@@ -1,0 +1,17 @@
+workflow: full
+phase: build
+build_mode: null
+build_pause: null
+isolation: null
+verify_mode: null
+base_ref: null
+design_doc: docs/superpowers/specs/2026-06-18-core-framework-design.md
+plan: null
+verify_result: pending
+verification_report: null
+branch_status: pending
+created_at: 2026-06-18
+verified_at: null
+archived: false
+handoff_context: openspec/changes/core-framework/.comet/handoff/design-context.json
+handoff_hash: ff423785b2956cf1bcaf614a871966a22fe9f27f0730d31a598c0f869aff37b7
