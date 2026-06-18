@@ -1,9 +1,9 @@
-# Demo Items
+# 演示物品
 
 items:
   - id: oil_lamp
-    name: Oil Lamp
-    description: A brass oil lamp that casts warm light.
+    name: 油灯
+    description: 一盏黄铜油灯，散发着温暖的光芒。
     location_id: tavern
     properties:
       light_source: true
@@ -13,8 +13,8 @@ items:
     value: 5
 
   - id: iron_sword
-    name: Iron Sword
-    description: A well-crafted iron sword from Duran's forge.
+    name: 铁剑
+    description: 杜兰锻造的精良铁剑。
     location_id: blacksmith
     properties:
       weapon: true
@@ -24,8 +24,8 @@ items:
     value: 25
 
   - id: rope
-    name: Hemp Rope
-    description: 50 feet of sturdy hemp rope.
+    name: 麻绳
+    description: 50尺长的结实麻绳。
     location_id: market_stall
     properties:
       flexible: true
@@ -34,8 +34,8 @@ items:
     value: 3
 
   - id: healing_potion
-    name: Healing Potion
-    description: A glowing red liquid in a glass vial. Restores health when consumed.
+    name: 治疗药水
+    description: 玻璃瓶中发光的红色液体。饮用后可恢复生命。
     location_id: market_stall
     properties:
       consumable: true
@@ -45,8 +45,8 @@ items:
     value: 15
 
   - id: bread
-    name: Fresh Bread
-    description: A warm loaf of bread from the inn's oven.
+    name: 新鲜面包
+    description: 客栈烤炉烤出的热腾腾的面包。
     location_id: tavern
     properties:
       consumable: true
@@ -55,8 +55,8 @@ items:
     value: 1
 
   - id: ancient_map
-    name: Ancient Map
-    description: A faded parchment showing the layout of the ruins. Found in Kael's possession.
+    name: 古代地图
+    description: 一张褪色的羊皮纸，标注着遗迹的布局。在凯尔处发现。
     location_id: tavern
     properties:
       readable: true
@@ -65,8 +65,8 @@ items:
     value: 100
 
   - id: lockpick
-    name: Lockpick Set
-    description: A set of fine metal tools for opening locks.
+    name: 开锁工具
+    description: 一套精密的金属工具，用于撬开锁具。
     location_id: forest_camp
     properties:
       portable: true
@@ -75,8 +75,8 @@ items:
     value: 10
 
   - id: torch
-    name: Torch
-    description: A wooden torch wrapped in oil-soaked cloth.
+    name: 火把
+    description: 一根裹着浸油布条的木制火把。
     location_id: village_gate
     properties:
       light_source: true

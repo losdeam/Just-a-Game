@@ -13,23 +13,24 @@ from jag.world.world import WorldState
 logger = logging.getLogger(__name__)
 
 
-NARRATOR_SYSTEM_PROMPT = """You are a narrator for an immersive open-world RPG.
-Generate vivid, atmospheric narrative text based on game events.
+NARRATOR_SYSTEM_PROMPT = """你是一个沉浸式开放世界RPG的叙事者。
+根据游戏事件生成生动、有氛围的叙事文本。
+所有输出必须使用简体中文。
 
-Style guidelines:
-- Use second person ("You") for player actions
-- Be descriptive but concise (2-4 sentences per narrative)
-- Include sensory details (sights, sounds, smells)
-- Maintain a consistent fantasy tone
-- Don't break the fourth wall
-- Reference NPC names and locations naturally
-- Show don't tell: describe outcomes rather than stating mechanics
+风格指南：
+- 用第二人称（“你”）描述玩家行动
+- 描述性但简洁（每段叙事2-4句）
+- 包含感官细节（视觉、声音、气味）
+- 保持一致的奇幻风格语调
+- 不要打破第四面墙
+- 自然地引用NPC名字和地名
+- 展现而非叙述：描述结果而非陈述机制
 
-When dice rolls are involved:
-- Critical success: Describe a masterful, impressive action
-- Success: Describe a competent, effective action
-- Failure: Describe what went wrong, but keep it interesting
-- Critical failure: Describe a dramatic, memorable mishap
+涉及骰子检定时：
+- 大成功：描述一次精湛的、令人印象深刻的行动
+- 成功：描述一次熟练的、有效的行动
+- 失败：描述出了什么问题，但保持趣味性
+- 大失败：描述一次戏剧性的、令人难忘的失误
 """
 
 
@@ -124,15 +125,15 @@ class NarrativeGenerator:
         assert self.llm is not None
 
         parts = []
-        parts.append(f"Time: {context['time']}, Day {context['day']}, {context['season']}")
-        parts.append(f"Location: {context['location']['name']} ({context['location']['description']})")
+        parts.append(f"时间: {context['time']}，第{context['day']}天，{context['season']}")
+        parts.append(f"地点: {context['location']['name']}（{context['location']['description']}）")
 
         if context["player_action"]:
             action = context["player_action"]
             parts.append(f"\nPlayer attempted: {action.get('type', 'act')} — \"{action.get('text', action.get('intent', ''))}\"")
 
         if context["dice_result"]:
-            parts.append(f"Dice result: {context['dice_result']['summary']}")
+            parts.append(f"骰子结果: {context['dice_result']['summary']}")
 
         if context["npc_actions"]:
             parts.append("\nNPC actions:")
@@ -172,7 +173,7 @@ class NarrativeGenerator:
         # Time and location
         loc_name = context["location"]["name"]
         time_str = context["time"]
-        parts.append(f"[{time_str}] You are at {loc_name}.")
+        parts.append(f"【{time_str}】你在{loc_name}。")
 
         # Player action
         action = context.get("player_action", {})
@@ -181,34 +182,34 @@ class NarrativeGenerator:
             target = action.get("target", "")
 
             if action_type == "move":
-                parts.append(f"You travel to {target}.")
+                parts.append(f"你前往{target}。")
             elif action_type == "attack":
-                parts.append(f"You attack {target}.")
+                parts.append(f"你攻击了{target}。")
             elif action_type == "interact":
-                parts.append(f"You interact with {target}.")
+                parts.append(f"你与{target}互动。")
             elif action_type == "speak":
-                parts.append(f"You speak to {target}.")
+                parts.append(f"你与{target}交谈。")
             elif action_type == "take":
-                parts.append(f"You pick up {target}.")
+                parts.append(f"你拾取了{target}。")
             elif action_type == "examine":
-                parts.append(f"You examine {target} closely.")
+                parts.append(f"你仔细检查了{target}。")
             elif action_type == "rest":
-                parts.append("You take a moment to rest.")
+                parts.append("你稍作休息。")
             else:
-                parts.append(f"You {action_type}.")
+                parts.append(f"你执行了{action_type}。")
 
         # Dice result
         dice = context.get("dice_result")
         if dice:
             dice_result = dice.get("result", "")
             if dice_result == "critical_success":
-                parts.append("An incredible success!")
+                parts.append("一次不可思议的大成功！")
             elif dice_result == "success":
-                parts.append("Your attempt succeeds.")
+                parts.append("你的尝试成功了。")
             elif dice_result == "failure":
-                parts.append("Your attempt fails.")
+                parts.append("你的尝试失败了。")
             elif dice_result == "critical_failure":
-                parts.append("A disastrous failure!")
+                parts.append("一场灾难性的大失败！")
 
         # NPC actions
         for npc_act in context.get("npc_actions", [])[:3]:
@@ -224,6 +225,6 @@ class NarrativeGenerator:
 
         # Quests
         for q in context.get("new_quests", []):
-            parts.append(f"★ New quest: {q['title']}")
+            parts.append(f"★ 新任务：{q['title']}")
 
         return " ".join(parts)

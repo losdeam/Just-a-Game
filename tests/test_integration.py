@@ -78,8 +78,8 @@ class TestWorldLoader:
         npcs = load_npcs()
         assert len(npcs) >= 4
         names = {n.name for n in npcs}
-        assert "Mara" in names
-        assert "Duran" in names
+        assert "玛拉" in names
+        assert "杜兰" in names
 
     def test_load_items(self):
         items = load_items()

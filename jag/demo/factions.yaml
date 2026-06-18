@@ -1,24 +1,24 @@
-# Demo Factions
+# 演示势力
 
 factions:
   - id: villagers
-    name: Greystone Villagers
-    description: The peaceful inhabitants of Greystone Village. They value community and safety.
+    name: 灰石村民
+    description: 灰石村的和平居民。他们重视社区和安全。
     faction_type: community
     leader_id: innkeeper_mara
     members: [innkeeper_mara, blacksmith_duran, hunter_lyra]
-    goals: [maintain peace, protect the village, prosper through trade]
+    goals: [维护和平, 保护村庄, 通过贸易繁荣发展]
     resources:
       gold: 500
       influence: 20
 
   - id: darkwood_bandits
-    name: Darkwood Bandits
-    description: A band of outlaws who prey on travelers in the Darkwood Forest.
+    name: 暗影强盗团
+    description: 一伙在暗影森林中抢劫旅行者的法外之徒。
     faction_type: criminal
     leader_id: thief_shadow
     members: [thief_shadow]
-    goals: [accumulate wealth, control the forest, find the ruins' treasure]
+    goals: [积累财富, 控制森林, 寻找遗迹中的宝藏]
     resources:
       gold: 300
       influence: 10

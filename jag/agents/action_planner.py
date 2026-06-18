@@ -54,28 +54,28 @@ DC_BY_RISK = {
 }
 
 
-PLANNER_SYSTEM_PROMPT = """You are an action planner for an open-world RPG game.
-Given a player's natural language input and the current world context,
-parse the action into a structured plan.
+PLANNER_SYSTEM_PROMPT = """你是一个开放世界RPG游戏的行动规划器。
+根据玩家的自然语言输入和当前世界上下文，将行动解析为结构化计划。
+所有输出内容请使用简体中文。
 
-Available action types:
-- move: travel to a location
-- attack: attack an entity
-- interact: interact with an entity or object
-- use: use an item
-- take: pick up an item
-- drop: drop an item
-- examine: examine something closely
-- rest: rest to recover
-- craft: create something from materials
-- speak: talk to an NPC
+可用行动类型：
+- move: 前往某个地点
+- attack: 攻击某个实体
+- interact: 与某个实体或物品互动
+- use: 使用某个物品
+- take: 拾取物品
+- drop: 丢弃物品
+- examine: 仔细检查某物
+- rest: 休息恢复
+- craft: 用材料制作
+- speak: 与NPC对话
 
-Attributes: STR, DEX, CON, INT, WIS, CHA
-Set DC based on difficulty: easy=8, medium=12, hard=16, extreme=20
+属性：STR（力量）、DEX（敏捷）、CON（体质）、INT（智力）、WIS（感知）、CHA（魅力）
+根据难度设定DC：简单=8、中等=12、困难=16、极难=20
 
-Be reasonable about risk and DC assignment.
-If the action is purely social or passive, risk should be LOW with DC 8.
-If the action involves danger or complexity, increase risk and DC accordingly.
+合理评估风险和DC：
+- 纯社交或被动行为，风险应为LOW，DC为8
+- 涉及危险或复杂性的行为，相应提高风险和DC
 """
 
 
@@ -85,21 +85,21 @@ def build_world_context(player_id: str, world: WorldState) -> str:
     loc_id = player.get("location_id", "")
     location = world.locations.get(loc_id)
 
-    parts = [f"Time: {world.time.time_of_day()} (hour {world.time.hour}), Day {world.time.day}, {world.time.season}"]
+    parts = [f"时间: {world.time.time_of_day()}（{world.time.hour}时），第{world.time.day}天，{world.time.season}"]
 
     if location:
-        parts.append(f"Location: {location.name} ({location.location_type})")
-        parts.append(f"  Description: {location.description}")
+        parts.append(f"地点: {location.name}（{location.location_type}）")
+        parts.append(f"  描述: {location.description}")
         nearby = [e for e in location.entities if e != player_id]
         if nearby:
-            parts.append(f"  Nearby: {', '.join(nearby)}")
+            parts.append(f"  附近: {', '.join(nearby)}")
         items = location.items
         if items:
-            parts.append(f"  Items here: {', '.join(items)}")
+            parts.append(f"  物品: {', '.join(items)}")
 
     inventory = player.get("inventory", [])
     if inventory:
-        parts.append(f"Inventory: {', '.join(inventory)}")
+        parts.append(f"背包: {', '.join(inventory)}")
 
     return "\n".join(parts)
 

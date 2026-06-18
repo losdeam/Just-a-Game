@@ -1,14 +1,14 @@
-# Demo NPCs
+# 演示NPC
 
 npcs:
   - id: innkeeper_mara
-    name: Mara
-    description: A warm, motherly woman who runs the Hearthstone Inn. She knows everyone's business.
+    name: 玛拉
+    description: 一位温暖慈祥的女性，经营着炉石客栈。她对村里每个人的事都了如指掌。
     location_id: tavern
     personality: friendly
-    goal: Keep her inn prosperous and her guests safe
-    desires: ["good reviews", "steady income"]
-    fears: ["bandits", "fire"]
+    goal: 让客栈生意兴隆，保护客人安全
+    desires: ["好评", "稳定收入"]
+    fears: ["强盗", "火灾"]
     attributes:
       STR: 8
       DEX: 10
@@ -19,17 +19,17 @@ npcs:
     resources:
       gold: 50
     schedule:
-      - { hour_start: 5, hour_end: 22, activity: "running the inn", location_id: tavern }
-      - { hour_start: 22, hour_end: 5, activity: "sleeping", location_id: tavern }
+      - { hour_start: 5, hour_end: 22, activity: "经营客栈", location_id: tavern }
+      - { hour_start: 22, hour_end: 5, activity: "睡觉", location_id: tavern }
 
   - id: blacksmith_duran
-    name: Duran
-    description: A burly dwarf with soot-stained hands. Master craftsman who forges the finest blades in the village.
+    name: 杜兰
+    description: 一位身材魁梧的矮人，双手沾满烟灰。他是村里最出色的锻造大师。
     location_id: blacksmith
     personality: gruff
-    goal: Create the perfect weapon
-    desires: ["rare metals", "masterwork designs"]
-    fears: ["losing his craft"]
+    goal: 打造出完美的武器
+    desires: ["稀有金属", "大师级设计图"]
+    fears: ["失去手艺"]
     attributes:
       STR: 16
       DEX: 14
@@ -40,18 +40,18 @@ npcs:
     resources:
       gold: 80
     schedule:
-      - { hour_start: 6, hour_end: 18, activity: "forging weapons", location_id: blacksmith }
-      - { hour_start: 18, hour_end: 22, activity: "drinking at the inn", location_id: tavern }
-      - { hour_start: 22, hour_end: 6, activity: "sleeping", location_id: blacksmith }
+      - { hour_start: 6, hour_end: 18, activity: "锻造武器", location_id: blacksmith }
+      - { hour_start: 18, hour_end: 22, activity: "在客栈喝酒", location_id: tavern }
+      - { hour_start: 22, hour_end: 6, activity: "睡觉", location_id: blacksmith }
 
   - id: hunter_lyra
-    name: Lyra
-    description: A keen-eyed elven hunter who patrols the forest edge. She moves silently and knows every trail.
+    name: 莱拉
+    description: 一位目光敏锐的精灵猎人，负责巡逻森林边缘。她行动无声，熟悉每一条小径。
     location_id: village_gate
     personality: cautious
-    goal: Protect the village from forest threats
-    desires: ["peace", "rare herbs"]
-    fears: ["the darkness in the ruins"]
+    goal: 保护村庄免受森林威胁
+    desires: ["和平", "稀有草药"]
+    fears: ["遗迹中的黑暗力量"]
     attributes:
       STR: 10
       DEX: 16
@@ -62,19 +62,19 @@ npcs:
     resources:
       gold: 20
     schedule:
-      - { hour_start: 5, hour_end: 12, activity: "patrolling the forest edge", location_id: village_gate }
-      - { hour_start: 12, hour_end: 16, activity: "scouting the forest", location_id: forest_path }
-      - { hour_start: 16, hour_end: 20, activity: "reporting to the village", location_id: village_square }
-      - { hour_start: 20, hour_end: 5, activity: "sleeping", location_id: tavern }
+      - { hour_start: 5, hour_end: 12, activity: "巡逻森林边缘", location_id: village_gate }
+      - { hour_start: 12, hour_end: 16, activity: "侦察森林", location_id: forest_path }
+      - { hour_start: 16, hour_end: 20, activity: "向村庄汇报", location_id: village_square }
+      - { hour_start: 20, hour_end: 5, activity: "睡觉", location_id: tavern }
 
   - id: mysterious_traveler
-    name: Kael
-    description: A cloaked figure who arrived three days ago. Speaks little but watches everything with keen interest.
+    name: 凯尔
+    description: 一位披着斗篷的神秘人物，三天前来到村庄。话不多，但用敏锐的目光观察着一切。
     location_id: tavern
     personality: mysterious
-    goal: Find the entrance to the ancient ruins
-    desires: ["ancient knowledge", "artifacts"]
-    fears: ["being discovered"]
+    goal: 找到古代遗迹的入口
+    desires: ["古代知识", "神器"]
+    fears: ["被发现真实身份"]
     attributes:
       STR: 10
       DEX: 14
@@ -85,18 +85,18 @@ npcs:
     resources:
       gold: 200
     schedule:
-      - { hour_start: 8, hour_end: 12, activity: "observing the village", location_id: village_square }
-      - { hour_start: 12, hour_end: 18, activity: "researching in secret", location_id: tavern }
-      - { hour_start: 18, hour_end: 8, activity: "resting", location_id: tavern }
+      - { hour_start: 8, hour_end: 12, activity: "观察村庄", location_id: village_square }
+      - { hour_start: 12, hour_end: 18, activity: "秘密研究", location_id: tavern }
+      - { hour_start: 18, hour_end: 8, activity: "休息", location_id: tavern }
 
   - id: thief_shadow
-    name: Shadow
-    description: A nimble rogue who operates from the forest camp. Leader of the Darkwood Bandits.
+    name: 暗影
+    description: 一位身手矫健的盗贼，在森林营地活动。暗影森林强盗团伙的首领。
     location_id: forest_camp
     personality: cunning
-    goal: Rob travelers and accumulate wealth
-    desires: ["gold", "valuable items"]
-    fears: ["being caught", "the ruins' guardian"]
+    goal: 抢劫旅行者，积累财富
+    desires: ["黄金", "贵重物品"]
+    fears: ["被捕", "遗迹的守护者"]
     attributes:
       STR: 10
       DEX: 16
@@ -107,5 +107,5 @@ npcs:
     resources:
       gold: 150
     schedule:
-      - { hour_start: 6, hour_end: 18, activity: "ambushing travelers", location_id: forest_path }
-      - { hour_start: 18, hour_end: 6, activity: "resting at camp", location_id: forest_camp }
+      - { hour_start: 6, hour_end: 18, activity: "伏击旅行者", location_id: forest_path }
+      - { hour_start: 18, hour_end: 6, activity: "在营地休息", location_id: forest_camp }

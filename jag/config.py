@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any
 
 import yaml
+from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
 
@@ -71,10 +73,93 @@ class GameConfig(BaseModel):
 
 def load_config(path: str | Path | None = None) -> GameConfig:
     """Load game configuration, with optional path."""
+    # Load .env file
+    load_dotenv()
+
     if path is None:
         # Try default locations
         for candidate in ["jag_config.yaml", "config.yaml"]:
             if Path(candidate).exists():
-                return GameConfig.from_yaml(candidate)
-        return GameConfig()
-    return GameConfig.from_yaml(path)
+                cfg = GameConfig.from_yaml(candidate)
+                _apply_env_overrides(cfg)
+                return cfg
+        cfg = GameConfig()
+        _apply_env_overrides(cfg)
+        return cfg
+    cfg = GameConfig.from_yaml(path)
+    _apply_env_overrides(cfg)
+    return cfg
+
+
+def _apply_env_overrides(cfg: GameConfig) -> None:
+    """Override config fields from .env variables."""
+    # LLM default config
+    if provider := os.getenv("LLM_PROVIDER"):
+        cfg.llm.default.provider = provider
+    if model := os.getenv("LLM_MODEL"):
+        cfg.llm.default.model = model
+    if api_key := os.getenv("LLM_API_KEY"):
+        cfg.llm.default.api_key = api_key
+    if api_base := os.getenv("LLM_API_BASE"):
+        cfg.llm.default.api_base = api_base
+    if temp := os.getenv("LLM_TEMPERATURE"):
+        try:
+            cfg.llm.default.temperature = float(temp)
+        except ValueError:
+            pass
+    if max_tokens := os.getenv("LLM_MAX_TOKENS"):
+        try:
+            cfg.llm.default.max_tokens = int(max_tokens)
+        except ValueError:
+            pass
+
+    # Per-module LLM overrides
+    for key, value in os.environ.items():
+        if key.startswith("LLM_MODULE_"):
+            parts = key.split("_", 3)
+            if len(parts) >= 4:
+                module_name = parts[2].lower()
+                field_name = parts[3].lower()
+                if module_name not in cfg.llm.modules:
+                    cfg.llm.modules[module_name] = LLMModuleConfig()
+                module_cfg = cfg.llm.modules[module_name]
+                if field_name == "provider":
+                    module_cfg.provider = value
+                elif field_name == "model":
+                    module_cfg.model = value
+                elif field_name == "api_key":
+                    module_cfg.api_key = value
+                elif field_name == "api_base":
+                    module_cfg.api_base = value
+                elif field_name == "temperature":
+                    try:
+                        module_cfg.temperature = float(value)
+                    except ValueError:
+                        pass
+                elif field_name == "max_tokens":
+                    try:
+                        module_cfg.max_tokens = int(value)
+                    except ValueError:
+                        pass
+
+    # Database overrides
+    if db_backend := os.getenv("DB_BACKEND"):
+        cfg.database.backend = db_backend
+    if db_path := os.getenv("DB_PATH"):
+        cfg.database.path = db_path
+    if db_url := os.getenv("DB_URL"):
+        cfg.database.url = db_url
+
+    # Game config overrides
+    if world_name := os.getenv("WORLD_NAME"):
+        cfg.world_name = world_name
+    if max_depth := os.getenv("MAX_CHAIN_DEPTH"):
+        try:
+            cfg.max_chain_depth = int(max_depth)
+        except ValueError:
+            pass
+    if npc_conc := os.getenv("NPC_CONCURRENCY"):
+        try:
+            cfg.npc_concurrency = int(npc_conc)
+        except ValueError:
+            pass

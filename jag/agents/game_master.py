@@ -209,9 +209,9 @@ class GameMaster:
 
         return {
             "turn": self.world.time.turn,
-            "time": f"{self.world.time.hour:02d}:00 ({self.world.time.time_of_day()})",
+            "time": f"{self.world.time.hour:02d}:00（{self.world.time.time_of_day_display()}）",
             "day": self.world.time.day,
-            "season": self.world.time.season,
+            "season": self.world.time.season_display(),
             "location": location.name if location else "unknown",
             "location_description": location.description if location else "",
             "inventory": player.get("inventory", []),

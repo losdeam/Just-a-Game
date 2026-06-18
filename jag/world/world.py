@@ -15,6 +15,9 @@ class TimeState:
     day: int = 1
     season: str = "spring"  # spring, summer, autumn, winter
 
+    SEASON_NAMES = {"spring": "春季", "summer": "夏季", "autumn": "秋季", "winter": "冬季"}
+    TIME_NAMES = {"morning": "清晨", "afternoon": "午后", "evening": "傍晚", "night": "深夜"}
+
     def advance(self, turns: int = 1) -> None:
         """Advance time by N turns (1 turn = ~1 hour)."""
         for _ in range(turns):
@@ -38,6 +41,14 @@ class TimeState:
             return "evening"
         else:
             return "night"
+
+    def time_of_day_display(self) -> str:
+        """Get Chinese display name for time of day."""
+        return self.TIME_NAMES.get(self.time_of_day(), self.time_of_day())
+
+    def season_display(self) -> str:
+        """Get Chinese display name for season."""
+        return self.SEASON_NAMES.get(self.season, self.season)
 
     def is_dark(self) -> bool:
         return self.hour < 6 or self.hour >= 20

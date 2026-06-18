@@ -1,6 +1,6 @@
-# Demo Rules
+# 演示规则
 
-- name: fire_spread
+- name: 火焰蔓延
   conditions:
     - attribute: source.type
       operator: eq
@@ -19,7 +19,7 @@
   priority: 10
   tags: [fire, environment]
 
-- name: darkness_penalty
+- name: 黑暗惩罚
   conditions:
     - attribute: world.time_of_day
       operator: eq
@@ -35,7 +35,7 @@
   priority: 5
   tags: [perception, environment]
 
-- name: npc_fear_response
+- name: NPC恐惧反应
   conditions:
     - attribute: source.mood
       operator: eq
@@ -51,7 +51,7 @@
   priority: 8
   tags: [npc, behavior]
 
-- name: combat_advantage_height
+- name: 战斗高地优势
   conditions:
     - attribute: source.position
       operator: eq

@@ -25,28 +25,28 @@ class NPCActionModel(BaseModel):
     params: dict[str, Any] = Field(default_factory=dict, description="Additional parameters")
 
 
-NPC_SYSTEM_PROMPT = """You are controlling an NPC in an open-world RPG.
-Given the NPC's personality, current state, and observations of the world,
-decide what the NPC should do this turn.
+NPC_SYSTEM_PROMPT = """你正在控制一个开放世界RPG中的NPC。
+根据NPC的性格、当前状态和对世界的观察，决定本回合NPC应该做什么。
+所有输出内容请使用简体中文。
 
-NPC behaviors should be:
-- Consistent with their personality and goals
-- Reactive to their environment (time of day, weather, nearby entities)
-- Following their schedule when appropriate
-- Self-preserving (eat when hungry, rest when tired)
+NPC行为应该：
+- 与其性格和目标一致
+- 对环境做出反应（时间、天气、附近实体）
+- 在适当时遵循日程安排
+- 自我保护（饿时进食、累时休息）
 
-Available actions:
-- move: go to a different location
-- interact: interact with an object or entity
-- work: perform job/duty
-- rest: rest to recover energy
-- trade: buy or sell goods
-- patrol: walk around guard duty
-- socialize: talk to nearby NPCs
-- flee: run from danger
-- idle: do nothing
+可用行动：
+- move: 前往另一个地点
+- interact: 与物体或实体互动
+- work: 执行工作/职责
+- rest: 休息恢复精力
+- trade: 买卖商品
+- patrol: 巡逻站岗
+- socialize: 与附近NPC交谈
+- flee: 逃离危险
+- idle: 什么也不做
 
-Respond with the most appropriate action.
+选择最合适的行动。
 """
 
 
@@ -188,14 +188,14 @@ class NPCAgent:
             return {
                 "type": "rest",
                 "target": obs.location_id,
-                "description": f"{npc.name} is exhausted and rests",
+                "description": f"{npc.name}已经筋疲力尽，停下来休息",
             }
 
         if obs.hunger > 0.85:
             return {
                 "type": "interact",
                 "target": "food",
-                "description": f"{npc.name} looks for food",
+                "description": f"{npc.name}四处寻找食物",
             }
 
         # Priority 2: Fear response
@@ -203,7 +203,7 @@ class NPCAgent:
             return {
                 "type": "flee",
                 "target": "",
-                "description": f"{npc.name} tries to flee from danger",
+                "description": f"{npc.name}试图逃离危险",
             }
 
         # Priority 3: Schedule adherence
@@ -212,12 +212,12 @@ class NPCAgent:
                 return {
                     "type": "move",
                     "target": obs.schedule_location,
-                    "description": f"{npc.name} heads to {obs.schedule_location} for {obs.schedule_activity}",
+                    "description": f"{npc.name}前往{obs.schedule_location}进行{obs.schedule_activity}",
                 }
             return {
                 "type": "work",
                 "target": obs.schedule_location,
-                "description": f"{npc.name} is {obs.schedule_activity}",
+                "description": f"{npc.name}正在{obs.schedule_activity}",
             }
 
         # Priority 4: Social behavior
@@ -226,12 +226,12 @@ class NPCAgent:
             return {
                 "type": "socialize",
                 "target": target,
-                "description": f"{npc.name} chats with {target}",
+                "description": f"{npc.name}与{target}聊天",
             }
 
         # Default: idle
         return {
             "type": "idle",
             "target": "",
-            "description": f"{npc.name} looks around",
+            "description": f"{npc.name}四处张望",
         }

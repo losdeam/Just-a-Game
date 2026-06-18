@@ -1,24 +1,23 @@
-# Demo World: Greystone Village & Darkwood Forest
-# 灰石村与暗影森林
+# 演示世界：灰石村与暗影森林
 
 regions:
   - id: greystone
-    name: Greystone Village
-    description: A quiet village nestled at the edge of the Darkwood. Stone buildings line cobblestone streets.
+    name: 灰石村
+    description: 坐落在黑暗森林边缘的宁静村庄。石砌建筑沿着鹅卵石街道排列。
     region_type: settlement
     danger_level: 1
 
   - id: darkwood
-    name: Darkwood Forest
-    description: An ancient forest where sunlight barely penetrates the thick canopy. Strange sounds echo between the trees.
+    name: 暗影森林
+    description: 一片古老的森林，浓密的树冠几乎遮蔽了所有阳光。诡异的声响在树木间回荡。
     region_type: wilderness
     danger_level: 5
 
 locations:
-  # Greystone Village
+  # 灰石村
   - id: village_square
-    name: Village Square
-    description: The heart of Greystone. A weathered stone fountain stands in the center. Villagers gather here to trade news and goods.
+    name: 村庄广场
+    description: 灰石村的中心。一座风化的石制喷泉矗立在中央。村民们聚集在此交流消息和交易货物。
     region_id: greystone
     location_type: outdoor
     light_level: 8
@@ -27,8 +26,8 @@ locations:
     tags: [social, trade]
 
   - id: tavern
-    name: The Hearthstone Inn
-    description: A warm, inviting tavern with a roaring fireplace. The smell of fresh bread and stew fills the air.
+    name: 炉石客栈
+    description: 一家温暖宜人的客栈，壁炉里火焰熊熊。新鲜面包和炖菜的香气弥漫在空气中。
     region_id: greystone
     location_type: indoor
     light_level: 6
@@ -37,8 +36,8 @@ locations:
     tags: [rest, social, food]
 
   - id: blacksmith
-    name: Iron & Anvil Smithy
-    description: The rhythmic clang of hammer on anvil rings out. Weapons and tools line the walls.
+    name: 铁砧铁匠铺
+    description: 锤击铁砧的节奏声不绝于耳。墙壁上挂满了各式武器和工具。
     region_id: greystone
     location_type: indoor
     light_level: 5
@@ -47,8 +46,8 @@ locations:
     tags: [trade, craft]
 
   - id: market_stall
-    name: Market Stall
-    description: A colorful array of goods displayed on wooden tables. Exotic spices, dried herbs, and curious trinkets.
+    name: 集市摊位
+    description: 木桌上摆满了琳琅满目的商品。异国香料、干草药和各种奇特的小饰品。
     region_id: greystone
     location_type: outdoor
     light_level: 8
@@ -57,8 +56,8 @@ locations:
     tags: [trade]
 
   - id: village_gate
-    name: Village Gate
-    description: The wooden gate marking the boundary between civilization and the wild. Guards keep watch.
+    name: 村口大门
+    description: 标志着文明与荒野界限的木制大门。守卫在此站岗放哨。
     region_id: greystone
     location_type: outdoor
     light_level: 7
@@ -66,10 +65,10 @@ locations:
     connected: [village_square, forest_path]
     tags: [transition]
 
-  # Darkwood Forest
+  # 暗影森林
   - id: forest_path
-    name: Forest Path
-    description: A winding trail through the dark trees. Birdsong has given way to an eerie silence.
+    name: 森林小径
+    description: 一条蜿蜒穿过幽暗树林的小径。鸟鸣声已消失，取而代之的是令人不安的寂静。
     region_id: darkwood
     location_type: outdoor
     light_level: 3
@@ -78,8 +77,8 @@ locations:
     tags: [wilderness]
 
   - id: forest_camp
-    name: Hidden Camp
-    description: A concealed campsite with a cold fire pit. Someone has been living here recently.
+    name: 隐秘营地
+    description: 一个隐蔽的营地，火塘已冷却。有人最近在此居住过。
     region_id: darkwood
     location_type: outdoor
     light_level: 2
@@ -88,8 +87,8 @@ locations:
     tags: [wilderness, hideout]
 
   - id: ruins_entrance
-    name: Ruins Entrance
-    description: Crumbling stone archways covered in ancient runes. A cold wind blows from within.
+    name: 遗迹入口
+    description: 覆满古代符文的崩塌石拱门。一股冷风从内部吹出。
     region_id: darkwood
     location_type: outdoor
     light_level: 2

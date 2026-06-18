@@ -41,25 +41,25 @@ class StoryThread:
     turns_since_event: int = 0
 
 
-STORY_DIRECTOR_PROMPT = """You are a story director for an open-world RPG.
-Your role is to analyze the current game state and recent events,
-then decide if any story developments should occur.
+STORY_DIRECTOR_PROMPT = """你是一个开放世界RPG的故事导演。
+你的职责是分析当前游戏状态和最近的事件，决定是否有故事发展应该发生。
+所有输出内容请使用简体中文。
 
-Story development types:
-- Escalation: An existing situation worsens
-- Revelation: New information is discovered
-- Opportunity: A new possibility emerges
-- Consequence: Past actions have repercussions
-- Encounter: An unexpected meeting or discovery
+故事发展类型：
+- 升级：现有局势恶化
+- 揭示：发现新信息
+- 机遇：出现新的可能性
+- 后果：过去的行为产生反作用
+- 邂逅：意外的会面或发现
 
-Consider:
-- Player engagement (don't let things get boring)
-- Narrative coherence (events should make sense)
-- World consistency (respect the established world)
-- Pacing (mix action with quieter moments)
+考虑因素：
+- 玩家参与度（不要让事情变得无聊）
+- 叙事连贯性（事件应该合理）
+- 世界一致性（尊重已建立的世界）
+- 节奏控制（动作与安静时刻交替）
 
-Only generate story beats when there's a meaningful development.
-Return 0-2 beats maximum per turn.
+只在有有意义的发展时才生成故事节拍。
+每回合最多返回 0-2 个节拍。
 """
 
 
@@ -226,21 +226,21 @@ class StoryDirector:
         templates = [
             {
                 "event_type": "environment",
-                "description": f"A strange sound echoes through {location.name}.",
+                "description": f"一阵奇异的声音在{location.name}回荡。",
                 "source_id": "ambient",
                 "location_id": loc_id,
                 "importance": 3,
             },
             {
                 "event_type": "social",
-                "description": f"A traveler arrives at {location.name} with news from afar.",
+                "description": f"一位旅行者来到{location.name}，带来了远方的消息。",
                 "source_id": "traveler",
                 "location_id": loc_id,
                 "importance": 5,
             },
             {
                 "event_type": "world",
-                "description": f"Something unusual catches your eye near {location.name}.",
+                "description": f"{location.name}附近有什么不寻常的东西引起了你的注意。",
                 "source_id": "discovery",
                 "location_id": loc_id,
                 "importance": 4,
