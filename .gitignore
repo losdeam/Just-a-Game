@@ -11,3 +11,9 @@ wheels/
 
 # Environment variables
 .env
+.qoder/
+.opencode/
+.pytest_cache/
+.openspec/changes/
+
+# Tooling artifacts
