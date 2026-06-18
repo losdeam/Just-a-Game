@@ -1,0 +1,29 @@
+# Demo Factions
+
+factions:
+  - id: villagers
+    name: Greystone Villagers
+    description: The peaceful inhabitants of Greystone Village. They value community and safety.
+    faction_type: community
+    leader_id: innkeeper_mara
+    members: [innkeeper_mara, blacksmith_duran, hunter_lyra]
+    goals: [maintain peace, protect the village, prosper through trade]
+    resources:
+      gold: 500
+      influence: 20
+
+  - id: darkwood_bandits
+    name: Darkwood Bandits
+    description: A band of outlaws who prey on travelers in the Darkwood Forest.
+    faction_type: criminal
+    leader_id: thief_shadow
+    members: [thief_shadow]
+    goals: [accumulate wealth, control the forest, find the ruins' treasure]
+    resources:
+      gold: 300
+      influence: 10
+
+relations:
+  - faction_a: villagers
+    faction_b: darkwood_bandits
+    relation: hostile

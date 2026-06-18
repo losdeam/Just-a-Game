@@ -1,0 +1,98 @@
+# Demo World: Greystone Village & Darkwood Forest
+# 灰石村与暗影森林
+
+regions:
+  - id: greystone
+    name: Greystone Village
+    description: A quiet village nestled at the edge of the Darkwood. Stone buildings line cobblestone streets.
+    region_type: settlement
+    danger_level: 1
+
+  - id: darkwood
+    name: Darkwood Forest
+    description: An ancient forest where sunlight barely penetrates the thick canopy. Strange sounds echo between the trees.
+    region_type: wilderness
+    danger_level: 5
+
+locations:
+  # Greystone Village
+  - id: village_square
+    name: Village Square
+    description: The heart of Greystone. A weathered stone fountain stands in the center. Villagers gather here to trade news and goods.
+    region_id: greystone
+    location_type: outdoor
+    light_level: 8
+    danger_level: 0
+    connected: [tavern, blacksmith, village_gate, market_stall]
+    tags: [social, trade]
+
+  - id: tavern
+    name: The Hearthstone Inn
+    description: A warm, inviting tavern with a roaring fireplace. The smell of fresh bread and stew fills the air.
+    region_id: greystone
+    location_type: indoor
+    light_level: 6
+    danger_level: 0
+    connected: [village_square]
+    tags: [rest, social, food]
+
+  - id: blacksmith
+    name: Iron & Anvil Smithy
+    description: The rhythmic clang of hammer on anvil rings out. Weapons and tools line the walls.
+    region_id: greystone
+    location_type: indoor
+    light_level: 5
+    danger_level: 0
+    connected: [village_square]
+    tags: [trade, craft]
+
+  - id: market_stall
+    name: Market Stall
+    description: A colorful array of goods displayed on wooden tables. Exotic spices, dried herbs, and curious trinkets.
+    region_id: greystone
+    location_type: outdoor
+    light_level: 8
+    danger_level: 0
+    connected: [village_square]
+    tags: [trade]
+
+  - id: village_gate
+    name: Village Gate
+    description: The wooden gate marking the boundary between civilization and the wild. Guards keep watch.
+    region_id: greystone
+    location_type: outdoor
+    light_level: 7
+    danger_level: 1
+    connected: [village_square, forest_path]
+    tags: [transition]
+
+  # Darkwood Forest
+  - id: forest_path
+    name: Forest Path
+    description: A winding trail through the dark trees. Birdsong has given way to an eerie silence.
+    region_id: darkwood
+    location_type: outdoor
+    light_level: 3
+    danger_level: 3
+    connected: [village_gate, forest_camp, ruins_entrance]
+    tags: [wilderness]
+
+  - id: forest_camp
+    name: Hidden Camp
+    description: A concealed campsite with a cold fire pit. Someone has been living here recently.
+    region_id: darkwood
+    location_type: outdoor
+    light_level: 2
+    danger_level: 4
+    connected: [forest_path]
+    tags: [wilderness, hideout]
+
+  - id: ruins_entrance
+    name: Ruins Entrance
+    description: Crumbling stone archways covered in ancient runes. A cold wind blows from within.
+    region_id: darkwood
+    location_type: outdoor
+    light_level: 2
+    danger_level: 6
+    connected: [forest_path]
+    tags: [dungeon, ancient]

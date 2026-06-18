@@ -1,0 +1,111 @@
+# Demo NPCs
+
+npcs:
+  - id: innkeeper_mara
+    name: Mara
+    description: A warm, motherly woman who runs the Hearthstone Inn. She knows everyone's business.
+    location_id: tavern
+    personality: friendly
+    goal: Keep her inn prosperous and her guests safe
+    desires: ["good reviews", "steady income"]
+    fears: ["bandits", "fire"]
+    attributes:
+      STR: 8
+      DEX: 10
+      CON: 12
+      INT: 11
+      WIS: 14
+      CHA: 16
+    resources:
+      gold: 50
+    schedule:
+      - { hour_start: 5, hour_end: 22, activity: "running the inn", location_id: tavern }
+      - { hour_start: 22, hour_end: 5, activity: "sleeping", location_id: tavern }
+
+  - id: blacksmith_duran
+    name: Duran
+    description: A burly dwarf with soot-stained hands. Master craftsman who forges the finest blades in the village.
+    location_id: blacksmith
+    personality: gruff
+    goal: Create the perfect weapon
+    desires: ["rare metals", "masterwork designs"]
+    fears: ["losing his craft"]
+    attributes:
+      STR: 16
+      DEX: 14
+      CON: 14
+      INT: 10
+      WIS: 8
+      CHA: 10
+    resources:
+      gold: 80
+    schedule:
+      - { hour_start: 6, hour_end: 18, activity: "forging weapons", location_id: blacksmith }
+      - { hour_start: 18, hour_end: 22, activity: "drinking at the inn", location_id: tavern }
+      - { hour_start: 22, hour_end: 6, activity: "sleeping", location_id: blacksmith }
+
+  - id: hunter_lyra
+    name: Lyra
+    description: A keen-eyed elven hunter who patrols the forest edge. She moves silently and knows every trail.
+    location_id: village_gate
+    personality: cautious
+    goal: Protect the village from forest threats
+    desires: ["peace", "rare herbs"]
+    fears: ["the darkness in the ruins"]
+    attributes:
+      STR: 10
+      DEX: 16
+      CON: 12
+      INT: 12
+      WIS: 15
+      CHA: 10
+    resources:
+      gold: 20
+    schedule:
+      - { hour_start: 5, hour_end: 12, activity: "patrolling the forest edge", location_id: village_gate }
+      - { hour_start: 12, hour_end: 16, activity: "scouting the forest", location_id: forest_path }
+      - { hour_start: 16, hour_end: 20, activity: "reporting to the village", location_id: village_square }
+      - { hour_start: 20, hour_end: 5, activity: "sleeping", location_id: tavern }
+
+  - id: mysterious_traveler
+    name: Kael
+    description: A cloaked figure who arrived three days ago. Speaks little but watches everything with keen interest.
+    location_id: tavern
+    personality: mysterious
+    goal: Find the entrance to the ancient ruins
+    desires: ["ancient knowledge", "artifacts"]
+    fears: ["being discovered"]
+    attributes:
+      STR: 10
+      DEX: 14
+      CON: 10
+      INT: 16
+      WIS: 14
+      CHA: 12
+    resources:
+      gold: 200
+    schedule:
+      - { hour_start: 8, hour_end: 12, activity: "observing the village", location_id: village_square }
+      - { hour_start: 12, hour_end: 18, activity: "researching in secret", location_id: tavern }
+      - { hour_start: 18, hour_end: 8, activity: "resting", location_id: tavern }
+
+  - id: thief_shadow
+    name: Shadow
+    description: A nimble rogue who operates from the forest camp. Leader of the Darkwood Bandits.
+    location_id: forest_camp
+    personality: cunning
+    goal: Rob travelers and accumulate wealth
+    desires: ["gold", "valuable items"]
+    fears: ["being caught", "the ruins' guardian"]
+    attributes:
+      STR: 10
+      DEX: 16
+      CON: 10
+      INT: 12
+      WIS: 10
+      CHA: 14
+    resources:
+      gold: 150
+    schedule:
+      - { hour_start: 6, hour_end: 18, activity: "ambushing travelers", location_id: forest_path }
+      - { hour_start: 18, hour_end: 6, activity: "resting at camp", location_id: forest_camp }

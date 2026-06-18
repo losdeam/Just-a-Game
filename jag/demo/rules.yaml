@@ -1,0 +1,65 @@
+# Demo Rules
+
+- name: fire_spread
+  conditions:
+    - attribute: source.type
+      operator: eq
+      value: fire
+    - attribute: target.properties.flammable
+      operator: has_property
+      value: true
+  effects:
+    - action: set_state
+      target: target.on_fire
+      value: true
+    - action: emit_event
+      target: fire_spread
+      value: true
+  probability: 0.7
+  priority: 10
+  tags: [fire, environment]
+
+- name: darkness_penalty
+  conditions:
+    - attribute: world.time_of_day
+      operator: eq
+      value: night
+    - attribute: source.has_light
+      operator: eq
+      value: false
+  effects:
+    - action: modify_attribute
+      target: source.perception
+      value: -3
+  probability: 1.0
+  priority: 5
+  tags: [perception, environment]
+
+- name: npc_fear_response
+  conditions:
+    - attribute: source.mood
+      operator: eq
+      value: fearful
+    - attribute: source.energy
+      operator: gt
+      value: 0.3
+  effects:
+    - action: emit_event
+      target: npc_flee
+      value: true
+  probability: 0.6
+  priority: 8
+  tags: [npc, behavior]
+
+- name: combat_advantage_height
+  conditions:
+    - attribute: source.position
+      operator: eq
+      value: elevated
+  effects:
+    - action: modify_attribute
+      target: source.attack_bonus
+      value: 2
+  probability: 1.0
+  priority: 3
+  tags: [combat]
