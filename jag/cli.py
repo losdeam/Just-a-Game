@@ -273,5 +273,17 @@ def version() -> None:
     console.print("[bold]JAG[/bold] v0.1.0 — 智能体驱动开放世界RPG框架")
 
 
+@main.command()
+@click.option("--host", "-h", default="127.0.0.1", help="服务监听地址")
+@click.option("--port", "-p", default=8000, help="服务监听端口")
+@click.option("--config", "-c", default=None, help="配置文件路径（YAML）")
+def web(host: str, port: int, config: str | None) -> None:
+    """启动调试 Web 界面。"""
+    from jag.web.server import run_server
+
+    console.print(f"[bold]JAG[/bold] 启动调试界面: http://{host}:{port}")
+    run_server(host=host, port=port, config=config)
+
+
 if __name__ == "__main__":
     main()

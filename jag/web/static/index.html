@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JAG — 调试控制台</title>
+<style>
+:root {
+  --bg: #0d1117; --bg2: #161b22; --bg3: #21262d; --border: #30363d;
+  --text: #c9d1d9; --text2: #8b949e; --accent: #58a6ff; --green: #3fb950;
+  --red: #f85149; --yellow: #d29922; --purple: #bc8cff; --orange: #f0883e;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'JetBrains Mono', 'Consolas', monospace; background: var(--bg); color: var(--text); font-size: 13px; height: 100vh; overflow: hidden; }
+
+/* ── Launcher overlay ── */
+.launcher { position: fixed; inset: 0; z-index: 100; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.4s; }
+.launcher.hidden { opacity: 0; pointer-events: none; }
+.launcher-logo { font-size: 48px; font-weight: 900; color: var(--accent); letter-spacing: 6px; margin-bottom: 6px; }
+.launcher-sub { color: var(--text2); font-size: 13px; margin-bottom: 40px; }
+.launcher-actions { display: flex; flex-direction: column; gap: 12px; width: 320px; }
+.launcher-btn { padding: 14px 24px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg2); color: var(--text); font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; text-align: left; transition: all 0.15s; display: flex; align-items: center; gap: 14px; }
+.launcher-btn:hover { border-color: var(--accent); background: var(--bg3); }
+.launcher-btn .icon { font-size: 22px; width: 36px; text-align: center; }
+.launcher-btn .label { flex: 1; }
+.launcher-btn .label small { display: block; font-size: 11px; font-weight: 400; color: var(--text2); margin-top: 2px; }
+.launcher-ver { position: absolute; bottom: 16px; color: var(--text2); font-size: 10px; }
+
+/* ── Settings modal ── */
+.modal-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; width: 640px; max-height: 80vh; display: flex; flex-direction: column; overflow: hidden; }
+.modal-header { display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--border); }
+.modal-header h2 { font-size: 15px; font-weight: 700; flex: 1; }
+.modal-close { background: none; border: none; color: var(--text2); font-size: 18px; cursor: pointer; padding: 4px 8px; border-radius: 4px; }
+.modal-close:hover { background: var(--bg3); color: var(--text); }
+.modal-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
+.modal-footer { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+
+/* Form elements */
+.form-section { margin-bottom: 20px; }
+.form-section-title { font-size: 12px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+.form-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.form-label { width: 120px; font-size: 11px; color: var(--text2); flex-shrink: 0; }
+.form-input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; color: var(--text); font-family: inherit; font-size: 12px; outline: none; }
+.form-input:focus { border-color: var(--accent); }
+.form-input::placeholder { color: var(--text2); }
+select.form-input { cursor: pointer; }
+.form-hint { font-size: 10px; color: var(--text2); margin-top: 2px; }
+.btn { padding: 8px 16px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg3); color: var(--text); font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.btn:hover { border-color: var(--accent); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-primary:hover { opacity: 0.85; }
+.btn-danger { background: var(--red); border-color: var(--red); color: #fff; }
+
+/* ── World Builder ── */
+.world-builder { position: fixed; inset: 0; z-index: 150; background: var(--bg); display: none; overflow-y: auto; }
+.world-builder.open { display: block; }
+.wb-container { max-width: 720px; margin: 0 auto; padding: 32px 24px; }
+.wb-title { font-size: 20px; font-weight: 800; color: var(--accent); margin-bottom: 4px; }
+.wb-subtitle { font-size: 12px; color: var(--text2); margin-bottom: 24px; }
+.wb-section { margin-bottom: 20px; }
+.wb-section-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.wb-section-icon { font-size: 16px; }
+.wb-section-title { font-size: 13px; font-weight: 700; color: var(--text); }
+.wb-section-hint { font-size: 10px; color: var(--text2); margin-left: auto; }
+.wb-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.wb-tag { padding: 6px 12px; border: 1px solid var(--border); border-radius: 20px; background: var(--bg2); color: var(--text2); font-size: 11px; cursor: pointer; transition: all 0.15s; user-select: none; }
+.wb-tag:hover { border-color: var(--accent); color: var(--text); }
+.wb-tag.selected { background: rgba(88,166,255,0.15); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.wb-tag .tag-desc { display: none; }
+.wb-input { width: 100%; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; color: var(--text); font-family: inherit; font-size: 13px; outline: none; }
+.wb-input:focus { border-color: var(--accent); }
+textarea.wb-input { min-height: 80px; resize: vertical; line-height: 1.5; }
+.wb-toggle { display: flex; align-items: center; gap: 8px; padding: 8px 0; }
+.wb-toggle-switch { width: 36px; height: 20px; border-radius: 10px; background: var(--bg3); border: 1px solid var(--border); cursor: pointer; position: relative; transition: background 0.2s; }
+.wb-toggle-switch.on { background: var(--accent); border-color: var(--accent); }
+.wb-toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--text); transition: left 0.2s; }
+.wb-toggle-switch.on::after { left: 18px; }
+.wb-toggle-label { font-size: 12px; color: var(--text); }
+.wb-toggle-hint { font-size: 10px; color: var(--text2); }
+.wb-preview { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; }
+.wb-preview-title { font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase; margin-bottom: 8px; }
+.wb-preview-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.wb-preview-chip { padding: 2px 8px; border-radius: 10px; background: rgba(88,166,255,0.1); color: var(--accent); font-size: 10px; }
+.wb-actions { display: flex; gap: 10px; margin-top: 24px; }
+.wb-btn { padding: 12px 24px; border-radius: 8px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; border: none; }
+.wb-btn-primary { background: var(--accent); color: #fff; }
+.wb-btn-primary:hover { opacity: 0.85; }
+.wb-btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+.wb-btn-secondary { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+.wb-btn-secondary:hover { border-color: var(--accent); }
+
+/* ── Main app layout ── */
+.app { display: grid; grid-template-columns: 1fr 420px; grid-template-rows: 48px 1fr; height: 100vh; }
+.header { grid-column: 1 / -1; display: flex; align-items: center; padding: 0 16px; background: var(--bg2); border-bottom: 1px solid var(--border); gap: 12px; }
+.header h1 { font-size: 15px; font-weight: 700; color: var(--accent); }
+.header .status { font-size: 11px; color: var(--text2); display: flex; gap: 16px; margin-left: auto; }
+.header .status span { display: flex; align-items: center; gap: 4px; }
+.header .settings-btn { background: none; border: 1px solid var(--border); color: var(--text2); padding: 4px 10px; border-radius: 6px; font-family: inherit; font-size: 11px; cursor: pointer; }
+.header .settings-btn:hover { border-color: var(--accent); color: var(--accent); }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.dot.green { background: var(--green); } .dot.red { background: var(--red); } .dot.yellow { background: var(--yellow); }
+.main { display: flex; flex-direction: column; overflow: hidden; }
+.sidebar { display: flex; flex-direction: column; border-left: 1px solid var(--border); overflow: hidden; }
+.panel-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text2); padding: 8px 12px; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 6px; }
+.panel-title .badge { background: var(--bg3); padding: 1px 6px; border-radius: 8px; font-size: 10px; }
+
+/* Narrative */
+.narrative-panel { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+.narrative-log { flex: 1; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+.narrative-entry { padding: 10px 14px; border-radius: 6px; line-height: 1.6; }
+.narrative-entry.player { background: rgba(88,166,255,0.08); border-left: 3px solid var(--accent); }
+.narrative-entry.system { background: rgba(63,185,80,0.06); border-left: 3px solid var(--green); }
+.narrative-entry.error { background: rgba(248,81,73,0.08); border-left: 3px solid var(--red); }
+.narrative-entry .turn-tag { font-size: 10px; color: var(--text2); margin-bottom: 4px; }
+
+/* Input */
+.input-bar { display: flex; padding: 10px 12px; background: var(--bg2); border-top: 1px solid var(--border); gap: 8px; }
+.input-bar input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; color: var(--text); font-family: inherit; font-size: 13px; outline: none; }
+.input-bar input:focus { border-color: var(--accent); }
+.input-bar button { background: var(--accent); color: #fff; border: none; border-radius: 6px; padding: 8px 16px; cursor: pointer; font-family: inherit; font-weight: 600; font-size: 12px; }
+.input-bar button:hover { opacity: 0.85; }
+.input-bar button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Pipeline debug */
+.debug-scroll { flex: 1; overflow-y: auto; padding: 8px; }
+.tick-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
+.tick-header { display: flex; align-items: center; padding: 8px 10px; gap: 8px; font-size: 11px; cursor: pointer; user-select: none; }
+.tick-header:hover { background: var(--bg3); }
+.tick-header .turn-num { font-weight: 700; color: var(--accent); }
+.tick-header .total-ms { margin-left: auto; color: var(--yellow); font-weight: 600; }
+.tick-header .input-text { color: var(--text2); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tick-steps { padding: 4px 8px 8px; }
+.step-row { display: flex; align-items: center; padding: 3px 0; gap: 6px; font-size: 11px; }
+.step-name { width: 72px; color: var(--text2); flex-shrink: 0; }
+.step-bar-wrap { flex: 1; height: 16px; background: var(--bg2); border-radius: 3px; position: relative; overflow: hidden; }
+.step-bar { height: 100%; border-radius: 3px; transition: width 0.3s; min-width: 2px; }
+.step-bar.fast { background: var(--green); } .step-bar.medium { background: var(--yellow); } .step-bar.slow { background: var(--orange); } .step-bar.error { background: var(--red); }
+.step-ms { width: 58px; text-align: right; font-size: 10px; color: var(--text2); flex-shrink: 0; }
+.step-status { width: 14px; text-align: center; flex-shrink: 0; }
+.step-details { font-size: 10px; color: var(--text2); padding: 2px 0 2px 80px; line-height: 1.4; }
+
+/* World status */
+.world-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 8px 12px; }
+.world-item { display: flex; justify-content: space-between; font-size: 11px; padding: 3px 6px; background: var(--bg); border-radius: 4px; }
+.world-item .label { color: var(--text2); } .world-item .val { color: var(--text); font-weight: 600; }
+
+/* NPC list */
+.npc-list { padding: 6px 10px; max-height: 140px; overflow-y: auto; }
+.npc-row { display: flex; align-items: center; gap: 6px; padding: 4px 6px; font-size: 11px; border-radius: 4px; margin-bottom: 2px; }
+.npc-row:hover { background: var(--bg3); }
+.npc-dot { width: 6px; height: 6px; border-radius: 50%; }
+.npc-name { font-weight: 600; flex: 1; }
+.npc-loc { color: var(--text2); font-size: 10px; }
+.npc-state { font-size: 10px; color: var(--yellow); }
+
+/* Tabs */
+.tab-bar { display: flex; border-bottom: 1px solid var(--border); }
+.tab { padding: 6px 14px; font-size: 11px; font-weight: 600; color: var(--text2); cursor: pointer; border-bottom: 2px solid transparent; }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab:hover { color: var(--text); }
+.tab-content { display: none; flex: 1; overflow: hidden; flex-direction: column; }
+.tab-content.active { display: flex; }
+
+/* Connection banner */
+.conn-banner { padding: 6px 12px; background: var(--red); color: #fff; font-size: 11px; text-align: center; display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; }
+
+/* Toast */
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--bg3); color: var(--text); padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border); font-size: 12px; z-index: 300; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+.toast.show { opacity: 1; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text2); }
+</style>
+</head>
+<body>
+
+<!-- ── Launcher Overlay ── -->
+<div class="launcher" id="launcher">
+  <div class="launcher-logo">JAG</div>
+  <div class="launcher-sub">智能体驱动开放世界 RPG 框架 · 调试控制台</div>
+  <div class="launcher-actions">
+    <button class="launcher-btn" onclick="openWorldBuilder()">
+      <span class="icon">▶</span>
+      <span class="label">创建新世界<small>选择词条构建自定义世界</small></span>
+    </button>
+    <button class="launcher-btn" onclick="quickStartDemo()">
+      <span class="icon">🎮</span>
+      <span class="label">快速开始<small>加载预设演示世界</small></span>
+    </button>
+    <button class="launcher-btn" onclick="openSettings(true)">
+      <span class="icon">⚙</span>
+      <span class="label">配置设置<small>LLM 模型、API 密钥、游戏参数</small></span>
+    </button>
+    <button class="launcher-btn" onclick="loadGame()">
+      <span class="icon">📂</span>
+      <span class="label">加载存档<small>从 savegame.json 恢复游戏状态</small></span>
+    </button>
+  </div>
+  <div class="launcher-ver">JAG v0.1.0 · Debug Console</div>
+</div>
+
+<!-- ── World Builder Overlay ── -->
+<div class="world-builder" id="world-builder">
+  <div class="wb-container">
+    <div class="wb-title">创建你的世界</div>
+    <div class="wb-subtitle">通过选择词条和描述来构建属于你的游戏世界</div>
+
+    <div class="wb-section">
+      <div class="wb-section-header"><span class="wb-section-title">世界名称</span></div>
+      <input class="wb-input" id="wb-name" placeholder="给你的世界起个名字..." maxlength="50">
+    </div>
+
+    <div id="wb-tag-sections"></div>
+
+    <div class="wb-section">
+      <div class="wb-section-header"><span class="wb-section-icon">✏️</span><span class="wb-section-title">世界描述</span><span class="wb-section-hint">可选，用自然语言描述你理想中的世界</span></div>
+      <textarea class="wb-input" id="wb-desc" placeholder="例如：我想创建一个蒸汽朋克风格的浮空城世界，有着复杂的齿轮机关和飞空艇港口..."></textarea>
+    </div>
+
+    <div class="wb-toggle" onclick="toggleLLM()">
+      <div class="wb-toggle-switch" id="wb-llm-switch"></div>
+      <span class="wb-toggle-label">使用 AI 生成</span>
+      <span class="wb-toggle-hint" id="wb-llm-hint">（需要配置 LLM API）</span>
+    </div>
+    <div id="wb-llm-warning" style="display:none;padding:8px 12px;margin:6px 0;border-radius:6px;background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);color:var(--red);font-size:11px;line-height:1.4"></div>
+
+    <div class="wb-preview" id="wb-preview">
+      <div class="wb-preview-title">已选词条</div>
+      <div class="wb-preview-tags" id="wb-preview-tags"><span style="color:var(--text2);font-size:10px">尚未选择任何词条</span></div>
+    </div>
+
+    <div class="wb-actions">
+      <button class="wb-btn wb-btn-primary" id="wb-create-btn" onclick="createWorld()">创建世界</button>
+      <button class="wb-btn wb-btn-secondary" onclick="closeWorldBuilder()">返回</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Settings Modal ── -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>⚙ 配置设置</h2>
+      <button class="modal-close" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="modal-body" id="settings-body">
+      <div class="form-section">
+        <div class="form-section-title">LLM 默认配置</div>
+        <div class="form-row"><span class="form-label">Provider</span>
+          <select class="form-input" id="cfg-llm-provider">
+            <option value="openai">OpenAI</option><option value="anthropic">Anthropic</option>
+            <option value="groq">Groq</option><option value="deepseek">DeepSeek</option>
+            <option value="ollama">Ollama (本地)</option><option value="azure">Azure OpenAI</option>
+          </select>
+        </div>
+        <div class="form-row"><span class="form-label">Model</span><input class="form-input" id="cfg-llm-model" placeholder="gpt-4"></div>
+        <div class="form-row"><span class="form-label">API Key</span><input class="form-input" id="cfg-llm-apikey" type="password" placeholder="sk-..."><button class="btn" id="test-key-btn" onclick="testLLMKey()" style="flex:none;width:90px;font-size:11px">测试连接</button></div>
+        <div id="test-key-result" style="display:none;padding:6px 10px;margin:0 0 8px 132px;border-radius:6px;font-size:11px;line-height:1.4"></div>
+        <div class="form-row"><span class="form-label">API Base</span><input class="form-input" id="cfg-llm-apibase" placeholder="可选，自定义 API 地址"></div>
+        <div class="form-row"><span class="form-label">Temperature</span><input class="form-input" id="cfg-llm-temp" type="number" min="0" max="2" step="0.1" placeholder="0.7"></div>
+        <div class="form-row"><span class="form-label">Max Tokens</span><input class="form-input" id="cfg-llm-maxtokens" type="number" min="1" max="128000" placeholder="2048"></div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">游戏参数</div>
+        <div class="form-row"><span class="form-label">世界名称</span><input class="form-input" id="cfg-world-name" placeholder="Default World"></div>
+        <div class="form-row"><span class="form-label">最大链深度</span><input class="form-input" id="cfg-max-depth" type="number" min="1" max="20" placeholder="5"><span class="form-hint">规则链最大递归深度</span></div>
+        <div class="form-row"><span class="form-label">NPC 并发数</span><input class="form-input" id="cfg-npc-conc" type="number" min="1" max="50" placeholder="5"><span class="form-hint">同时处理的 NPC 数量上限</span></div>
+        <div class="form-row"><span class="form-label">短期记忆容量</span><input class="form-input" id="cfg-stm-size" type="number" min="5" max="200" placeholder="20"></div>
+        <div class="form-row"><span class="form-label">记忆压缩阈值</span><input class="form-input" id="cfg-mem-thresh" type="number" min="10" max="1000" placeholder="100"></div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">数据库</div>
+        <div class="form-row"><span class="form-label">Backend</span>
+          <select class="form-input" id="cfg-db-backend"><option value="sqlite">SQLite</option><option value="postgres">PostgreSQL</option></select>
+        </div>
+        <div class="form-row"><span class="form-label">数据库路径</span><input class="form-input" id="cfg-db-path" placeholder="jag_world.db"></div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">模块级 LLM 覆盖 <span style="font-weight:400;color:var(--text2)">(可选)</span></div>
+        <div class="form-hint" style="margin-bottom:8px">为 action_planner / npc_agent / story_director / narrator 单独设置模型</div>
+        <div id="module-overrides"></div>
+        <button class="btn" onclick="addModuleOverride()" style="margin-top:6px;font-size:11px">+ 添加模块覆盖</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeSettings()">取消</button>
+      <button class="btn btn-primary" onclick="saveConfig()">保存配置</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Main App ── -->
+<div class="app">
+  <div class="header">
+    <h1>JAG</h1>
+    <span style="color:var(--text2);font-size:11px">调试控制台</span>
+    <div class="status">
+      <span><span class="dot green" id="conn-dot"></span> <span id="conn-text">已连接</span></span>
+      <span>回合: <b id="hdr-turn">0</b></span>
+      <span>耗时: <b id="hdr-time">-</b></span>
+    </div>
+    <button class="settings-btn" onclick="openSettings()">⚙ 配置</button>
+  </div>
+
+  <div class="main">
+    <div class="narrative-panel">
+      <div class="panel-title">游戏叙事 <span class="badge" id="narrative-count">0</span></div>
+      <div class="narrative-log" id="narrative-log"></div>
+      <div class="input-bar">
+        <input type="text" id="player-input" placeholder="输入行动... (如: 探索森林、和商人对话)" autocomplete="off">
+        <button id="send-btn" onclick="sendAction()">发送</button>
+        <button style="background:var(--bg3);color:var(--text)" onclick="sendWait(1)">等待</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <div class="tab-bar">
+      <div class="tab active" data-tab="debug" onclick="switchTab('debug')">流水线</div>
+      <div class="tab" data-tab="world" onclick="switchTab('world')">世界</div>
+      <div class="tab" data-tab="npc" onclick="switchTab('npc')">NPC</div>
+    </div>
+    <div class="tab-content active" id="tab-debug">
+      <div class="panel-title">流水线追踪 <span class="badge" id="trace-count">0</span></div>
+      <div class="debug-scroll" id="debug-scroll"></div>
+    </div>
+    <div class="tab-content" id="tab-world">
+      <div class="panel-title">世界状态</div>
+      <div class="world-grid" id="world-grid"></div>
+      <div style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+        <div class="panel-title">地点</div>
+        <div class="debug-scroll" id="locations-list"></div>
+      </div>
+    </div>
+    <div class="tab-content" id="tab-npc">
+      <div class="panel-title">NPC 状态 <span class="badge" id="npc-count">0</span></div>
+      <div class="npc-list" id="npc-list"></div>
+    </div>
+  </div>
+</div>
+
+<div class="conn-banner" id="conn-banner">连接已断开，正在重连...</div>
+<div class="toast" id="toast"></div>
+
+<script>
+let ws = null, reconnectTimer = null, narrativeCount = 0, traceCount = 0;
+let currentConfig = {};
+let moduleOverrideCount = 0;
+
+// ── WebSocket ──
+function connect() {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  ws = new WebSocket(`${proto}//${location.host}/ws`);
+  ws.onopen = () => {
+    document.getElementById('conn-dot').className = 'dot green';
+    document.getElementById('conn-text').textContent = '已连接';
+    document.getElementById('conn-banner').style.display = 'none';
+    if (reconnectTimer) { clearInterval(reconnectTimer); reconnectTimer = null; }
+  };
+  ws.onclose = () => {
+    document.getElementById('conn-dot').className = 'dot red';
+    document.getElementById('conn-text').textContent = '已断开';
+    document.getElementById('conn-banner').style.display = 'block';
+    if (!reconnectTimer) reconnectTimer = setInterval(connect, 3000);
+  };
+  ws.onmessage = (evt) => handleMessage(JSON.parse(evt.data));
+}
+
+function handleMessage(msg) {
+  switch (msg.type) {
+    case 'init': updateStatus(msg.status); break;
+    case 'trace': case 'tick': addTraceCard(msg); break;
+    case 'action_result': addNarrative('player', msg.narrative, msg.status?.turn); updateStatus(msg.status); break;
+    case 'wait_result': for (const n of (msg.narratives||[])) addNarrative('system', n); updateStatus(msg.status); break;
+    case 'status': updateStatus(msg.status); break;
+    case 'history': for (const t of (msg.history||[])) addTraceCard(t); break;
+    case 'world_created':
+      onWorldCreated(msg);
+      break;
+    case 'config': currentConfig = msg.config; populateSettings(msg.config); break;
+    case 'config_updated': showToast(msg.message || '配置已更新'); break;
+    case 'error': addNarrative('error', `错误: ${msg.message}`); break;
+    default: if (msg.turn !== undefined && msg.steps) addTraceCard(msg);
+  }
+}
+
+// ── Launcher ──
+let worldTags = {};  // category_id -> [selected tag_ids]
+let tagCategories = [];
+let useLLM = false;
+
+function openWorldBuilder() {
+  document.getElementById('world-builder').classList.add('open');
+  // Check LLM status and update hint
+  checkLLMStatus().then(status => {
+    const hint = document.getElementById('wb-llm-hint');
+    if (status.configured) {
+      hint.textContent = `（已配置: ${status.provider}/${status.model}）`;
+      hint.style.color = 'var(--green)';
+    } else {
+      hint.textContent = '（未配置 API Key，请在配置设置中填写）';
+      hint.style.color = 'var(--red)';
+    }
+  });
+  if (tagCategories.length === 0) {
+    fetch('/api/world/tags').then(r => r.json()).then(data => {
+      tagCategories = data;
+      renderTagSections();
+    }).catch(() => showToast('加载词条失败'));
+  }
+}
+
+function closeWorldBuilder() {
+  document.getElementById('world-builder').classList.remove('open');
+}
+
+function renderTagSections() {
+  const container = document.getElementById('wb-tag-sections');
+  container.innerHTML = tagCategories.map(cat => {
+    const hint = cat.multi ? '可多选' : '单选';
+    return `<div class="wb-section">
+      <div class="wb-section-header"><span class="wb-section-icon">${cat.icon}</span><span class="wb-section-title">${cat.name}</span><span class="wb-section-hint">${hint}</span></div>
+      <div class="wb-tags">${cat.tags.map(t =>
+        `<div class="wb-tag" data-cat="${cat.id}" data-tag="${t.id}" onclick="toggleTag('${cat.id}','${t.id}',${cat.multi})" title="${escHtml(t.desc)}">${escHtml(t.name)}</div>`
+      ).join('')}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleTag(catId, tagId, multi) {
+  if (!worldTags[catId]) worldTags[catId] = [];
+  const idx = worldTags[catId].indexOf(tagId);
+  if (idx >= 0) {
+    worldTags[catId].splice(idx, 1);
+  } else {
+    if (!multi) worldTags[catId] = [];
+    worldTags[catId].push(tagId);
+  }
+  // Update UI
+  document.querySelectorAll(`.wb-tag[data-cat="${catId}"]`).forEach(el => {
+    el.classList.toggle('selected', worldTags[catId].includes(el.dataset.tag));
+  });
+  updatePreview();
+}
+
+function updatePreview() {
+  const container = document.getElementById('wb-preview-tags');
+  const selected = [];
+  for (const [cat, tags] of Object.entries(worldTags)) {
+    for (const tid of tags) {
+      const catData = tagCategories.find(c => c.id === cat);
+      const tagData = catData?.tags.find(t => t.id === tid);
+      if (tagData) selected.push(`${catData.icon} ${tagData.name}`);
+    }
+  }
+  container.innerHTML = selected.length
+    ? selected.map(s => `<span class="wb-preview-chip">${escHtml(s)}</span>`).join('')
+    : '<span style="color:var(--text2);font-size:10px">尚未选择任何词条</span>';
+}
+
+async function toggleLLM() {
+  if (!useLLM) {
+    // Trying to enable LLM — check key status
+    const status = await checkLLMStatus();
+    if (!status.configured) {
+      const warn = document.getElementById('wb-llm-warning');
+      warn.style.display = 'block';
+      warn.textContent = '⚠ 未配置有效的 LLM API Key。请在「配置设置」中填写 API Key 并使用「测试连接」验证后重试。无 AI 时将使用词条模板生成。';
+      useLLM = false;
+      document.getElementById('wb-llm-switch').classList.remove('on');
+      return;
+    }
+    document.getElementById('wb-llm-warning').style.display = 'none';
+  }
+  useLLM = !useLLM;
+  document.getElementById('wb-llm-switch').classList.toggle('on', useLLM);
+}
+
+async function checkLLMStatus() {
+  try {
+    const r = await fetch('/api/llm/status');
+    return await r.json();
+  } catch { return { configured: false }; }
+}
+
+function createWorld() {
+  const btn = document.getElementById('wb-create-btn');
+  const worldName = document.getElementById('wb-name').value.trim();
+  const description = document.getElementById('wb-desc').value.trim();
+
+  // If description provided but LLM not enabled, check status
+  if (description && !useLLM) {
+    checkLLMStatus().then(status => {
+      if (!status.configured) {
+        // Show confirmation: proceed with template or go configure
+        const warn = document.getElementById('wb-llm-warning');
+        warn.style.display = 'block';
+        warn.innerHTML = `⚠ 您填写了自定义描述，但未配置 AI。将以词条模板生成。<br><a href="#" onclick="event.preventDefault();closeWorldBuilder();openSettings(true)" style="color:var(--accent)">前往配置 AI Key</a> 或 <a href="#" onclick="event.preventDefault();document.getElementById('wb-llm-warning').style.display='none';doCreateWorld()" style="color:var(--green)">继续使用模板生成</a>`;
+        return;
+      }
+      // Key exists, auto-enable LLM
+      useLLM = true;
+      document.getElementById('wb-llm-switch').classList.add('on');
+      doCreateWorld();
+    });
+  } else {
+    doCreateWorld();
+  }
+}
+
+function doCreateWorld() {
+  const btn = document.getElementById('wb-create-btn');
+  btn.disabled = true;
+  btn.textContent = useLLM ? '🤖 AI 生成中...' : '生成中...';
+
+  const worldName = document.getElementById('wb-name').value.trim();
+  const description = document.getElementById('wb-desc').value.trim();
+
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({
+      type: 'create_world',
+      world_name: worldName,
+      tags: worldTags,
+      description: description,
+      use_llm: useLLM,
+    }));
+  } else {
+    fetch('/api/world/create', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ world_name: worldName, tags: worldTags, description, use_llm: useLLM }),
+    }).then(r => r.json()).then(data => {
+      if (data.ok) {
+        onWorldCreated({ result: data, status: null });
+        fetch('/api/status').then(r => r.json()).then(s => updateStatus(s));
+      } else {
+        showToast(data.message || '创建失败');
+        btn.disabled = false; btn.textContent = '创建世界';
+      }
+    }).catch(() => {
+      showToast('创建失败'); btn.disabled = false; btn.textContent = '创建世界';
+    });
+  }
+}
+
+function onWorldCreated(msg) {
+  const result = msg.result || {};
+  closeWorldBuilder();
+  document.getElementById('launcher').classList.add('hidden');
+  setTimeout(() => document.getElementById('launcher').style.display = 'none', 500);
+  const method = result.method === 'llm' ? '🤖 AI 生成' : result.method === 'demo' ? '🎮 预设世界' : '📝 词条生成';
+  addNarrative('system', `世界创建成功！[${method}] ${result.world_name || ''} — ${result.locations || 0} 个地点, ${result.npcs || 0} 个 NPC。输入行动开始冒险！`);
+  // Show warning if any
+  if (result.warning) {
+    addNarrative('error', `⚠ ${result.warning}`);
+  }
+  if (msg.status) updateStatus(msg.status);
+  document.getElementById('wb-create-btn').disabled = false;
+  document.getElementById('wb-create-btn').textContent = '创建世界';
+}
+
+function quickStartDemo() {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'load_demo' }));
+  } else {
+    fetch('/api/world/load_demo', { method: 'POST' }).then(r => r.json()).then(() => {
+      document.getElementById('launcher').classList.add('hidden');
+      setTimeout(() => document.getElementById('launcher').style.display = 'none', 500);
+      addNarrative('system', '演示世界已加载。输入行动开始冒险！');
+      fetch('/api/status').then(r => r.json()).then(s => updateStatus(s));
+    });
+  }
+}
+
+function loadGame() {
+  showToast('存档加载功能暂未实现');
+}
+
+// ── Settings ──
+async function openSettings(fromLauncher) {
+  document.getElementById('settings-modal').classList.add('open');
+  try {
+    const r = await fetch('/api/config');
+    currentConfig = await r.json();
+    populateSettings(currentConfig);
+  } catch (e) { showToast('加载配置失败'); }
+}
+
+function closeSettings() { document.getElementById('settings-modal').classList.remove('open'); }
+
+async function testLLMKey() {
+  const btn = document.getElementById('test-key-btn');
+  const resultDiv = document.getElementById('test-key-result');
+  const apiKey = document.getElementById('cfg-llm-apikey').value.trim();
+
+  if (!apiKey || apiKey.includes('*')) {
+    resultDiv.style.display = 'block';
+    resultDiv.style.background = 'rgba(248,81,73,0.1)';
+    resultDiv.style.color = 'var(--red)';
+    resultDiv.textContent = '⚠ 请先填写有效的 API Key';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '测试中...';
+  resultDiv.style.display = 'none';
+
+  try {
+    const r = await fetch('/api/llm/test', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        provider: document.getElementById('cfg-llm-provider').value,
+        model: document.getElementById('cfg-llm-model').value,
+        api_key: apiKey,
+        api_base: document.getElementById('cfg-llm-apibase').value,
+      }),
+    });
+    const data = await r.json();
+    resultDiv.style.display = 'block';
+    if (data.ok) {
+      resultDiv.style.background = 'rgba(63,185,80,0.1)';
+      resultDiv.style.color = 'var(--green)';
+      resultDiv.textContent = `✓ ${data.message}`;
+    } else {
+      resultDiv.style.background = 'rgba(248,81,73,0.1)';
+      resultDiv.style.color = 'var(--red)';
+      resultDiv.textContent = `✗ ${data.message}`;
+    }
+  } catch (e) {
+    resultDiv.style.display = 'block';
+    resultDiv.style.background = 'rgba(248,81,73,0.1)';
+    resultDiv.style.color = 'var(--red)';
+    resultDiv.textContent = '✗ 请求失败，请检查网络连接';
+  }
+  btn.disabled = false;
+  btn.textContent = '测试连接';
+}
+
+function populateSettings(cfg) {
+  const llm = cfg.llm?.default || {};
+  document.getElementById('cfg-llm-provider').value = llm.provider || 'openai';
+  document.getElementById('cfg-llm-model').value = llm.model || '';
+  document.getElementById('cfg-llm-apikey').value = llm.api_key || '';
+  document.getElementById('cfg-llm-apibase').value = llm.api_base || '';
+  document.getElementById('cfg-llm-temp').value = llm.temperature ?? 0.7;
+  document.getElementById('cfg-llm-maxtokens').value = llm.max_tokens ?? 2048;
+  document.getElementById('cfg-world-name').value = cfg.world_name || '';
+  document.getElementById('cfg-max-depth').value = cfg.max_chain_depth ?? 5;
+  document.getElementById('cfg-npc-conc').value = cfg.npc_concurrency ?? 5;
+  document.getElementById('cfg-stm-size').value = cfg.short_term_memory_size ?? 20;
+  document.getElementById('cfg-mem-thresh').value = cfg.memory_compression_threshold ?? 100;
+  document.getElementById('cfg-db-backend').value = cfg.database?.backend || 'sqlite';
+  document.getElementById('cfg-db-path').value = cfg.database?.path || '';
+
+  // Module overrides
+  const container = document.getElementById('module-overrides');
+  container.innerHTML = '';
+  moduleOverrideCount = 0;
+  const modules = cfg.llm?.modules || {};
+  for (const [name, mod] of Object.entries(modules)) {
+    addModuleOverrideRow(name, mod);
+  }
+}
+
+function addModuleOverrideRow(name, mod) {
+  const container = document.getElementById('module-overrides');
+  const idx = moduleOverrideCount++;
+  mod = mod || {};
+  const row = document.createElement('div');
+  row.className = 'form-row';
+  row.style.flexWrap = 'wrap';
+  row.innerHTML = `
+    <select class="form-input mod-name" style="width:140px;flex:none" data-idx="${idx}">
+      <option value="action_planner" ${name==='action_planner'?'selected':''}>action_planner</option>
+      <option value="npc_agent" ${name==='npc_agent'?'selected':''}>npc_agent</option>
+      <option value="story_director" ${name==='story_director'?'selected':''}>story_director</option>
+      <option value="narrator" ${name==='narrator'?'selected':''}>narrator</option>
+    </select>
+    <input class="form-input mod-model" style="width:150px;flex:none" placeholder="模型" value="${mod.model||''}">
+    <input class="form-input mod-provider" style="width:100px;flex:none" placeholder="Provider" value="${mod.provider||''}">
+    <button class="btn btn-danger" style="padding:4px 8px;font-size:10px" onclick="this.parentElement.remove()">✕</button>`;
+  container.appendChild(row);
+}
+
+function addModuleOverride() { addModuleOverrideRow('', {}); }
+
+function saveConfig() {
+  const updates = {
+    llm: {
+      default: {
+        provider: document.getElementById('cfg-llm-provider').value,
+        model: document.getElementById('cfg-llm-model').value,
+        api_key: document.getElementById('cfg-llm-apikey').value,
+        api_base: document.getElementById('cfg-llm-apibase').value,
+        temperature: parseFloat(document.getElementById('cfg-llm-temp').value) || 0.7,
+        max_tokens: parseInt(document.getElementById('cfg-llm-maxtokens').value) || 2048,
+      },
+      modules: {}
+    },
+    world_name: document.getElementById('cfg-world-name').value,
+    max_chain_depth: parseInt(document.getElementById('cfg-max-depth').value) || 5,
+    npc_concurrency: parseInt(document.getElementById('cfg-npc-conc').value) || 5,
+    short_term_memory_size: parseInt(document.getElementById('cfg-stm-size').value) || 20,
+    memory_compression_threshold: parseInt(document.getElementById('cfg-mem-thresh').value) || 100,
+    database: {
+      backend: document.getElementById('cfg-db-backend').value,
+      path: document.getElementById('cfg-db-path').value,
+    }
+  };
+
+  // Collect module overrides
+  document.querySelectorAll('#module-overrides .form-row').forEach(row => {
+    const name = row.querySelector('.mod-name')?.value;
+    const model = row.querySelector('.mod-model')?.value;
+    const provider = row.querySelector('.mod-provider')?.value;
+    if (name) {
+      updates.llm.modules[name] = { model: model || undefined, provider: provider || undefined };
+    }
+  });
+
+  // Send via WebSocket if connected, else via REST
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'update_config', config: updates }));
+  } else {
+    fetch('/api/config', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(updates) })
+      .then(r => r.json()).then(d => showToast(d.message || '已更新')).catch(() => showToast('保存失败'));
+  }
+  closeSettings();
+}
+
+// ── Game UI ──
+function updateStatus(s) {
+  if (!s) return;
+  document.getElementById('hdr-turn').textContent = s.turn;
+  const grid = document.getElementById('world-grid');
+  grid.innerHTML = [
+    ['回合', s.turn], ['时间', s.time], ['天数', `第${s.day}天`],
+    ['季节', s.season], ['位置', s.location], ['NPC', s.npc_count],
+    ['任务', s.active_quests], ['故事线', s.active_threads],
+  ].map(([l,v]) => `<div class="world-item"><span class="label">${l}</span><span class="val">${v}</span></div>`).join('');
+  loadNPCs(); loadLocations();
+}
+
+function addNarrative(type, text, turn) {
+  const log = document.getElementById('narrative-log');
+  const div = document.createElement('div');
+  div.className = `narrative-entry ${type}`;
+  const turnTag = turn ? `<div class="turn-tag">Turn ${turn}</div>` : '';
+  div.innerHTML = `${turnTag}<div>${escHtml(text)}</div>`;
+  log.appendChild(div); log.scrollTop = log.scrollHeight;
+  narrativeCount++;
+  document.getElementById('narrative-count').textContent = narrativeCount;
+}
+
+function addTraceCard(data) {
+  const container = document.getElementById('debug-scroll');
+  const card = document.createElement('div'); card.className = 'tick-card';
+  const steps = data.steps || [];
+  const maxMs = Math.max(...steps.map(s => s.duration_ms || 0), 1);
+  const inputText = data.player_input || (data.action_type ? `[${data.action_type}]` : '(无输入)');
+  let stepsHtml = steps.map(s => {
+    const pct = Math.max(2, ((s.duration_ms||0)/maxMs)*100);
+    const cls = !s.success ? 'error' : s.duration_ms > 1000 ? 'slow' : s.duration_ms > 200 ? 'medium' : 'fast';
+    const icon = s.success ? '✓' : '✗';
+    const det = s.details && Object.keys(s.details).length
+      ? `<div class="step-details">${Object.entries(s.details).filter(([k])=>!k.startsWith('_')).map(([k,v])=>`${k}: ${typeof v==='object'?JSON.stringify(v):v}`).join(' · ')}</div>` : '';
+    return `<div class="step-row"><span class="step-status" style="color:${s.success?'var(--green)':'var(--red)'}">${icon}</span><span class="step-name">${s.display_name||s.name}</span><div class="step-bar-wrap"><div class="step-bar ${cls}" style="width:${pct}%"></div></div><span class="step-ms">${(s.duration_ms||0).toFixed(1)}ms</span></div>${det}`;
+  }).join('');
+  const err = data.errors?.length ? `<div style="padding:4px 10px;font-size:10px;color:var(--red)">${data.errors.join('; ')}</div>` : '';
+  const dice = data.dice_summary ? `<div style="padding:2px 10px;font-size:10px;color:var(--purple)">${data.dice_summary}</div>` : '';
+  const sum = `<div style="padding:4px 10px;font-size:10px;color:var(--text2)">NPC:${data.npc_count||0} 事件:${data.event_count||0} 任务:${data.quest_count||0} 故事:${data.story_beat_count||0}</div>`;
+  card.innerHTML = `<div class="tick-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'"><span class="turn-num">T${data.turn}</span><span class="input-text">${escHtml(inputText)}</span><span class="total-ms">${(data.total_duration_ms||0).toFixed(0)}ms</span></div><div class="tick-steps">${stepsHtml}${dice}${sum}${err}</div>`;
+  container.insertBefore(card, container.firstChild);
+  traceCount++;
+  document.getElementById('trace-count').textContent = traceCount;
+  document.getElementById('hdr-time').textContent = `${(data.total_duration_ms||0).toFixed(0)}ms`;
+}
+
+function sendAction() {
+  const input = document.getElementById('player-input');
+  const text = input.value.trim();
+  if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+  ws.send(JSON.stringify({ type: 'action', input: text }));
+  addNarrative('player', `> ${text}`);
+  input.value = '';
+}
+
+function sendWait(turns) {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  ws.send(JSON.stringify({ type: 'wait', turns }));
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.toggle('active', t.id === `tab-${name}`));
+}
+
+async function loadNPCs() {
+  try {
+    const r = await fetch('/api/npcs'); const npcs = await r.json();
+    document.getElementById('npc-count').textContent = npcs.length;
+    document.getElementById('npc-list').innerHTML = npcs.map(n =>
+      `<div class="npc-row"><span class="npc-dot" style="background:${n.mood==='happy'?'var(--green)':n.mood==='sad'||n.mood==='fearful'?'var(--red)':'var(--yellow)'}"></span><span class="npc-name">${escHtml(n.name)}</span><span class="npc-state">${n.mood} ⚡${(n.energy*100).toFixed(0)}%</span><span class="npc-loc">${n.location_id}</span></div>`
+    ).join('');
+  } catch {}
+}
+
+async function loadLocations() {
+  try {
+    const r = await fetch('/api/locations'); const locs = await r.json();
+    document.getElementById('locations-list').innerHTML = locs.map(l =>
+      `<div class="tick-card" style="margin:4px 0"><div style="padding:6px 10px;font-size:11px;font-weight:600">${escHtml(l.name)} <span style="color:var(--text2);font-weight:400">(${l.type})</span></div><div style="padding:2px 10px 6px;font-size:10px;color:var(--text2)">${escHtml(l.description)}</div><div style="padding:2px 10px 6px;font-size:10px;color:var(--text2)">连接: ${l.connected.join(', ')||'无'} · 实体: ${l.entities.length} · 物品: ${l.items.length} · 光照:${l.light_level} 危险:${l.danger_level}</div></div>`
+    ).join('');
+  } catch {}
+}
+
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── Init ──
+document.getElementById('player-input').addEventListener('keydown', e => { if (e.key === 'Enter') sendAction(); });
+connect();
+</script>
+</body>
+</html>

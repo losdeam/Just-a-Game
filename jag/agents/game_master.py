@@ -16,6 +16,7 @@ from jag.config import GameConfig, load_config
 from jag.core.dice import DiceRoller
 from jag.core.events import EventBus, EventType, GameEvent
 from jag.core.rules import RuleEngine
+from jag.debug.tracer import PipelineTracer
 from jag.knowledge.compression import MemoryCompressor, RuleBasedCompressor
 from jag.knowledge.graph import KnowledgeGraph
 from jag.knowledge.memory import MemoryStore
@@ -64,6 +65,9 @@ class GameMaster:
         )
         self.narrator = NarrativeGenerator(llm=self._get_llm("narrator"))
 
+        # Debug tracer (must be created before TickEngine)
+        self.tracer = PipelineTracer()
+
         # Tick engine
         self.tick_engine = TickEngine(
             world=self.world,
@@ -80,6 +84,7 @@ class GameMaster:
             narrator=self.narrator,
             npc_agent=self.npc_agent,
             npc_concurrency=self.config.npc_concurrency,
+            tracer=self.tracer,
         )
 
         # Player state

@@ -15,6 +15,7 @@ from typing import Any, Callable, Coroutine, Protocol
 from jag.core.dice import DiceRoller, DiceResult
 from jag.core.events import EventBus, EventQueue, EventType, GameEvent
 from jag.core.rules import RuleContext, RuleEngine
+from jag.debug.tracer import PipelineTracer, TickTrace
 from jag.knowledge.graph import KnowledgeGraph
 from jag.knowledge.memory import MemoryStore
 from jag.world.economy import EconomySimulator
@@ -146,6 +147,8 @@ class TickEngine:
         npc_agent: NPCAgent | None = None,
         # Config
         npc_concurrency: int = 5,
+        # Debug
+        tracer: PipelineTracer | None = None,
     ) -> None:
         self.world = world
         self.event_bus = event_bus
@@ -168,6 +171,7 @@ class TickEngine:
         self._semaphore = asyncio.Semaphore(npc_concurrency)
         self._persist_callback: Callable[..., Coroutine[Any, Any, None]] | None = None
         self._event_queue = EventQueue()
+        self.tracer = tracer
 
     def register_npc(self, npc: NPC) -> None:
         """Register an NPC for tick processing."""
@@ -193,44 +197,57 @@ class TickEngine:
         Returns:
             TickResult with all outcomes from this tick.
         """
+        # Determine player input text for tracing
+        player_input_text = ""
+        if player_action:
+            player_input_text = player_action.get("text", "")
+
+        # Start tracing
+        trace: TickTrace | None = None
+        if self.tracer:
+            trace = self.tracer.start_tick(
+                turn=self.world.time.turn,
+                player_input=player_input_text,
+            )
+
         result = TickResult(turn=self.world.time.turn)
 
         try:
             # 1. Action Planning
-            planned_action = await self._step_action_plan(player_action, result)
+            planned_action = await self._step_action_plan(player_action, result, trace)
 
             # 2. Rule Evaluation
-            await self._step_rules(planned_action, result)
+            await self._step_rules(planned_action, result, trace)
 
             # 3. Dice Resolution
-            await self._step_dice(planned_action, result)
+            await self._step_dice(planned_action, result, trace)
 
             # 4. World Update
-            await self._step_world_update(planned_action, result)
+            await self._step_world_update(planned_action, result, trace)
 
             # 5. NPC Tick (concurrent)
-            await self._step_npc_tick(result)
+            await self._step_npc_tick(result, trace)
 
             # 6. World Simulation
-            sim_events = self._step_world_sim(result)
+            sim_events = self._step_world_sim(result, trace)
 
             # 7. Quest Generation
-            await self._step_quest_gen(sim_events, result)
+            await self._step_quest_gen(sim_events, result, trace)
 
             # 8. Story Processing
-            await self._step_story(result)
+            await self._step_story(result, trace)
 
             # 9. Memory Compression
-            await self._step_memory(result)
+            await self._step_memory(result, trace)
 
             # 10. Knowledge Graph Update
-            await self._step_knowledge(result)
+            await self._step_knowledge(result, trace)
 
             # 11. Persist
-            await self._step_persist(result)
+            await self._step_persist(result, trace)
 
             # 12. Narrative
-            await self._step_narrative(result)
+            await self._step_narrative(result, trace)
 
             # Advance time
             self.world.advance_time(1)
@@ -240,6 +257,19 @@ class TickEngine:
             logger.error("Tick error: %s", e)
             result.errors.append(str(e))
             result.success = False
+
+        # Finalize trace
+        if trace and self.tracer:
+            trace.narrative = result.narrative
+            trace.action_type = result.player_action.get("type", "") if result.player_action else ""
+            trace.dice_summary = result.dice_result.summary() if result.dice_result else ""
+            trace.npc_count = len(result.npc_actions)
+            trace.event_count = len(result.world_events)
+            trace.quest_count = len(result.new_quests)
+            trace.story_beat_count = len(result.story_beats)
+            trace.errors = list(result.errors)
+            self.tracer.end_tick(trace)
+            await self.tracer.notify(trace)
 
         # Publish tick complete event
         await self.event_bus.publish(
@@ -256,10 +286,14 @@ class TickEngine:
     # ── Step implementations ─────────────────────────────────────
 
     async def _step_action_plan(
-        self, player_action: dict[str, Any] | None, result: TickResult
+        self, player_action: dict[str, Any] | None, result: TickResult, trace: TickTrace | None = None
     ) -> dict[str, Any]:
         """Step 1: Parse and plan the player action."""
+        step = self.tracer.start_step("action_plan") if self.tracer else None
         if not player_action:
+            if step and self.tracer:
+                self.tracer.end_step(step, details={"skipped": True})
+                trace.steps.append(step)  # type: ignore[union-attr]
             return {}
 
         if self.action_planner:
@@ -270,20 +304,39 @@ class TickEngine:
                     world=self.world,
                 )
                 result.player_action = planned
+                if step and self.tracer:
+                    self.tracer.end_step(step, details={
+                        "action_type": planned.get("type", ""),
+                        "target": planned.get("target", ""),
+                        "risk": planned.get("risk", ""),
+                        "dc": planned.get("dc", 0),
+                        "attribute": planned.get("attribute", ""),
+                    })
+                    trace.steps.append(step)  # type: ignore[union-attr]
                 return planned
             except Exception as e:
                 logger.warning("Action planner failed: %s", e)
                 result.errors.append(f"action_plan: {e}")
+                if step and self.tracer:
+                    self.tracer.end_step(step, success=False, error=str(e))
+                    trace.steps.append(step)  # type: ignore[union-attr]
 
         # Fallback: use raw action
         result.player_action = player_action
+        if step and self.tracer:
+            self.tracer.end_step(step, details={"fallback": True, "action_type": player_action.get("type", "")})
+            trace.steps.append(step)  # type: ignore[union-attr]
         return player_action
 
     async def _step_rules(
-        self, action: dict[str, Any], result: TickResult
+        self, action: dict[str, Any], result: TickResult, trace: TickTrace | None = None
     ) -> None:
         """Step 2: Evaluate game rules."""
+        step = self.tracer.start_step("rules") if self.tracer else None
         if not action:
+            if step and self.tracer:
+                self.tracer.end_step(step, details={"skipped": True})
+                trace.steps.append(step)  # type: ignore[union-attr]
             return
 
         context = RuleContext(
@@ -302,15 +355,25 @@ class TickEngine:
                 if event and isinstance(event, GameEvent):
                     await self.event_bus.publish(event)
                     result.world_events.append(event)
+            if step and self.tracer:
+                self.tracer.end_step(step, details={"rules_matched": len(changes)})
+                trace.steps.append(step)  # type: ignore[union-attr]
         except Exception as e:
             logger.warning("Rule evaluation failed: %s", e)
             result.errors.append(f"rules: {e}")
+            if step and self.tracer:
+                self.tracer.end_step(step, success=False, error=str(e))
+                trace.steps.append(step)  # type: ignore[union-attr]
 
     async def _step_dice(
-        self, action: dict[str, Any], result: TickResult
+        self, action: dict[str, Any], result: TickResult, trace: TickTrace | None = None
     ) -> None:
         """Step 3: Resolve actions with dice rolls."""
+        step = self.tracer.start_step("dice") if self.tracer else None
         if not action:
+            if step and self.tracer:
+                self.tracer.end_step(step, details={"skipped": True})
+                trace.steps.append(step)  # type: ignore[union-attr]
             return
 
         action_type = action.get("type", "")
@@ -340,12 +403,29 @@ class TickEngine:
                     turn=self.world.time.turn,
                 )
             )
+            if step and self.tracer:
+                self.tracer.end_step(step, details={
+                    "roll": dice_result.base_roll,
+                    "total": dice_result.total,
+                    "result": dice_result.result.value,
+                    "dc": dc,
+                    "summary": dice_result.summary(),
+                })
+                trace.steps.append(step)  # type: ignore[union-attr]
+        else:
+            if step and self.tracer:
+                self.tracer.end_step(step, details={"skipped": True, "reason": f"action_type={action_type}"})
+                trace.steps.append(step)  # type: ignore[union-attr]
 
     async def _step_world_update(
-        self, action: dict[str, Any], result: TickResult
+        self, action: dict[str, Any], result: TickResult, trace: TickTrace | None = None
     ) -> None:
         """Step 4: Apply action effects to world state."""
+        step = self.tracer.start_step("world_update") if self.tracer else None
         if not action:
+            if step and self.tracer:
+                self.tracer.end_step(step, details={"skipped": True})
+                trace.steps.append(step)  # type: ignore[union-attr]
             return
 
         action_type = action.get("type", "")
@@ -387,9 +467,17 @@ class TickEngine:
                 loc = self.world.locations[loc_id]
                 loc.items.append(item_id)
 
-    async def _step_npc_tick(self, result: TickResult) -> None:
+        if step and self.tracer:
+            self.tracer.end_step(step, details={"action_type": action_type, "target": action.get("target", "")})
+            trace.steps.append(step)  # type: ignore[union-attr]
+
+    async def _step_npc_tick(self, result: TickResult, trace: TickTrace | None = None) -> None:
         """Step 5: Process all NPC ticks concurrently."""
+        step = self.tracer.start_step("npc_tick") if self.tracer else None
         if not self._npcs:
+            if step and self.tracer:
+                self.tracer.end_step(step, details={"skipped": True, "npc_count": 0})
+                trace.steps.append(step)  # type: ignore[union-attr]
             return
 
         tasks = []
@@ -397,6 +485,10 @@ class TickEngine:
             tasks.append(self._process_single_npc(npc_id, npc, result))
 
         await asyncio.gather(*tasks, return_exceptions=True)
+
+        if step and self.tracer:
+            self.tracer.end_step(step, details={"npc_count": len(self._npcs), "actions": len(result.npc_actions)})
+            trace.steps.append(step)  # type: ignore[union-attr]
 
     async def _process_single_npc(
         self, npc_id: str, npc: NPC, result: TickResult
@@ -506,8 +598,9 @@ class TickEngine:
             )
         )
 
-    def _step_world_sim(self, result: TickResult) -> list[dict[str, Any]]:
+    def _step_world_sim(self, result: TickResult, trace: TickTrace | None = None) -> list[dict[str, Any]]:
         """Step 6: Run world simulations (weather, economy, faction)."""
+        step = self.tracer.start_step("world_sim") if self.tracer else None
         all_sim_events: list[dict[str, Any]] = []
 
         # Weather
@@ -550,12 +643,17 @@ class TickEngine:
             )
             result.world_events.append(game_event)
 
+        if step and self.tracer:
+            self.tracer.end_step(step, details={"sim_events": len(all_sim_events)})
+            trace.steps.append(step)  # type: ignore[union-attr]
+
         return all_sim_events
 
     async def _step_quest_gen(
-        self, sim_events: list[dict[str, Any]], result: TickResult
+        self, sim_events: list[dict[str, Any]], result: TickResult, trace: TickTrace | None = None
     ) -> None:
         """Step 7: Generate quests from events."""
+        step = self.tracer.start_step("quest_gen") if self.tracer else None
         try:
             new_quests = self.quest_gen.check(self.world, sim_events)
             result.new_quests = new_quests
@@ -568,25 +666,42 @@ class TickEngine:
                         turn=self.world.time.turn,
                     )
                 )
+            if step and self.tracer:
+                self.tracer.end_step(step, details={"new_quests": len(new_quests)})
+                trace.steps.append(step)  # type: ignore[union-attr]
         except Exception as e:
             logger.warning("Quest generation failed: %s", e)
             result.errors.append(f"quest: {e}")
+            if step and self.tracer:
+                self.tracer.end_step(step, success=False, error=str(e))
+                trace.steps.append(step)  # type: ignore[union-attr]
 
-    async def _step_story(self, result: TickResult) -> None:
+    async def _step_story(self, result: TickResult, trace: TickTrace | None = None) -> None:
         """Step 8: Process story developments."""
+        step = self.tracer.start_step("story") if self.tracer else None
         if not self.story_director or not result.world_events:
+            if step and self.tracer:
+                self.tracer.end_step(step, details={"skipped": True})
+                trace.steps.append(step)  # type: ignore[union-attr]
             return
         try:
             story_beats = await self.story_director.process(
                 result.world_events, self.world
             )
             result.story_beats = story_beats
+            if step and self.tracer:
+                self.tracer.end_step(step, details={"story_beats": len(story_beats)})
+                trace.steps.append(step)  # type: ignore[union-attr]
         except Exception as e:
             logger.warning("Story processing failed: %s", e)
             result.errors.append(f"story: {e}")
+            if step and self.tracer:
+                self.tracer.end_step(step, success=False, error=str(e))
+                trace.steps.append(step)  # type: ignore[union-attr]
 
-    async def _step_memory(self, result: TickResult) -> None:
+    async def _step_memory(self, result: TickResult, trace: TickTrace | None = None) -> None:
         """Step 9: Memory maintenance (compression handled externally)."""
+        step = self.tracer.start_step("memory") if self.tracer else None
         # Memory compression is handled by MemoryCompressor
         # Here we just ensure short-term memories don't overflow
         for npc_id, store in self._memory_stores.items():
@@ -597,8 +712,14 @@ class TickEngine:
             except Exception as e:
                 logger.warning("Memory step failed for %s: %s", npc_id, e)
 
-    async def _step_knowledge(self, result: TickResult) -> None:
+        if step and self.tracer:
+            self.tracer.end_step(step, details={"memory_stores": len(self._memory_stores)})
+            trace.steps.append(step)  # type: ignore[union-attr]
+
+    async def _step_knowledge(self, result: TickResult, trace: TickTrace | None = None) -> None:
         """Step 10: Update knowledge graph from events."""
+        step = self.tracer.start_step("knowledge") if self.tracer else None
+        updates = 0
         for event in result.world_events:
             try:
                 # Convert GameEvent to dict for KnowledgeGraph.infer()
@@ -610,11 +731,17 @@ class TickEngine:
                     **event.data,
                 }
                 self.knowledge.infer(event_dict)
+                updates += 1
             except Exception as e:
                 logger.warning("Knowledge update failed: %s", e)
 
-    async def _step_persist(self, result: TickResult) -> None:
+        if step and self.tracer:
+            self.tracer.end_step(step, details={"events_processed": updates})
+            trace.steps.append(step)  # type: ignore[union-attr]
+
+    async def _step_persist(self, result: TickResult, trace: TickTrace | None = None) -> None:
         """Step 11: Persist state."""
+        step = self.tracer.start_step("persist") if self.tracer else None
         if self._persist_callback:
             try:
                 await self._persist_callback(self.world, result)
@@ -622,8 +749,14 @@ class TickEngine:
                 logger.warning("Persist failed: %s", e)
                 result.errors.append(f"persist: {e}")
 
-    async def _step_narrative(self, result: TickResult) -> None:
+        if step and self.tracer:
+            has_cb = self._persist_callback is not None
+            self.tracer.end_step(step, details={"has_callback": has_cb})
+            trace.steps.append(step)  # type: ignore[union-attr]
+
+    async def _step_narrative(self, result: TickResult, trace: TickTrace | None = None) -> None:
         """Step 12: Generate narrative text."""
+        step = self.tracer.start_step("narrative") if self.tracer else None
         if self.narrator:
             try:
                 result.narrative = await self.narrator.narrate(result, self.world)
@@ -642,3 +775,7 @@ class TickEngine:
             for evt in result.world_events[:5]:
                 parts.append(evt.description)
             result.narrative = " ".join(p for p in parts if p)
+
+        if step and self.tracer:
+            self.tracer.end_step(step, details={"narrative_length": len(result.narrative)})
+            trace.steps.append(step)  # type: ignore[union-attr]
