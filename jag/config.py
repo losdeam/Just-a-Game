@@ -20,6 +20,7 @@ class LLMModuleConfig(BaseModel):
     api_base: str | None = None
     temperature: float = 0.7
     max_tokens: int = 2048
+    disable_thinking: bool = False
 
 
 class LLMConfig(BaseModel):
@@ -52,6 +53,8 @@ class GameConfig(BaseModel):
     npc_concurrency: int = 5
     short_term_memory_size: int = 20
     memory_compression_threshold: int = 100
+    web_host: str = "127.0.0.1"
+    web_port: int = 8000
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> GameConfig:
@@ -112,6 +115,8 @@ def _apply_env_overrides(cfg: GameConfig) -> None:
             cfg.llm.default.max_tokens = int(max_tokens)
         except ValueError:
             pass
+    if disable_thinking := os.getenv("LLM_DISABLE_THINKING"):
+        cfg.llm.default.disable_thinking = disable_thinking.lower() in ("true", "1", "yes")
 
     # Per-module LLM overrides
     for key, value in os.environ.items():
@@ -141,6 +146,8 @@ def _apply_env_overrides(cfg: GameConfig) -> None:
                         module_cfg.max_tokens = int(value)
                     except ValueError:
                         pass
+                elif field_name == "disable_thinking":
+                    module_cfg.disable_thinking = value.lower() in ("true", "1", "yes")
 
     # Database overrides
     if db_backend := os.getenv("DB_BACKEND"):
@@ -161,5 +168,12 @@ def _apply_env_overrides(cfg: GameConfig) -> None:
     if npc_conc := os.getenv("NPC_CONCURRENCY"):
         try:
             cfg.npc_concurrency = int(npc_conc)
+        except ValueError:
+            pass
+    if web_host := os.getenv("WEB_HOST"):
+        cfg.web_host = web_host
+    if web_port := os.getenv("WEB_PORT"):
+        try:
+            cfg.web_port = int(web_port)
         except ValueError:
             pass

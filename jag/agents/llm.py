@@ -29,11 +29,13 @@ class LLMProvider(Protocol):
 class LiteLLMProvider:
     """LLM provider using litellm for multi-provider support."""
 
-    def __init__(self, model: str = "gpt-4", api_key: str = "", api_base: str | None = None, **kwargs: Any) -> None:
-        self.model = model
+    def __init__(self, model: str = "gpt-4", provider: str = "", api_key: str = "", api_base: str | None = None, disable_thinking: bool = False, **kwargs: Any) -> None:
+        self.provider = provider
         self.api_key = api_key
         self.api_base = api_base
+        self.disable_thinking = disable_thinking
         self._extra = kwargs
+        self.model = f"{provider}/{model}" if provider and "/" not in model else model
 
     async def complete(self, prompt: str, system: str = "", **kwargs: Any) -> str:
         """Generate completion via litellm."""
@@ -54,6 +56,8 @@ class LiteLLMProvider:
             params["api_key"] = self.api_key
         if self.api_base:
             params["api_base"] = self.api_base
+        if self.disable_thinking:
+            params.setdefault("extra_body", {})["thinking"] = {"type": "disabled"}
 
         response = await litellm.acompletion(**params)
         return response.choices[0].message.content or ""
@@ -83,6 +87,8 @@ class LiteLLMProvider:
             params["api_key"] = self.api_key
         if self.api_base:
             params["api_base"] = self.api_base
+        if self.disable_thinking:
+            params.setdefault("extra_body", {})["thinking"] = {"type": "disabled"}
 
         return await client.create(**params)
 
@@ -117,12 +123,14 @@ class MockLLMProvider:
 class LLMConfig:
     """Configuration for a single LLM instance."""
 
-    provider: str = "litellm"
+    provider: str = "litellm"  # internal: "litellm" or "mock"
+    upstream_provider: str = ""  # upstream: "openai", "deepseek", etc.
     model: str = "gpt-4"
     api_key: str = ""
     api_base: str | None = None
     temperature: float = 0.7
     max_tokens: int = 2048
+    disable_thinking: bool = False
     extra: dict[str, Any] = field(default_factory=dict)
 
 
@@ -151,9 +159,11 @@ class LLMFactory:
 
         return LiteLLMProvider(
             model=config.model,
+            provider=config.upstream_provider,
             api_key=config.api_key,
             api_base=config.api_base,
             temperature=config.temperature,
             max_tokens=config.max_tokens,
+            disable_thinking=config.disable_thinking,
             **config.extra,
         )

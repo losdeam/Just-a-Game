@@ -28,7 +28,7 @@ def print_banner() -> None:
     console.print()
 
 
-def print_status(status: dict[str, Any]) -> None:
+def print_status(status: dict[str, Any], gm: GameMaster | None = None) -> None:
     """Print game status in a nice panel."""
     table = Table(show_header=False, box=None, padding=(0, 2))
     table.add_column("属性", style="cyan")
@@ -39,11 +39,21 @@ def print_status(status: dict[str, Any]) -> None:
     table.add_row("天数", str(status["day"]))
     table.add_row("季节", status["season"])
     table.add_row("位置", status["location"])
-    table.add_row("NPC数量", str(status["npc_count"]))
     table.add_row("任务", str(status["active_quests"]))
     table.add_row("故事线", str(status["active_threads"]))
 
     console.print(Panel(table, title="[bold]世界状态[/bold]", border_style="blue"))
+
+    # Show nearby NPCs if any
+    nearby = status.get("nearby_npcs", [])
+    if nearby and gm:
+        npc_names = []
+        for npc_id in nearby:
+            npc = gm.tick_engine._npcs.get(npc_id)
+            if npc:
+                npc_names.append(npc.name)
+        if npc_names:
+            console.print(f"[dim]附近的人: {'、'.join(npc_names)}[/dim]")
 
 
 def print_inventory(inventory: list[str]) -> None:
@@ -93,12 +103,8 @@ async def game_loop(gm: GameMaster) -> None:
     """Main game loop."""
     print_banner()
 
-    status = gm.get_status()
-    loc_desc = status.get("location_description", "")
-    console.print(f"[dim]你发现自己身处 [bold]{status['location']}[/bold]。[/dim]")
-    if loc_desc:
-        console.print(f"[dim]{loc_desc}[/dim]")
-    console.print(f"[dim]现在是 {status['time']}，第{status['day']}天，{status['season']}。[/dim]")
+    opening = await gm.generate_opening()
+    print_narrative(opening)
     console.print()
     console.print("[dim]输入 [cyan]help[/cyan] 查看指令，或直接描述你想做的事。[/dim]")
     console.print()
@@ -120,7 +126,7 @@ async def game_loop(gm: GameMaster) -> None:
             console.print("[yellow]再见，冒险者！[/yellow]")
             break
         elif cmd == "status":
-            print_status(gm.get_status())
+            print_status(gm.get_status(), gm)
             continue
         elif cmd == "inventory":
             player = gm.world.characters.get(gm.player_id, {})
@@ -138,12 +144,28 @@ async def game_loop(gm: GameMaster) -> None:
             path = player_input.split(maxsplit=1)[1] if len(player_input.split()) > 1 else "savegame.json"
             if gm.load_game(path):
                 console.print(f"[green]游戏已从 {path} 加载[/green]")
-                print_status(gm.get_status())
+                print_status(gm.get_status(), gm)
             else:
                 console.print(f"[red]从 {path} 加载失败[/red]")
             continue
         elif cmd == "look":
-            player_input = "仔细环顾四周"
+            status = gm.get_status()
+            nearby = status.get("nearby_npcs", [])
+            loc_name = status["location"]
+            loc_desc = status.get("location_description", "")
+            text = f"你环顾四周。你身处{loc_name}。{loc_desc}"
+            if nearby:
+                npc_names = []
+                for npc_id in nearby:
+                    npc = gm.tick_engine._npcs.get(npc_id)
+                    if npc:
+                        npc_names.append(f"{npc.name}（{npc.description}）")
+                if npc_names:
+                    text += "\n\n你看到:\n" + "\n".join(f"  • {n}" for n in npc_names)
+            else:
+                text += "\n\n附近没有其他人。"
+            print_narrative(text)
+            continue
         elif cmd == "wait":
             parts = player_input.split()
             turns = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else 1
@@ -225,6 +247,8 @@ def setup_demo_world(gm: GameMaster) -> None:
             "inventory": ["生锈的铁剑", "皮甲", "面包", "10枚金币"],
             "name": "冒险者",
             "type": "player",
+            "health": 100,
+            "max_health": 100,
         },
     )
 
@@ -242,6 +266,33 @@ def setup_demo_world(gm: GameMaster) -> None:
         locs["darkwood"].connected = ["forest_edge", "ruins"]
     if "ruins" in locs:
         locs["ruins"].connected = ["darkwood"]
+
+    gm.world_lore = {
+        "world_name": "阿尔多利亚王国",
+        "genre": "fantasy",
+        "era": "封建中世纪",
+        "atmosphere": "阳光明媚，处处生机。",
+        "terrain": "城镇、森林",
+        "magic_level": "中魔",
+        "danger_level": "适中",
+        "description": "一个位于荒野边缘的和平王国，剑与魔法的经典奇幻世界。",
+        "history": "阿尔多利亚王国曾是古代精灵帝国的一部分，人类在精灵隐退后建立了自己的文明。如今王国边境的黑暗森林中，古老的遗迹正散发出不祥的气息。",
+        "factions": [],
+        "main_quest": "传说中的黑暗领主正在集结大军，你必须找到传说中的神器，联合各势力，在末日降临前阻止他。",
+        "npcs": [
+            {"name": "贝尔塔", "role": "让酒馆生意兴隆，顾客满意", "location": "金色酒壶"},
+            {"name": "阿尔德里克爵士", "role": "保护城镇免受威胁", "location": "城镇广场"},
+            {"name": "泽菲尔", "role": "通过贸易积累财富", "location": "集市街"},
+        ],
+        "locations": [
+            {"name": "城镇广场", "description": "阿尔多利亚繁华的中心。", "danger": 0},
+            {"name": "金色酒壶", "description": "一家温暖的酒馆。", "danger": 0},
+            {"name": "集市街", "description": "一条长长的街道。", "danger": 0},
+            {"name": "森林边缘", "description": "文明世界与黑暗森林的交界处。", "danger": 3},
+            {"name": "暗木小径", "description": "一条穿过古老森林的狭窄小径。", "danger": 5},
+            {"name": "远古遗迹", "description": "布满青苔和藤蔓的石制建筑。", "danger": 7},
+        ],
+    }
 
 
 @click.group(invoke_without_command=True)
@@ -274,13 +325,16 @@ def version() -> None:
 
 
 @main.command()
-@click.option("--host", "-h", default="127.0.0.1", help="服务监听地址")
-@click.option("--port", "-p", default=8000, help="服务监听端口")
+@click.option("--host", "-h", default=None, help="服务监听地址")
+@click.option("--port", "-p", default=None, type=int, help="服务监听端口")
 @click.option("--config", "-c", default=None, help="配置文件路径（YAML）")
-def web(host: str, port: int, config: str | None) -> None:
+def web(host: str | None, port: int | None, config: str | None) -> None:
     """启动调试 Web 界面。"""
     from jag.web.server import run_server
 
+    cfg = load_config(config)
+    host = host or cfg.web_host
+    port = port or cfg.web_port
     console.print(f"[bold]JAG[/bold] 启动调试界面: http://{host}:{port}")
     run_server(host=host, port=port, config=config)
 

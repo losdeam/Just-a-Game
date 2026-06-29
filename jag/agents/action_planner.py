@@ -22,6 +22,20 @@ class RiskLevel(str, Enum):
     EXTREME = "extreme"
 
 
+class SuggestedOption(BaseModel):
+    """Suggested player option."""
+    
+    text: str = Field(description="The natural language text of the option")
+    description: str = Field(description="Brief description of what this action does")
+    risk: RiskLevel = Field(default=RiskLevel.LOW, description="Risk level of this option")
+
+
+class SuggestedOptionsModel(BaseModel):
+    """Container for suggested options."""
+    
+    options: list[SuggestedOption] = Field(default_factory=list, description="3 suggested actions for the player")
+
+
 class ActionPlanModel(BaseModel):
     """Structured action plan output from LLM."""
 
@@ -78,9 +92,21 @@ PLANNER_SYSTEM_PROMPT = """你是一个开放世界RPG游戏的行动规划器�
 - 涉及危险或复杂性的行为，相应提高风险和DC
 """
 
+OPTIONS_SYSTEM_PROMPT = """你是一个开放世界RPG游戏的引导助手。
+根据当前世界上下文，生成3个适合玩家的自然语言行动建议。
+所有输出内容请使用简体中文。
+
+建议原则：
+1. 提供不同类型的选择（例如：探索、社交、互动）
+2. 根据当前地点和附近实体生成有意义的选项
+3. 包含1个低风险、1个中等风险、1个高风险选项
+4. 每个选项要简短，符合RPG游戏的行动描述
+5. 不要提及机制性词汇（如DC、属性），只描述玩家可以做什么
+"""
+
 
 def build_world_context(player_id: str, world: WorldState) -> str:
-    """Build a world context string for the LLM prompt."""
+    """Build a compact world context string for the LLM prompt."""
     player = world.characters.get(player_id, {})
     loc_id = player.get("location_id", "")
     location = world.locations.get(loc_id)
@@ -92,14 +118,14 @@ def build_world_context(player_id: str, world: WorldState) -> str:
         parts.append(f"  描述: {location.description}")
         nearby = [e for e in location.entities if e != player_id]
         if nearby:
-            parts.append(f"  附近: {', '.join(nearby)}")
+            parts.append(f"  附近: {', '.join(nearby[:5])}{'...' if len(nearby) > 5 else ''}")
         items = location.items
         if items:
-            parts.append(f"  物品: {', '.join(items)}")
+            parts.append(f"  物品: {', '.join(items[:5])}{'...' if len(items) > 5 else ''}")
 
     inventory = player.get("inventory", [])
     if inventory:
-        parts.append(f"背包: {', '.join(inventory)}")
+        parts.append(f"背包: {', '.join(inventory[:8])}{'...' if len(inventory) > 8 else ''}")
 
     return "\n".join(parts)
 
@@ -109,6 +135,58 @@ class ActionPlanner:
 
     def __init__(self, llm: LLMProvider) -> None:
         self.llm = llm
+
+    async def suggest_options(
+        self, player_id: str, world: WorldState
+    ) -> list[dict[str, Any]]:
+        """Suggest 3 possible actions for the player based on current context.
+        
+        Returns list of suggested options with text, description, and risk.
+        """
+        world_context = build_world_context(player_id, world)
+
+        prompt = (
+            f"World Context:\n{world_context}\n\n"
+            "请根据当前环境生成3个不同的行动建议，给玩家选择。"
+        )
+
+        try:
+            result = await self.llm.structured(
+                prompt=prompt,
+                response_model=SuggestedOptionsModel,
+                system=OPTIONS_SYSTEM_PROMPT,
+                max_tokens=512,
+            )
+            
+            # Convert to dicts and ensure exactly 3 options
+            options = []
+            for opt in result.options[:3]:
+                options.append({
+                    "text": opt.text,
+                    "description": opt.description,
+                    "risk": opt.risk.value if isinstance(opt.risk, RiskLevel) else str(opt.risk),
+                })
+            
+            # Fill with fallback options if needed
+            while len(options) < 3:
+                fallback_opt = self._fallback_suggestions(len(options))[len(options)-1]
+                options.append(fallback_opt)
+            
+            return options
+        except Exception as e:
+            logger.warning("LLM option suggestion failed: %s, using fallback", e)
+            return self._fallback_suggestions(3)
+
+    def _fallback_suggestions(self, count: int = 3) -> list[dict[str, Any]]:
+        """Generate fallback suggestions when LLM fails."""
+        suggestions = [
+            {"text": "仔细观察周围环境", "description": "观察当前地点的细节", "risk": "low"},
+            {"text": "与附近的NPC交谈", "description": "与附近的角色互动", "risk": "low"},
+            {"text": "检查背包里的物品", "description": "查看并管理你的装备", "risk": "low"},
+            {"text": "前往下一个地点", "description": "移动到相邻的区域", "risk": "medium"},
+            {"text": "休息恢复体力", "description": "原地休息恢复状态", "risk": "low"},
+        ]
+        return suggestions[:count]
 
     async def plan(
         self, action_text: str, player_id: str, world: WorldState
@@ -130,6 +208,7 @@ class ActionPlanner:
                 prompt=prompt,
                 response_model=ActionPlanModel,
                 system=PLANNER_SYSTEM_PROMPT,
+                max_tokens=512,
             )
             return self._to_action_dict(plan, player_id, action_text)
         except Exception as e:

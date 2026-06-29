@@ -149,8 +149,7 @@ class TestGameLoop:
         status = game_master.get_status()
         assert "turn" in status
         assert "location" in status
-        assert "npc_count" in status
-        assert status["npc_count"] >= 4
+        assert "nearby_npcs" in status
 
     @pytest.mark.asyncio
     async def test_save_load(self, game_master: GameMaster, tmp_path):

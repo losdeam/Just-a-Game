@@ -20,6 +20,7 @@ class EventType(Enum):
     NPC_ACTION = "npc_action"
     WORLD = "world"
     SYSTEM = "system"
+    DANGER = "danger"
 
 
 @dataclass

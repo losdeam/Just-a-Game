@@ -38,11 +38,8 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
     _world_initialized = False  # Track if world has been set up
 
     def _ensure_world() -> None:
-        """Ensure a world is loaded; use demo if none was created."""
-        nonlocal _world_initialized
-        if not _world_initialized:
-            setup_demo_world(gm)
-            _world_initialized = True
+        """Ensure a world is loaded; does nothing if none was created."""
+        pass  # World must be explicitly created via create_world or load_demo
 
     # WebSocket connections
     connections: list[WebSocket] = []
@@ -180,7 +177,7 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
         try:
             from jag.agents.llm import LiteLLMProvider
             test_llm_provider = LiteLLMProvider(
-                model=model, api_key=api_key, api_base=api_base,
+                model=model, provider=provider, api_key=api_key, api_base=api_base,
             )
             result = await test_llm_provider.complete("Say OK", system="Reply with exactly: OK")
             return JSONResponse({"ok": True, "message": f"连接成功！模型响应: {result.strip()[:100]}"})
@@ -214,10 +211,13 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                 result = await world_builder.build_with_llm(world_name, tags, description)
             else:
                 result = world_builder.build_from_tags(world_name, tags, description)
-                # Warn if description was provided but no LLM key
                 if description and not has_key:
                     result["warning"] = "未配置 LLM API Key，您的自定义描述无法用于 AI 生成，已使用词条模板生成。配置 API Key 后可获得 AI 驱动的自定义世界。"
             _world_initialized = True
+            opening = await gm.generate_opening()
+            options = await gm.get_suggested_options()
+            result["opening"] = opening
+            result["suggested_options"] = options
             return JSONResponse(result)
         except Exception as e:
             return JSONResponse({"ok": False, "message": str(e)}, status_code=500)
@@ -229,13 +229,29 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
         if not _world_initialized:
             setup_demo_world(gm)
             _world_initialized = True
-        return JSONResponse({"ok": True, "message": "演示世界已加载"})
+        opening = await gm.generate_opening()
+        options = await gm.get_suggested_options()
+        return JSONResponse({"ok": True, "message": "演示世界已加载", "opening": opening, "suggested_options": options})
 
     @app.get("/api/inventory")
     async def get_inventory() -> JSONResponse:
         _ensure_world()
         player = gm.world.characters.get(gm.player_id, {})
         return JSONResponse(player.get("inventory", []))
+    
+    @app.get("/api/suggested-options")
+    async def get_suggested_options() -> JSONResponse:
+        _ensure_world()
+        try:
+            options = await gm.get_suggested_options()
+            return JSONResponse({"ok": True, "options": options})
+        except Exception as e:
+            return JSONResponse({"ok": False, "message": str(e)}, status_code=500)
+
+    @app.get("/api/lore")
+    async def get_lore() -> JSONResponse:
+        _ensure_world()
+        return JSONResponse(gm.world_lore)
 
     @app.websocket("/ws")
     async def websocket_endpoint(websocket: WebSocket) -> None:
@@ -245,9 +261,12 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
 
         # Send initial state
         try:
+            status = gm.get_status()
+            opening = await gm.generate_opening() if _world_initialized else ""
             await websocket.send_text(json.dumps({
                 "type": "init",
-                "status": gm.get_status(),
+                "status": status,
+                "opening": opening,
             }, ensure_ascii=False))
         except Exception:
             pass
@@ -264,12 +283,13 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                     player_input = msg.get("input", "")
                     if player_input:
                         try:
-                            narrative = await gm.process_action(player_input)
+                            narrative, options = await gm.process_action(player_input)
                             status = gm.get_status()
                             await websocket.send_text(json.dumps({
                                 "type": "action_result",
                                 "narrative": narrative,
                                 "status": status,
+                                "suggested_options": options,
                             }, ensure_ascii=False))
                         except Exception as e:
                             await websocket.send_text(json.dumps({
@@ -281,12 +301,13 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                     _ensure_world()
                     turns = msg.get("turns", 1)
                     try:
-                        narratives = await gm.advance_world(turns)
+                        narratives, options = await gm.advance_world(turns)
                         status = gm.get_status()
                         await websocket.send_text(json.dumps({
                             "type": "wait_result",
                             "narratives": narratives,
                             "status": status,
+                            "suggested_options": options,
                         }, ensure_ascii=False))
                     except Exception as e:
                         await websocket.send_text(json.dumps({
@@ -341,17 +362,66 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                                     "message": "使用 AI 生成需要配置 LLM API Key。请在配置设置中填写并测试。",
                                 }, ensure_ascii=False))
                                 continue
+                            await websocket.send_text(json.dumps({
+                                "type": "progress",
+                                "message": "正在调用 AI 生成世界观...（可能需要 30-60 秒）",
+                            }, ensure_ascii=False))
                             result = await world_builder.build_with_llm(world_name, tags, description)
                         else:
-                            result = world_builder.build_from_tags(world_name, tags, description)
+                            world_builder._parse_tags(world_name, tags, description)
+                            await websocket.send_text(json.dumps({
+                                "type": "progress", "message": "正在创建世界区域...",
+                            }, ensure_ascii=False))
+                            step_region = world_builder.build_step_region()
+                            await websocket.send_text(json.dumps({
+                                "type": "progress", "message": f"区域「{step_region['name']}」已创建",
+                            }, ensure_ascii=False))
+                            await asyncio.sleep(0.3)
+
+                            await websocket.send_text(json.dumps({
+                                "type": "progress", "message": "正在生成地点...",
+                            }, ensure_ascii=False))
+                            step_locs = world_builder.build_step_locations()
+                            await websocket.send_text(json.dumps({
+                                "type": "progress", "message": f"已创建 {step_locs['count']} 个地点",
+                            }, ensure_ascii=False))
+                            await asyncio.sleep(0.3)
+
+                            await websocket.send_text(json.dumps({
+                                "type": "progress", "message": "正在生成 NPC...",
+                            }, ensure_ascii=False))
+                            step_npcs = world_builder.build_step_npcs()
+                            await websocket.send_text(json.dumps({
+                                "type": "progress", "message": f"已创建 {step_npcs['count']} 个 NPC",
+                            }, ensure_ascii=False))
+                            await asyncio.sleep(0.3)
+
+                            await websocket.send_text(json.dumps({
+                                "type": "progress", "message": "正在生成世界观设定...",
+                            }, ensure_ascii=False))
+                            step_lore = world_builder.build_step_lore()
+                            await websocket.send_text(json.dumps({
+                                "type": "progress", "message": "世界观设定已生成",
+                            }, ensure_ascii=False))
+                            await asyncio.sleep(0.3)
+
+                            result = world_builder.build_step_finalize(step_lore.get("lore"))
                             if description and not has_key:
                                 result["warning"] = "未配置 LLM API Key，您的描述未用于 AI 生成。配置后可获得 AI 驱动的自定义世界。"
                         _world_initialized = True
                         status = gm.get_status()
                         await websocket.send_text(json.dumps({
+                            "type": "progress",
+                            "message": "正在生成开场白...",
+                        }, ensure_ascii=False))
+                        opening = await gm.generate_opening()
+                        options = await gm.get_suggested_options()
+                        await websocket.send_text(json.dumps({
                             "type": "world_created",
                             "result": result,
                             "status": status,
+                            "opening": opening,
+                            "suggested_options": options,
                         }, ensure_ascii=False))
                     except Exception as e:
                         await websocket.send_text(json.dumps({
@@ -361,13 +431,25 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
 
                 elif msg_type == "load_demo":
                     if not _world_initialized:
+                        await websocket.send_text(json.dumps({
+                            "type": "progress",
+                            "message": "正在加载演示世界...",
+                        }, ensure_ascii=False))
                         setup_demo_world(gm)
                         _world_initialized = True
                     status = gm.get_status()
                     await websocket.send_text(json.dumps({
+                        "type": "progress",
+                        "message": "正在生成开场白...",
+                    }, ensure_ascii=False))
+                    opening = await gm.generate_opening()
+                    options = await gm.get_suggested_options()
+                    await websocket.send_text(json.dumps({
                         "type": "world_created",
                         "result": {"ok": True, "method": "demo"},
                         "status": status,
+                        "opening": opening,
+                        "suggested_options": options,
                     }, ensure_ascii=False))
 
                 elif msg_type == "update_config":
@@ -445,11 +527,13 @@ def _apply_config_updates(cfg: GameConfig, updates: dict) -> None:  # type: igno
             setattr(cfg, field, updates[field])
 
 
-def run_server(host: str = "127.0.0.1", port: int = 8000, config: str | None = None) -> None:
+def run_server(host: str | None = None, port: int | None = None, config: str | None = None) -> None:
     """Run the debug web server."""
     import uvicorn
 
     cfg = load_config(config)
     app = create_app(cfg)
+    host = host or cfg.web_host
+    port = port or cfg.web_port
     logger.info("Starting JAG debug server at http://%s:%d", host, port)
     uvicorn.run(app, host=host, port=port, log_level="info")

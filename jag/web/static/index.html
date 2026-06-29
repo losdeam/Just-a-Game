@@ -155,6 +155,21 @@ textarea.wb-input { min-height: 80px; resize: vertical; line-height: 1.5; }
 .npc-loc { color: var(--text2); font-size: 10px; }
 .npc-state { font-size: 10px; color: var(--yellow); }
 
+/* Lore */
+.lore-section { margin-bottom: 16px; }
+.lore-section-title { font-size: 12px; font-weight: 700; color: var(--accent); margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+.lore-text { font-size: 12px; line-height: 1.6; color: var(--text); white-space: pre-wrap; }
+.lore-tag { display: inline-block; padding: 2px 8px; border-radius: 10px; background: rgba(88,166,255,0.1); color: var(--accent); font-size: 10px; margin: 2px; }
+.lore-npc { padding: 6px 8px; background: var(--bg); border-radius: 6px; margin-bottom: 4px; font-size: 11px; }
+.lore-npc .name { font-weight: 600; color: var(--text); }
+.lore-npc .role { color: var(--text2); }
+.lore-npc .loc { color: var(--yellow); font-size: 10px; }
+.lore-loc { padding: 4px 8px; font-size: 11px; border-left: 2px solid var(--border); margin-bottom: 4px; }
+.lore-loc .name { font-weight: 600; }
+.lore-loc .desc { color: var(--text2); font-size: 10px; }
+.lore-loc .danger { color: var(--orange); font-size: 10px; }
+.lore-quest { padding: 10px 12px; background: rgba(210,153,34,0.08); border: 1px solid rgba(210,153,34,0.2); border-radius: 8px; font-size: 12px; line-height: 1.6; color: var(--yellow); }
+
 /* Tabs */
 .tab-bar { display: flex; border-bottom: 1px solid var(--border); }
 .tab { padding: 6px 14px; font-size: 11px; font-weight: 600; color: var(--text2); cursor: pointer; border-bottom: 2px solid transparent; }
@@ -174,6 +189,196 @@ textarea.wb-input { min-height: 80px; resize: vertical; line-height: 1.5; }
 ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text2); }
+
+    /* Player status panel */
+    .status-panel {
+        background: var(--bg2);
+        border-bottom: 1px solid var(--border);
+        padding: 10px 14px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .status-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+    }
+    
+    .status-label {
+        color: var(--text2);
+    }
+    
+    .health-bar {
+        width: 120px;
+        height: 14px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        overflow: hidden;
+    }
+    
+    .health-fill {
+        height: 100%;
+        background: var(--green);
+        transition: width 0.3s;
+    }
+    
+    .health-fill.low {
+        background: var(--orange);
+    }
+    
+    .health-fill.critical {
+        background: var(--red);
+    }
+    
+    /* Suggested options */
+    .options-panel {
+        background: var(--bg2);
+        padding: 10px 14px;
+        border-top: 1px solid var(--border);
+    }
+    
+    .options-title {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--text2);
+        text-transform: uppercase;
+        margin-bottom: 8px;
+        letter-spacing: 0.5px;
+    }
+    
+    .options-list {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    
+    .option-btn {
+        flex: 1;
+        min-width: 140px;
+        padding: 10px 14px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text);
+        cursor: pointer;
+        text-align: left;
+        transition: all 0.15s;
+        font-family: inherit;
+        font-size: 12px;
+    }
+    
+    .option-btn:hover {
+        border-color: var(--accent);
+        background: rgba(88, 166, 255, 0.08);
+    }
+    
+    .option-text {
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    
+    .option-desc {
+        color: var(--text2);
+        font-size: 10px;
+    }
+    
+    .option-badge {
+        display: inline-block;
+        font-size: 9px;
+        padding: 1px 6px;
+        border-radius: 8px;
+        margin-top: 6px;
+    }
+    
+    .option-badge.low {
+        background: rgba(63, 185, 80, 0.15);
+        color: var(--green);
+    }
+    
+    .option-badge.medium {
+        background: rgba(210, 153, 34, 0.15);
+        color: var(--yellow);
+    }
+    
+    .option-badge.high, .option-badge.extreme {
+        background: rgba(248, 81, 73, 0.15);
+        color: var(--red);
+    }
+    
+    /* Processing indicator */
+    .processing-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.3);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+    }
+    
+    .processing-card {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px 24px;
+        min-width: 280px;
+    }
+    
+    .processing-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 12px;
+        color: var(--text);
+    }
+    
+    .processing-steps {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .processing-step {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: var(--text2);
+    }
+    
+    .processing-step.active {
+        color: var(--accent);
+    }
+    
+    .processing-step.complete {
+        color: var(--green);
+    }
+    
+    .processing-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--border);
+    }
+    
+    .processing-step.active .processing-dot {
+        background: var(--accent);
+        animation: pulse 1s infinite;
+    }
+    
+    .processing-step.complete .processing-dot {
+        background: var(--green);
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    
+    @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -236,6 +441,12 @@ textarea.wb-input { min-height: 80px; resize: vertical; line-height: 1.5; }
     <div class="wb-actions">
       <button class="wb-btn wb-btn-primary" id="wb-create-btn" onclick="createWorld()">创建世界</button>
       <button class="wb-btn wb-btn-secondary" onclick="closeWorldBuilder()">返回</button>
+    </div>
+    <div id="wb-progress" style="display:none;margin-top:16px;padding:12px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:8px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="spinner" style="width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite"></div>
+        <span id="wb-progress-text" style="font-size:12px;color:var(--text)">正在生成...</span>
+      </div>
     </div>
   </div>
 </div>
@@ -306,23 +517,58 @@ textarea.wb-input { min-height: 80px; resize: vertical; line-height: 1.5; }
     <button class="settings-btn" onclick="openSettings()">⚙ 配置</button>
   </div>
 
-  <div class="main">
-    <div class="narrative-panel">
-      <div class="panel-title">游戏叙事 <span class="badge" id="narrative-count">0</span></div>
-      <div class="narrative-log" id="narrative-log"></div>
-      <div class="input-bar">
-        <input type="text" id="player-input" placeholder="输入行动... (如: 探索森林、和商人对话)" autocomplete="off">
-        <button id="send-btn" onclick="sendAction()">发送</button>
-        <button style="background:var(--bg3);color:var(--text)" onclick="sendWait(1)">等待</button>
-      </div>
+    <div class="main">
+        <div class="status-panel" id="player-status">
+            <div class="status-item">
+                <span class="status-label">生命值:</span>
+                <div class="health-bar">
+                    <div class="health-fill" id="health-fill" style="width: 100%"></div>
+                </div>
+                <span id="health-text">100/100</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">位置:</span>
+                <span id="status-location">--</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">背包:</span>
+                <span id="status-inventory-count">0件</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">附近:</span>
+                <span id="status-nearby">--</span>
+            </div>
+        </div>
+        
+        <div class="narrative-panel" id="narrative-panel">
+            <div class="processing-overlay" id="processing-overlay">
+                <div class="processing-card">
+                    <div class="processing-title">正在处理...</div>
+                    <div class="processing-steps" id="processing-steps"></div>
+                </div>
+            </div>
+            <div class="panel-title">游戏叙事 <span class="badge" id="narrative-count">0</span></div>
+            <div class="narrative-log" id="narrative-log"></div>
+            
+            <div class="options-panel" id="options-panel" style="display: none;">
+                <div class="options-title">你可以：</div>
+                <div class="options-list" id="options-list"></div>
+            </div>
+            
+            <div class="input-bar">
+                <input type="text" id="player-input" placeholder="输入行动... (如: 探索森林、和商人对话)" autocomplete="off">
+                <button id="send-btn" onclick="sendAction()">发送</button>
+                <button style="background:var(--bg3);color:var(--text)" onclick="sendWait(1)">等待</button>
+            </div>
+        </div>
     </div>
-  </div>
 
   <div class="sidebar">
     <div class="tab-bar">
       <div class="tab active" data-tab="debug" onclick="switchTab('debug')">流水线</div>
       <div class="tab" data-tab="world" onclick="switchTab('world')">世界</div>
       <div class="tab" data-tab="npc" onclick="switchTab('npc')">NPC</div>
+      <div class="tab" data-tab="lore" onclick="switchTab('lore')">世界观</div>
     </div>
     <div class="tab-content active" id="tab-debug">
       <div class="panel-title">流水线追踪 <span class="badge" id="trace-count">0</span></div>
@@ -339,6 +585,10 @@ textarea.wb-input { min-height: 80px; resize: vertical; line-height: 1.5; }
     <div class="tab-content" id="tab-npc">
       <div class="panel-title">NPC 状态 <span class="badge" id="npc-count">0</span></div>
       <div class="npc-list" id="npc-list"></div>
+    </div>
+    <div class="tab-content" id="tab-lore">
+      <div class="panel-title">世界观</div>
+      <div class="debug-scroll" id="lore-content"></div>
     </div>
   </div>
 </div>
@@ -371,22 +621,41 @@ function connect() {
 }
 
 function handleMessage(msg) {
-  switch (msg.type) {
-    case 'init': updateStatus(msg.status); break;
-    case 'trace': case 'tick': addTraceCard(msg); break;
-    case 'action_result': addNarrative('player', msg.narrative, msg.status?.turn); updateStatus(msg.status); break;
-    case 'wait_result': for (const n of (msg.narratives||[])) addNarrative('system', n); updateStatus(msg.status); break;
-    case 'status': updateStatus(msg.status); break;
-    case 'history': for (const t of (msg.history||[])) addTraceCard(t); break;
-    case 'world_created':
-      onWorldCreated(msg);
-      break;
-    case 'config': currentConfig = msg.config; populateSettings(msg.config); break;
-    case 'config_updated': showToast(msg.message || '配置已更新'); break;
-    case 'error': addNarrative('error', `错误: ${msg.message}`); break;
-    default: if (msg.turn !== undefined && msg.steps) addTraceCard(msg);
-  }
-}
+        switch (msg.type) {
+            case 'init': updateStatus(msg.status); if (msg.opening) addNarrative('system', msg.opening); break;
+            case 'trace': case 'tick': addTraceCard(msg); break;
+            case 'action_result': 
+                addNarrative('player', msg.narrative, msg.status?.turn); 
+                updateStatus(msg.status); 
+                updateOptions(msg.suggested_options); 
+                hideProcessing();
+                break;
+            case 'wait_result': 
+                for (const n of (msg.narratives||[])) addNarrative('system', n); 
+                updateStatus(msg.status); 
+                updateOptions(msg.suggested_options); 
+                hideProcessing();
+                break;
+            case 'status': updateStatus(msg.status); break;
+            case 'history': for (const t of (msg.history||[])) addTraceCard(t); break;
+            case 'world_created':
+                hideProgress();
+                onWorldCreated(msg);
+                updateOptions(msg.suggested_options);
+                break;
+            case 'progress':
+                showProgress(msg.message);
+                break;
+            case 'config': currentConfig = msg.config; populateSettings(msg.config); break;
+            case 'config_updated': showToast(msg.message || '配置已更新'); break;
+            case 'error': 
+                addNarrative('error', `错误: ${msg.message}`); 
+                reenableCreateBtn(); 
+                hideProcessing();
+                break;
+            default: if (msg.turn !== undefined && msg.steps) addTraceCard(msg);
+        }
+    }
 
 // ── Launcher ──
 let worldTags = {};  // category_id -> [selected tag_ids]
@@ -512,69 +781,94 @@ function createWorld() {
   }
 }
 
+function showProgress(msg) {
+  const el = document.getElementById('wb-progress');
+  el.style.display = 'block';
+  document.getElementById('wb-progress-text').textContent = msg;
+}
+
+function hideProgress() {
+  document.getElementById('wb-progress').style.display = 'none';
+}
+
 function doCreateWorld() {
+        const btn = document.getElementById('wb-create-btn');
+        btn.disabled = true;
+        btn.textContent = useLLM ? '🤖 AI 生成中...' : '生成中...';
+        showProgress(useLLM ? '🤖 AI 生成中...（可能需要 30-60 秒）' : '正在构建世界...');
+
+        const worldName = document.getElementById('wb-name').value.trim();
+        const description = document.getElementById('wb-desc').value.trim();
+
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+                type: 'create_world',
+                world_name: worldName,
+                tags: worldTags,
+                description: description,
+                use_llm: useLLM,
+            }));
+        } else {
+            fetch('/api/world/create', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ world_name: worldName, tags: worldTags, description, use_llm: useLLM }),
+            }).then(r => r.json()).then(data => {
+                if (data.ok) {
+                    onWorldCreated({ result: data, status: null, opening: data.opening, suggested_options: data.suggested_options });
+                    fetch('/api/status').then(r => r.json()).then(s => updateStatus(s));
+                } else {
+                    showToast(data.message || '创建失败');
+                    btn.disabled = false; btn.textContent = '创建世界';
+                }
+            }).catch(() => {
+                showToast('创建失败'); btn.disabled = false; btn.textContent = '创建世界';
+            });
+        }
+    }
+
+function reenableCreateBtn() {
   const btn = document.getElementById('wb-create-btn');
-  btn.disabled = true;
-  btn.textContent = useLLM ? '🤖 AI 生成中...' : '生成中...';
-
-  const worldName = document.getElementById('wb-name').value.trim();
-  const description = document.getElementById('wb-desc').value.trim();
-
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({
-      type: 'create_world',
-      world_name: worldName,
-      tags: worldTags,
-      description: description,
-      use_llm: useLLM,
-    }));
-  } else {
-    fetch('/api/world/create', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ world_name: worldName, tags: worldTags, description, use_llm: useLLM }),
-    }).then(r => r.json()).then(data => {
-      if (data.ok) {
-        onWorldCreated({ result: data, status: null });
-        fetch('/api/status').then(r => r.json()).then(s => updateStatus(s));
-      } else {
-        showToast(data.message || '创建失败');
-        btn.disabled = false; btn.textContent = '创建世界';
-      }
-    }).catch(() => {
-      showToast('创建失败'); btn.disabled = false; btn.textContent = '创建世界';
-    });
-  }
+  btn.disabled = false;
+  btn.textContent = '创建世界';
 }
 
 function onWorldCreated(msg) {
-  const result = msg.result || {};
-  closeWorldBuilder();
-  document.getElementById('launcher').classList.add('hidden');
-  setTimeout(() => document.getElementById('launcher').style.display = 'none', 500);
-  const method = result.method === 'llm' ? '🤖 AI 生成' : result.method === 'demo' ? '🎮 预设世界' : '📝 词条生成';
-  addNarrative('system', `世界创建成功！[${method}] ${result.world_name || ''} — ${result.locations || 0} 个地点, ${result.npcs || 0} 个 NPC。输入行动开始冒险！`);
-  // Show warning if any
-  if (result.warning) {
-    addNarrative('error', `⚠ ${result.warning}`);
-  }
-  if (msg.status) updateStatus(msg.status);
-  document.getElementById('wb-create-btn').disabled = false;
-  document.getElementById('wb-create-btn').textContent = '创建世界';
-}
+        const result = msg.result || {};
+        closeWorldBuilder();
+        document.getElementById('launcher').classList.add('hidden');
+        setTimeout(() => document.getElementById('launcher').style.display = 'none', 500);
+        const method = result.method === 'llm' ? '🤖 AI 生成' : result.method === 'demo' ? '🎮 预设世界' : '📝 词条生成';
+        addNarrative('system', `世界创建成功！[${method}] ${result.world_name || ''} — ${result.locations || 0} 个地点, ${result.npcs || 0} 个 NPC。`);
+        // Show opening narration
+        if (msg.opening) {
+            addNarrative('system', msg.opening);
+        }
+        // Show warning if any
+        if (result.warning) {
+            addNarrative('error', `⚠ ${result.warning}`);
+        }
+        if (msg.status) updateStatus(msg.status);
+        if (msg.suggested_options) updateOptions(msg.suggested_options);
+        document.getElementById('wb-create-btn').disabled = false;
+        document.getElementById('wb-create-btn').textContent = '创建世界';
+        loadLore();
+    }
 
 function quickStartDemo() {
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({ type: 'load_demo' }));
-  } else {
-    fetch('/api/world/load_demo', { method: 'POST' }).then(r => r.json()).then(() => {
-      document.getElementById('launcher').classList.add('hidden');
-      setTimeout(() => document.getElementById('launcher').style.display = 'none', 500);
-      addNarrative('system', '演示世界已加载。输入行动开始冒险！');
-      fetch('/api/status').then(r => r.json()).then(s => updateStatus(s));
-    });
-  }
-}
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'load_demo' }));
+        } else {
+            fetch('/api/world/load_demo', { method: 'POST' }).then(r => r.json()).then(data => {
+                document.getElementById('launcher').classList.add('hidden');
+                setTimeout(() => document.getElementById('launcher').style.display = 'none', 500);
+                addNarrative('system', '演示世界已加载。');
+                if (data.opening) addNarrative('system', data.opening);
+                fetch('/api/status').then(r => r.json()).then(s => updateStatus(s));
+                if (data.suggested_options) updateOptions(data.suggested_options);
+            });
+        }
+    }
 
 function loadGame() {
   showToast('存档加载功能暂未实现');
@@ -735,16 +1029,126 @@ function saveConfig() {
 
 // ── Game UI ──
 function updateStatus(s) {
-  if (!s) return;
-  document.getElementById('hdr-turn').textContent = s.turn;
-  const grid = document.getElementById('world-grid');
-  grid.innerHTML = [
-    ['回合', s.turn], ['时间', s.time], ['天数', `第${s.day}天`],
-    ['季节', s.season], ['位置', s.location], ['NPC', s.npc_count],
-    ['任务', s.active_quests], ['故事线', s.active_threads],
-  ].map(([l,v]) => `<div class="world-item"><span class="label">${l}</span><span class="val">${v}</span></div>`).join('');
-  loadNPCs(); loadLocations();
-}
+        if (!s) return;
+        document.getElementById('hdr-turn').textContent = s.turn;
+        const grid = document.getElementById('world-grid');
+        grid.innerHTML = [
+            ['回合', s.turn], ['时间', s.time], ['天数', `第${s.day}天`],
+            ['季节', s.season], ['位置', s.location],
+            ['任务', s.active_quests], ['故事线', s.active_threads],
+        ].map(([l,v]) => `<div class="world-item"><span class="label">${l}</span><span class="val">${v}</span></div>`).join('');
+        
+        // Update player status panel
+        document.getElementById('status-location').textContent = s.location || '未知';
+        const invCount = (s.inventory || []).length;
+        document.getElementById('status-inventory-count').textContent = `${invCount}件`;
+        
+        // Update health
+        const health = s.health || 100;
+        const maxHealth = s.max_health || 100;
+        const healthPercent = Math.max(0, Math.min(100, (health / maxHealth) * 100));
+        const healthFill = document.getElementById('health-fill');
+        healthFill.style.width = `${healthPercent}%`;
+        healthFill.className = 'health-fill';
+        if (healthPercent <= 25) {
+            healthFill.classList.add('critical');
+        } else if (healthPercent <= 50) {
+            healthFill.classList.add('low');
+        }
+        document.getElementById('health-text').textContent = `${health}/${maxHealth}`;
+        
+        // Update nearby
+        const nearby = (s.nearby_entities || []).slice(0, 4);
+        if (nearby.length > 0) {
+            document.getElementById('status-nearby').textContent = nearby.join(', ');
+        } else {
+            document.getElementById('status-nearby').textContent = '无';
+        }
+        
+        loadNPCs(); loadLocations();
+    }
+    
+    function updateOptions(options) {
+        const panel = document.getElementById('options-panel');
+        const list = document.getElementById('options-list');
+        
+        if (!options || options.length === 0) {
+            panel.style.display = 'none';
+            return;
+        }
+        
+        panel.style.display = 'block';
+        list.innerHTML = '';
+        
+        options.forEach((opt, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            
+            const riskClass = (opt.risk || 'low').toLowerCase();
+            const riskLabel = {
+                'low': '低风险',
+                'medium': '中风险',
+                'high': '高风险',
+                'extreme': '极高风险'
+            }[riskClass] || '低风险';
+            
+            btn.innerHTML = `
+                <div class="option-text">${escHtml(opt.text)}</div>
+                <div class="option-desc">${escHtml(opt.description)}</div>
+                <span class="option-badge ${riskClass}">${riskLabel}</span>
+            `;
+            
+            btn.onclick = () => {
+                document.getElementById('player-input').value = opt.text;
+                sendAction();
+            };
+            
+            list.appendChild(btn);
+        });
+    }
+    
+    function showProcessing(steps) {
+        const overlay = document.getElementById('processing-overlay');
+        const stepsContainer = document.getElementById('processing-steps');
+        
+        stepsContainer.innerHTML = steps.map(step => `
+            <div class="processing-step" data-step="${step.id}">
+                <div class="processing-dot"></div>
+                <div>${step.name}</div>
+            </div>
+        `).join('');
+        
+        overlay.style.display = 'flex';
+        
+        // Disable inputs while processing
+        document.getElementById('player-input').disabled = true;
+        document.getElementById('send-btn').disabled = true;
+    }
+    
+    function updateProcessingStep(stepId, complete) {
+        const stepEl = document.querySelector(`.processing-step[data-step="${stepId}"]`);
+        if (stepEl) {
+            stepEl.classList.remove('active');
+            if (complete) {
+                stepEl.classList.add('complete');
+            }
+        }
+        
+        // Mark next step as active if exists
+        const nextStep = stepEl?.nextElementSibling;
+        if (nextStep && !complete) {
+            nextStep.classList.add('active');
+        }
+    }
+    
+    function hideProcessing() {
+        const overlay = document.getElementById('processing-overlay');
+        overlay.style.display = 'none';
+        
+        // Re-enable inputs
+        document.getElementById('player-input').disabled = false;
+        document.getElementById('send-btn').disabled = false;
+    }
 
 function addNarrative(type, text, turn) {
   const log = document.getElementById('narrative-log');
@@ -788,16 +1192,40 @@ function sendAction() {
   ws.send(JSON.stringify({ type: 'action', input: text }));
   addNarrative('player', `> ${text}`);
   input.value = '';
+  
+  // Show processing indicator
+  showProcessing([
+    { id: 'action_plan', name: '解析行动' },
+    { id: 'rules', name: '评估规则' },
+    { id: 'dice', name: '掷骰判定' },
+    { id: 'world_update', name: '更新世界' },
+    { id: 'npc_tick', name: 'NPC行动' },
+    { id: 'world_sim', name: '世界模拟' },
+    { id: 'quest', name: '任务生成' },
+    { id: 'story', name: '故事导演' },
+    { id: 'narrative', name: '生成叙事' }
+  ]);
 }
 
 function sendWait(turns) {
   if (!ws || ws.readyState !== WebSocket.OPEN) return;
   ws.send(JSON.stringify({ type: 'wait', turns }));
+  
+  // Show processing indicator
+  showProcessing([
+    { id: 'world_update', name: '更新世界' },
+    { id: 'npc_tick', name: 'NPC行动' },
+    { id: 'world_sim', name: '世界模拟' },
+    { id: 'quest', name: '任务生成' },
+    { id: 'story', name: '故事导演' },
+    { id: 'narrative', name: '生成叙事' }
+  ]);
 }
 
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
   document.querySelectorAll('.tab-content').forEach(t => t.classList.toggle('active', t.id === `tab-${name}`));
+  if (name === 'lore') loadLore();
 }
 
 async function loadNPCs() {
@@ -817,6 +1245,56 @@ async function loadLocations() {
       `<div class="tick-card" style="margin:4px 0"><div style="padding:6px 10px;font-size:11px;font-weight:600">${escHtml(l.name)} <span style="color:var(--text2);font-weight:400">(${l.type})</span></div><div style="padding:2px 10px 6px;font-size:10px;color:var(--text2)">${escHtml(l.description)}</div><div style="padding:2px 10px 6px;font-size:10px;color:var(--text2)">连接: ${l.connected.join(', ')||'无'} · 实体: ${l.entities.length} · 物品: ${l.items.length} · 光照:${l.light_level} 危险:${l.danger_level}</div></div>`
     ).join('');
   } catch {}
+}
+
+async function loadLore() {
+  try {
+    const r = await fetch('/api/lore'); const lore = await r.json();
+    if (!lore || !lore.world_name) {
+      document.getElementById('lore-content').innerHTML = '<div style="padding:12px;color:var(--text2);font-size:11px">尚未创建世界。</div>';
+      return;
+    }
+    const tags = [
+      lore.genre && `类型: ${lore.genre}`,
+      lore.era,
+      lore.terrain && `地形: ${lore.terrain}`,
+      lore.magic_level && `魔法: ${lore.magic_level}`,
+      lore.danger_level && `危险: ${lore.danger_level}`,
+    ].filter(Boolean).map(t => `<span class="lore-tag">${escHtml(t)}</span>`).join('');
+
+    const npcsHtml = (lore.npcs||[]).map(n =>
+      `<div class="lore-npc"><span class="name">${escHtml(n.name)}</span> <span class="role">${escHtml(n.role)}</span> <span class="loc">📍 ${escHtml(n.location)}</span></div>`
+    ).join('');
+
+    const locsHtml = (lore.locations||[]).map(l =>
+      `<div class="lore-loc"><span class="name">${escHtml(l.name)}</span> <span class="danger">⚔ ${l.danger}/10</span><br><span class="desc">${escHtml(l.description)}</span></div>`
+    ).join('');
+
+    document.getElementById('lore-content').innerHTML = `
+      <div style="padding:10px 14px">
+        <div class="lore-section">
+          <div class="lore-section-title">🌍 ${escHtml(lore.world_name)}</div>
+          <div style="margin-bottom:8px">${tags}</div>
+          <div class="lore-text">${escHtml(lore.description||'')}</div>
+        </div>
+        <div class="lore-section">
+          <div class="lore-section-title">📜 历史</div>
+          <div class="lore-text">${escHtml(lore.history||'')}</div>
+        </div>
+        <div class="lore-section">
+          <div class="lore-section-title">⚔ 主线任务</div>
+          <div class="lore-quest">${escHtml(lore.main_quest||'')}</div>
+        </div>
+        <div class="lore-section">
+          <div class="lore-section-title">👥 关键人物</div>
+          ${npcsHtml || '<div style="color:var(--text2);font-size:11px">无</div>'}
+        </div>
+        <div class="lore-section">
+          <div class="lore-section-title">🏛 地点</div>
+          ${locsHtml || '<div style="color:var(--text2);font-size:11px">无</div>'}
+        </div>
+      </div>`;
+  } catch { document.getElementById('lore-content').innerHTML = '<div style="padding:12px;color:var(--text2);font-size:11px">加载失败</div>'; }
 }
 
 function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }

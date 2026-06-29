@@ -94,28 +94,39 @@ class GameMaster:
         # Game state
         self._running = False
         self._turn_count = 0
+        self.world_lore: dict[str, Any] = {}
 
     def _init_llm(self) -> None:
         """Initialize LLM factory from config."""
         default_cfg = self.config.llm.default
-        default_llm_config = LLMConfig(
-            provider=default_cfg.provider,
-            model=default_cfg.model,
-            api_key=default_cfg.api_key,
-            api_base=default_cfg.api_base,
-            temperature=default_cfg.temperature,
-            max_tokens=default_cfg.max_tokens,
-        )
+        if default_cfg.provider == "mock":
+            default_llm_config = LLMConfig(provider="mock")
+        else:
+            default_llm_config = LLMConfig(
+                provider="litellm",
+                upstream_provider=default_cfg.provider,
+                model=default_cfg.model,
+                api_key=default_cfg.api_key,
+                api_base=default_cfg.api_base,
+                temperature=default_cfg.temperature,
+                max_tokens=default_cfg.max_tokens,
+                disable_thinking=default_cfg.disable_thinking,
+            )
         module_configs = {}
         for name, mod_cfg in self.config.llm.modules.items():
-            module_configs[name] = LLMConfig(
-                provider=mod_cfg.provider,
-                model=mod_cfg.model,
-                api_key=mod_cfg.api_key,
-                api_base=mod_cfg.api_base,
-                temperature=mod_cfg.temperature,
-                max_tokens=mod_cfg.max_tokens,
-            )
+            if mod_cfg.provider == "mock":
+                module_configs[name] = LLMConfig(provider="mock")
+            else:
+                module_configs[name] = LLMConfig(
+                    provider="litellm",
+                    upstream_provider=mod_cfg.provider,
+                    model=mod_cfg.model,
+                    api_key=mod_cfg.api_key,
+                    api_base=mod_cfg.api_base,
+                    temperature=mod_cfg.temperature,
+                    max_tokens=mod_cfg.max_tokens,
+                    disable_thinking=mod_cfg.disable_thinking,
+                )
         self._llm_factory = LLMFactory(
             default_config=default_llm_config,
             module_configs=module_configs,
@@ -133,6 +144,7 @@ class GameMaster:
         locations: list[WorldLocation] | None = None,
         npcs: list[NPC] | None = None,
         player_data: dict[str, Any] | None = None,
+        lore: dict[str, Any] | None = None,
     ) -> None:
         """Set up the game world with regions, locations, NPCs, and player."""
         for region in regions or []:
@@ -143,15 +155,23 @@ class GameMaster:
             self.world.add_location(location)
 
         for npc in npcs or []:
-            self.world.add_character(npc.id, {
+            npc_data = {
                 "location_id": npc.location_id,
                 "name": npc.name,
                 "type": "npc",
-            })
+                "health": 100,
+                "max_health": 100,
+            }
+            self.world.add_character(npc.id, npc_data)
             self.tick_engine.register_npc(npc)
 
         # Add player
         if player_data:
+            # Ensure player has health fields
+            if "health" not in player_data:
+                player_data["health"] = 100
+            if "max_health" not in player_data:
+                player_data["max_health"] = 100
             self.world.add_character(self.player_id, player_data)
         else:
             # Default: place player at first location
@@ -161,18 +181,82 @@ class GameMaster:
                 "inventory": [],
                 "name": "Player",
                 "type": "player",
+                "health": 100,
+                "max_health": 100,
             })
+
+        # Store lore
+        if lore:
+            self.world_lore = lore
+
+    def clear_world(self) -> None:
+        """Clear all world state for a fresh rebuild."""
+        self.world = WorldState()
+        self.world_lore = {}
+        self._turn_count = 0
+        self.tick_engine.clear_npcs()
+        self.knowledge = KnowledgeGraph()
+        self.quest_gen = QuestGenerator()
+        self.event_bus = EventBus()
+        self.rule_engine = RuleEngine(self.event_bus, max_chain_depth=self.config.max_chain_depth)
 
     # ── Game loop ────────────────────────────────────────────────
 
-    async def process_action(self, player_input: str) -> str:
-        """Process a player action and return narrative text.
+    async def generate_opening(self) -> str:
+        """Generate an immersive opening narration for the player."""
+        player = self.world.characters.get(self.player_id, {})
+        loc_id = player.get("location_id", "")
+        location = self.world.locations.get(loc_id)
+
+        if self.narrator and self.narrator.llm:
+            try:
+                inv = player.get("inventory", [])
+                context = {
+                    "location": {
+                        "name": location.name if location else "unknown",
+                        "description": location.description[:200] if location else "",
+                        "type": location.location_type if location else "outdoor",
+                    },
+                    "time": f"{self.world.time.time_of_day()} (hour {self.world.time.hour})",
+                    "day": self.world.time.day,
+                    "season": self.world.time.season,
+                    "inventory": inv[:8],
+                }
+                prompt = (
+                    f"地点: {context['location']['name']}（{context['location']['description']}）\n"
+                    f"时间: {context['time']}，第{context['day']}天，{context['season']}\n"
+                    f"背包: {'、'.join(context['inventory']) if context['inventory'] else '空'}\n\n"
+                    "请以第二人称「你」写一段沉浸式的开场白，描述玩家初次来到这个世界时的所见所感。"
+                    "包括环境氛围、感官细节，暗示前方的冒险。不要提及具体NPC。3-5句。"
+                )
+                opening = await self.narrator.llm.complete(
+                    prompt=prompt,
+                    system="你是一个沉浸式开放世界RPG的叙事者。所有输出使用简体中文。",
+                    max_tokens=300,
+                )
+                return opening.strip()
+            except Exception:
+                pass
+
+        # Fallback
+        loc_name = location.name if location else "未知之地"
+        loc_desc = location.description if location else ""
+        inv = player.get("inventory", [])
+        inv_str = f"你的背包里有{'、'.join(inv)}。" if inv else "你的背包空空如也。"
+        return (
+            f"你睁开双眼，发现自己身处{loc_name}。{loc_desc}\n"
+            f"{inv_str}\n"
+            f"一场伟大的冒险正等待着你……"
+        )
+
+    async def process_action(self, player_input: str) -> tuple[str, list[dict[str, Any]]]:
+        """Process a player action and return narrative text and suggested options.
 
         Args:
             player_input: Natural language player input
 
         Returns:
-            Narrative text describing the result
+            Tuple of (narrative text, suggested options list)
         """
         action = {
             "text": player_input,
@@ -189,12 +273,15 @@ class GameMaster:
             turn=result.turn,
         )
 
-        return result.narrative or f"Turn {result.turn} complete."
+        # Get suggested options after action
+        options = await self.get_suggested_options()
 
-    async def advance_world(self, turns: int = 1) -> list[str]:
+        return (result.narrative or f"Turn {result.turn} complete.", options)
+
+    async def advance_world(self, turns: int = 1) -> tuple[list[str], list[dict[str, Any]]]:
         """Advance the world without player action.
 
-        Returns list of narrative texts for each turn.
+        Returns tuple of (list of narrative texts, suggested options).
         """
         narratives = []
         for _ in range(turns):
@@ -204,13 +291,31 @@ class GameMaster:
                 narratives.append(result.narrative)
             else:
                 narratives.append(f"Time passes... (Turn {result.turn})")
-        return narratives
+        
+        # Get suggested options after advance
+        options = await self.get_suggested_options()
+        return (narratives, options)
+
+    async def get_suggested_options(self) -> list[dict[str, Any]]:
+        """Get suggested actions for the player."""
+        return await self.action_planner.suggest_options(self.player_id, self.world)
 
     def get_status(self) -> dict[str, Any]:
         """Get current game status."""
         player = self.world.characters.get(self.player_id, {})
         loc_id = player.get("location_id", "")
         location = self.world.locations.get(loc_id)
+
+        # Only count NPCs at the player's location
+        nearby_npcs = [
+            cid for cid, c in self.world.characters.items()
+            if c.get("location_id") == loc_id and c.get("type") == "npc"
+        ]
+        
+        # Get nearby entities from location
+        nearby_entities = []
+        if location:
+            nearby_entities = [e for e in location.entities if e != self.player_id]
 
         return {
             "turn": self.world.time.turn,
@@ -220,9 +325,13 @@ class GameMaster:
             "location": location.name if location else "unknown",
             "location_description": location.description if location else "",
             "inventory": player.get("inventory", []),
+            "health": player.get("health", 100),
+            "max_health": player.get("max_health", 100),
+            "equipment": player.get("equipment", []),
+            "nearby_npcs": nearby_npcs,
+            "nearby_entities": nearby_entities,
             "active_threads": len(self.story_director.get_active_threads()),
             "active_quests": len(self.quest_gen.active_quests),
-            "npc_count": len(self.tick_engine._npcs),
         }
 
     # ── Save/Load ────────────────────────────────────────────────

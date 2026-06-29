@@ -18,13 +18,15 @@ NARRATOR_SYSTEM_PROMPT = """你是一个沉浸式开放世界RPG的叙事者。
 所有输出必须使用简体中文。
 
 风格指南：
-- 用第二人称（“你”）描述玩家行动
+- 用第二人称（"你"）描述玩家行动
 - 描述性但简洁（每段叙事2-4句）
 - 包含感官细节（视觉、声音、气味）
 - 保持一致的奇幻风格语调
 - 不要打破第四面墙
 - 自然地引用NPC名字和地名
 - 展现而非叙述：描述结果而非陈述机制
+- 只有当玩家主动与NPC互动或NPC做出值得注意的行动时，才描述NPC
+- 不要仅仅因为NPC存在就描述他们
 
 涉及骰子检定时：
 - 大成功：描述一次精湛的、令人印象深刻的行动
@@ -89,6 +91,12 @@ class NarrativeGenerator:
             if event.location_id == loc_id or not event.location_id:
                 visible_events.append(event)
 
+        # Only include NPC actions at the player's location
+        visible_npc_actions = []
+        for npc_act in result.npc_actions:
+            if npc_act.get("location_id") == loc_id:
+                visible_npc_actions.append(npc_act)
+
         context: dict[str, Any] = {
             "time": f"{world.time.time_of_day()} (hour {world.time.hour})",
             "day": world.time.day,
@@ -96,7 +104,7 @@ class NarrativeGenerator:
             "location": {
                 "name": location.name if location else "unknown",
                 "type": location.location_type if location else "room",
-                "description": location.description if location else "",
+                "description": (location.description[:200] + "...") if location and len(location.description) > 200 else (location.description if location else ""),
                 "light_level": location.light_level if location else 5,
             },
             "player_action": result.player_action,
@@ -105,7 +113,7 @@ class NarrativeGenerator:
                 "result": result.dice_result.result.value,
                 "summary": result.dice_result.summary(),
             } if result.dice_result else None,
-            "npc_actions": result.npc_actions[:5],
+            "npc_actions": visible_npc_actions[:5],
             "world_events": [
                 {"description": e.description, "type": e.event_type.value}
                 for e in visible_events[:5]

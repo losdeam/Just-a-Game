@@ -155,3 +155,74 @@ class WorldState:
             "locations": len(self.locations),
             "characters": len(self.characters),
         }
+        
+    def is_dangerous_location(self, location_id: str) -> bool:
+        """Check if a location is dangerous."""
+        loc = self.locations.get(location_id)
+        if not loc:
+            return False
+        # Danger level 5+ is considered dangerous
+        return loc.danger_level >= 5
+        
+    def get_hostile_characters_at(self, location_id: str, exclude_id: str | None = None) -> list[str]:
+        """Get list of hostile characters at a location."""
+        hostile = []
+        for char_id in self.get_location_entities(location_id):
+            if char_id == exclude_id:
+                continue
+            char = self.characters.get(char_id, {})
+            # Check if character is marked as hostile or is an NPC with negative mood
+            if char.get("hostile", False) or char.get("mood") in ["angry", "fearful"]:
+                hostile.append(char_id)
+        return hostile
+        
+    def generate_npc_at(self, location_id: str, npc_type: str = "guard") -> dict[str, Any]:
+        """Generate an NPC dynamically at a location (simple template-based)."""
+        from random import choice, randint
+        
+        npc_templates = {
+            "guard": {
+                "names": ["卫兵张三", "卫兵李四", "卫兵王五", "守卫赵六"],
+                "types": ["guard"],
+                "roles": ["门卫", "守卫", "巡逻兵"],
+            },
+            "merchant": {
+                "names": ["商人老陈", "商人阿婆", "行商小李", "货郎老王"],
+                "types": ["merchant"],
+                "roles": ["店主", "商人", "行商"],
+            },
+            "citizen": {
+                "names": ["村民阿强", "村民小红", "居民老黄", "路人阿花"],
+                "types": ["citizen"],
+                "roles": ["村民", "居民", "路人"],
+            },
+            "monster": {
+                "names": ["哥布林", "狼人", "强盗", "史莱姆"],
+                "types": ["monster"],
+                "roles": ["怪物", "敌人", "野兽"],
+            }
+        }
+        
+        template = npc_templates.get(npc_type, npc_templates["citizen"])
+        name = choice(template["names"])
+        role = choice(template["roles"])
+        char_type = choice(template["types"])
+        
+        npc_id = f"npc_{location_id}_{randint(1000, 9999)}"
+        
+        npc_data = {
+            "location_id": location_id,
+            "name": name,
+            "role": role,
+            "type": "npc",
+            "hostile": npc_type == "monster",
+            "mood": "neutral",
+            "energy": 0.8,
+            "hunger": 0.3,
+            "inventory": [],
+        }
+        
+        return {
+            "id": npc_id,
+            "data": npc_data,
+        }

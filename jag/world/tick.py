@@ -178,6 +178,11 @@ class TickEngine:
         self._npcs[npc.id] = npc
         self._memory_stores[npc.id] = npc.memory
 
+    def clear_npcs(self) -> None:
+        """Clear all registered NPCs."""
+        self._npcs.clear()
+        self._memory_stores.clear()
+
     def set_persist_callback(
         self, callback: Callable[..., Coroutine[Any, Any, None]]
     ) -> None:
@@ -213,40 +218,50 @@ class TickEngine:
         result = TickResult(turn=self.world.time.turn)
 
         try:
-            # 1. Action Planning
+            # === PHASE 1: DANGER CHECK & NPC GENERATION (CODE-ONLY) ===
+            
+            # 1. Check if player is in danger or moving to danger
+            danger_encountered = await self._step_danger_check(player_action, result, trace)
+            
+            # 2. Dynamically generate NPCs if needed
+            await self._step_dynamic_npc_generation(player_action, result, trace)
+            
+            # === PHASE 2: STANDARD TICK PROCESSING ===
+            
+            # 3. Action Planning (uses LLM only if needed)
             planned_action = await self._step_action_plan(player_action, result, trace)
 
-            # 2. Rule Evaluation
+            # 4. Rule Evaluation (CODE-ONLY)
             await self._step_rules(planned_action, result, trace)
 
-            # 3. Dice Resolution
+            # 5. Dice Resolution (CODE-ONLY)
             await self._step_dice(planned_action, result, trace)
 
-            # 4. World Update
+            # 6. World Update (CODE-ONLY)
             await self._step_world_update(planned_action, result, trace)
 
-            # 5. NPC Tick (concurrent)
+            # 7. NPC Tick (concurrent, CODE-ONLY + LLM for decisions if available)
             await self._step_npc_tick(result, trace)
 
-            # 6. World Simulation
+            # 8. World Simulation (CODE-ONLY)
             sim_events = self._step_world_sim(result, trace)
 
-            # 7. Quest Generation
+            # 9. Quest Generation (CODE-ONLY)
             await self._step_quest_gen(sim_events, result, trace)
 
-            # 8. Story Processing
+            # 10. Story Processing (LLM, optional)
             await self._step_story(result, trace)
 
-            # 9. Memory Compression
+            # 11. Memory Compression (CODE-ONLY)
             await self._step_memory(result, trace)
 
-            # 10. Knowledge Graph Update
+            # 12. Knowledge Graph Update (CODE-ONLY)
             await self._step_knowledge(result, trace)
 
-            # 11. Persist
+            # 13. Persist (CODE-ONLY)
             await self._step_persist(result, trace)
 
-            # 12. Narrative
+            # 14. Narrative Generation (LLM, with code fallback)
             await self._step_narrative(result, trace)
 
             # Advance time
@@ -284,6 +299,138 @@ class TickEngine:
         return result
 
     # ── Step implementations ─────────────────────────────────────
+
+    async def _step_danger_check(
+        self, player_action: dict[str, Any] | None, result: TickResult, trace: TickTrace | None = None
+    ) -> bool:
+        """Check if player is in danger or entering danger. Code-only step."""
+        step = self.tracer.start_step("danger_check") if self.tracer else None
+        
+        from jag.core.events import EventType, GameEvent
+        
+        player_id = "player"  # default player ID
+        player = self.world.characters.get(player_id, {})
+        current_loc_id = player.get("location_id", "")
+        
+        danger_encountered = False
+        danger_description = ""
+        
+        # Check destination danger if moving
+        if player_action and player_action.get("type") == "move":
+            dest_loc_id = player_action.get("target", "")
+            if dest_loc_id:
+                dest_loc = self.world.locations.get(dest_loc_id)
+                if dest_loc and dest_loc.danger_level >= 7:
+                    # High danger! Roll to see if encounter happens
+                    dc = 8 + dest_loc.danger_level - 5
+                    roll = self.dice.roll(dc=dc)
+                    if not roll.is_success:
+                        danger_encountered = True
+                        danger_description = f"你在前往{dest_loc.name}的途中遇到了危险！"
+                        result.dice_result = roll
+        
+        # Check current location danger
+        if not danger_encountered and current_loc_id:
+            current_loc = self.world.locations.get(current_loc_id)
+            if current_loc:
+                # Check for hostile characters
+                hostiles = self.world.get_hostile_characters_at(current_loc_id, exclude_id=player_id)
+                if hostiles:
+                    danger_encountered = True
+                    hostile_name = self.world.characters.get(hostiles[0], {}).get("name", "某物")
+                    danger_description = f"{hostile_name}正在对你虎视眈眈！"
+        
+        if danger_encountered:
+            # Emit danger event
+            await self.event_bus.publish(
+                GameEvent(
+                    event_type=EventType.DANGER,
+                    description=danger_description,
+                    data={"location_id": current_loc_id, "danger_level": current_loc.danger_level if current_loc else 0},
+                    turn=result.turn,
+                )
+            )
+            result.world_events.append(
+                GameEvent(
+                    event_type=EventType.DANGER,
+                    description=danger_description,
+                    data={"location_id": current_loc_id},
+                    turn=result.turn,
+                )
+            )
+        
+        if step and self.tracer:
+            self.tracer.end_step(step, details={"danger_encountered": danger_encountered, "description": danger_description})
+            trace.steps.append(step)
+        
+        return danger_encountered
+    
+    async def _step_dynamic_npc_generation(
+        self, player_action: dict[str, Any] | None, result: TickResult, trace: TickTrace | None = None
+    ) -> None:
+        """Dynamically generate NPCs based on location and context. Code-only step."""
+        step = self.tracer.start_step("dynamic_npc") if self.tracer else None
+        
+        from random import randint
+        from jag.world.npc import NPC
+        
+        player_id = "player"
+        player = self.world.characters.get(player_id, {})
+        current_loc_id = player.get("location_id", "")
+        
+        if current_loc_id:
+            current_loc = self.world.locations.get(current_loc_id)
+            if current_loc:
+                # 1. Generate NPC based on location type and tags
+                loc_type = current_loc.location_type
+                loc_tags = current_loc.tags
+                should_generate = False
+                npc_type = "citizen"
+                
+                # Location-type based generation
+                if loc_type in ["tavern", "inn", "market", "shop"]:
+                    npc_type = "merchant"
+                    should_generate = randint(1, 100) <= 70
+                elif loc_type in ["gate", "wall", "tower", "fortress"]:
+                    npc_type = "guard"
+                    should_generate = randint(1, 100) <= 80
+                elif loc_type in ["forest", "cave", "ruins", "dungeon"]:
+                    npc_type = "monster"
+                    should_generate = randint(1, 100) <= 40 + current_loc.danger_level
+                
+                # Tag-based generation
+                if "tavern" in loc_tags:
+                    npc_type = "merchant"
+                    should_generate = True
+                
+                # Generate NPC if conditions met
+                if should_generate and len(current_loc.entities) < 10:
+                    npc_info = self.world.generate_npc_at(current_loc_id, npc_type)
+                    
+                    # Create NPC
+                    npc = NPC(
+                        id=npc_info["id"],
+                        name=npc_info["data"]["name"],
+                        description=f"{npc_info['data']['role']}，出现在{current_loc.name}。",
+                    )
+                    npc.state.current_location_id = current_loc_id
+                    npc.state.mood = "neutral"
+                    
+                    # Register NPC
+                    self.register_npc(npc)
+                    self.world.add_character(npc.id, npc_info["data"])
+                    
+                    result.npc_actions.append({
+                        "npc_id": npc.id,
+                        "npc_name": npc.name,
+                        "action": "spawn",
+                        "description": f"{npc.name}出现了。",
+                        "location_id": current_loc_id,
+                    })
+        
+        if step and self.tracer:
+            self.tracer.end_step(step, details={"npc_generated": len([a for a in result.npc_actions if a.get("action") == "spawn"])})
+            trace.steps.append(step)
 
     async def _step_action_plan(
         self, player_action: dict[str, Any] | None, result: TickResult, trace: TickTrace | None = None
@@ -585,6 +732,7 @@ class TickEngine:
             "npc_name": npc.name,
             "action": action_type,
             "description": action.get("description", ""),
+            "location_id": npc.state.current_location_id,
         })
 
         await self.event_bus.publish(
@@ -755,27 +903,82 @@ class TickEngine:
             trace.steps.append(step)  # type: ignore[union-attr]
 
     async def _step_narrative(self, result: TickResult, trace: TickTrace | None = None) -> None:
-        """Step 12: Generate narrative text."""
+        """Step 14: Generate narrative text (with improved code-based fallback)."""
         step = self.tracer.start_step("narrative") if self.tracer else None
         if self.narrator:
             try:
                 result.narrative = await self.narrator.narrate(result, self.world)
             except Exception as e:
-                logger.warning("Narrative generation failed: %s", e)
+                logger.warning("Narrative generation failed: %s, using fallback", e)
                 result.errors.append(f"narrative: {e}")
+                result.narrative = self._generate_fallback_narrative(result)
         else:
-            # Default: build simple narrative from events
-            parts = []
-            if result.player_action:
-                parts.append(f"You {result.player_action.get('type', 'act')}.")
-            if result.dice_result:
-                parts.append(f"Roll: {result.dice_result.summary()}")
-            for npc_act in result.npc_actions:
-                parts.append(npc_act.get("description", ""))
-            for evt in result.world_events[:5]:
-                parts.append(evt.description)
-            result.narrative = " ".join(p for p in parts if p)
+            # Code-based narrative generation (no LLM)
+            result.narrative = self._generate_fallback_narrative(result)
 
         if step and self.tracer:
-            self.tracer.end_step(step, details={"narrative_length": len(result.narrative)})
-            trace.steps.append(step)  # type: ignore[union-attr]
+            self.tracer.end_step(step, details={"narrative_length": len(result.narrative), "llm_used": self.narrator is not None})
+            trace.steps.append(step)
+    
+    def _generate_fallback_narrative(self, result: TickResult) -> str:
+        """Generate rich narrative text using code-only logic."""
+        parts = []
+        
+        # Player action
+        if result.player_action:
+            action_type = result.player_action.get("type", "act")
+            action_text = result.player_action.get("text", "")
+            if action_text:
+                parts.append(f"你尝试{action_text}。")
+            else:
+                action_desc = {
+                    "move": "移动",
+                    "attack": "攻击",
+                    "interact": "互动",
+                    "take": "拾取",
+                    "drop": "丢弃",
+                    "use": "使用",
+                    "examine": "检查",
+                    "rest": "休息",
+                    "speak": "交谈",
+                }.get(action_type, "行动")
+                target = result.player_action.get("target", "")
+                if target:
+                    parts.append(f"你尝试{action_desc}{target}。")
+                else:
+                    parts.append(f"你尝试{action_desc}。")
+        
+        # Dice result
+        if result.dice_result:
+            roll = result.dice_result
+            if roll.result.value == "critical_success":
+                parts.append("你完美地完成了！这真是一次出色的表现！")
+            elif roll.result.value == "success":
+                parts.append("你成功了！事情进展得很顺利。")
+            elif roll.result.value == "failure":
+                parts.append("你失败了……事情没有按计划进行。")
+            elif roll.result.value == "critical_failure":
+                parts.append("糟糕！这是一次灾难性的失败！")
+        
+        # Danger events
+        for evt in result.world_events:
+            if evt.event_type.value == "danger":
+                parts.append(evt.description)
+        
+        # NPC actions
+        for npc_act in result.npc_actions:
+            if npc_act.get("action") == "spawn":
+                parts.append(npc_act.get("description", ""))
+            elif npc_act.get("description"):
+                parts.append(npc_act["description"])
+        
+        # Other events
+        for evt in result.world_events[:3]:
+            if evt.event_type.value != "danger":
+                parts.append(evt.description)
+        
+        # If nothing else, provide a default
+        if not parts:
+            parts.append("时间流逝，周围一切如常。")
+        
+        return " ".join(p for p in parts if p)  # type: ignore[union-attr]

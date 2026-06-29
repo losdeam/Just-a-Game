@@ -373,6 +373,7 @@ class WorldBuilder:
 
     def __init__(self, gm: GameMaster) -> None:
         self.gm = gm
+        self._state: dict[str, Any] = {}
 
     def build_from_tags(
         self,
@@ -380,6 +381,23 @@ class WorldBuilder:
         tags: dict[str, list[str]] | None = None,
         description: str = "",
     ) -> dict[str, Any]:
+        self._parse_tags(world_name, tags, description)
+        self.build_step_region()
+        self.build_step_locations()
+        self.build_step_npcs()
+        lore = self.build_step_lore()
+        result = self.build_step_finalize(lore)
+        return result
+
+    # ── Step-by-step build (for progressive UI) ─────────────────────
+
+    def _parse_tags(
+        self,
+        world_name: str = "",
+        tags: dict[str, list[str]] | None = None,
+        description: str = "",
+    ) -> None:
+        self.gm.clear_world()
         tags = tags or {}
         genre = (tags.get("genre", ["fantasy"]) or ["fantasy"])[0]
         era = (tags.get("era", ["medieval"]) or ["medieval"])[0]
@@ -396,21 +414,55 @@ class WorldBuilder:
         atmo_danger = sum(_ATMO_MOD.get(a, {}).get("danger_mod", 0) for a in atmosphere)
         era_light = era_info.get("light_mod", 0)
 
-        # ── Assemble location definitions ──
+        self._state = {
+            "world_name": world_name,
+            "description": description,
+            "genre": genre, "era": era,
+            "atmosphere": atmosphere, "terrain": terrain,
+            "magic": magic, "danger": danger,
+            "g": g, "rng": rng,
+            "era_info": era_info,
+            "danger_base": danger_base,
+            "atmo_light": atmo_light,
+            "atmo_danger": atmo_danger,
+            "era_light": era_light,
+            "region_name": world_name or g["region_default"],
+        }
+
+    def build_step_region(self) -> dict[str, Any]:
+        """Step 1: Create the region."""
+        s = self._state
+        g = s["g"]
+        atmo_tones = " ".join(_ATMO_MOD.get(a, {}).get("tone", "") for a in s["atmosphere"])
+        desc_parts = [p for p in [s["description"], atmo_tones, s["era_info"].get("label", "")] if p]
+        region_desc = " ".join(desc_parts) if desc_parts else "由玩家创建的世界。"
+
+        region = WorldRegion(
+            id="main_region", name=s["region_name"],
+            description=region_desc,
+            region_type=g.get("region_type", "kingdom"),
+        )
+        self.gm.world.add_region(region)
+        self.gm.weather.add_region(region.id)
+        s["region"] = region
+        return {"step": "region", "name": region.name, "description": region.description}
+
+    def build_step_locations(self) -> dict[str, Any]:
+        """Step 2: Create locations."""
+        s = self._state
+        g = s["g"]
         loc_defs: list[dict[str, Any]] = []
 
-        # Hub (safe starting point)
-        hub_name = rng.choice(g["hub_names"])
-        hub_desc = rng.choice(g["hub_descs"])
+        hub_name = g["hub_names"][0]
+        hub_desc = g["hub_descs"][0]
         loc_defs.append({"id": "hub", "name": hub_name, "desc": hub_desc,
                          "type": "outdoor", "light": 8, "danger": 0})
 
-        # Tavern (social hub)
         tav_name, tav_descs = g["tavern"]
-        loc_defs.append({"id": "tavern", "name": tav_name, "desc": rng.choice(tav_descs),
+        loc_defs.append({"id": "tavern", "name": tav_name, "desc": tav_descs[0],
                          "type": "indoor", "light": 6, "danger": 0})
 
-        # Terrain-driven locations (the CORE of user choice)
+        terrain = s["terrain"]
         if not terrain:
             terrain = ["city", "forest"]
         for t in terrain:
@@ -419,54 +471,77 @@ class WorldBuilder:
                                  "desc": loc["desc"], "type": loc["type"],
                                  "light": loc["light"], "danger": loc["danger"]})
 
-        # Magic-driven extra locations
-        for loc in _MAGIC_LOCS.get(magic, []):
+        for loc in _MAGIC_LOCS.get(s["magic"], []):
             loc_defs.append({"id": loc["id"], "name": loc["name"],
                              "desc": loc["desc"], "type": loc["type"],
                              "light": loc["light"], "danger": loc["danger"]})
 
-        # Apply modifiers and create WorldLocation objects
         locations: list[WorldLocation] = []
         for ld in loc_defs:
-            # Hub/tavern stay safe regardless of modifiers
             is_safe = ld["id"] in ("hub", "tavern")
-            light = max(1, min(10, ld["light"] + era_light + (atmo_light if not is_safe else 0)))
+            light = max(1, min(10, ld["light"] + s["era_light"] + (s["atmo_light"] if not is_safe else 0)))
             dng = ld["danger"]
             if not is_safe:
-                dng = max(0, min(10, ld["danger"] + danger_base + atmo_danger))
+                dng = max(0, min(10, ld["danger"] + s["danger_base"] + s["atmo_danger"]))
             locations.append(WorldLocation(
                 id=ld["id"], name=ld["name"], description=ld["desc"],
                 region_id="main_region", location_type=ld["type"],
                 light_level=light, danger_level=dng,
             ))
 
-        # Build connection graph
         self._build_connections(locations)
+        for loc in locations:
+            self.gm.world.add_location(loc)
+        s["locations"] = locations
+        return {"step": "locations", "count": len(locations), "names": [l.name for l in locations]}
 
-        # ── Build NPCs (distributed across locations) ──
+    def build_step_npcs(self) -> dict[str, Any]:
+        """Step 3: Create NPCs."""
+        s = self._state
+        genre = s["genre"]
+        rng = s["rng"]
+        locations = s.get("locations", [])
+
         npc_pool = list(_NPC_ROLES.get(genre, _NPC_ROLES["fantasy"]))
-        rng.shuffle(npc_pool)
+        fixed_ids = ["tavern_owner", "knight", "blacksmith"]
+        genre_fixed_map = {
+            "fantasy": {"tavern_owner": "tavern_owner", "knight": "knight", "blacksmith": "blacksmith"},
+            "scifi": {"tavern_owner": "bar_owner", "knight": "veteran", "blacksmith": "mechanic"},
+            "postapoc": {"tavern_owner": "camp_leader", "knight": "warrior", "blacksmith": "tech"},
+            "wuxia": {"tavern_owner": "innkeeper", "knight": "swordsman", "blacksmith": "apothecary"},
+            "mystery": {"tavern_owner": "bar_owner", "knight": "ex_cop", "blacksmith": "detective"},
+            "steampunk": {"tavern_owner": "inventor", "knight": "airship_captain", "blacksmith": "mechanic"},
+            "horror": {"tavern_owner": "bar_owner", "knight": "hunter", "blacksmith": "librarian"},
+        }
+        fixed_map = genre_fixed_map.get(genre, genre_fixed_map["fantasy"])
+        fixed_npcs = []
+        for fixed_id in fixed_ids:
+            role_id = fixed_map.get(fixed_id)
+            match = [n for n in npc_pool if n["id"] == role_id]
+            if match:
+                fixed_npcs.append(match[0])
+                npc_pool.remove(match[0])
 
-        # Pick NPC locations: distribute across multiple spots, prefer safer ones
+        rng.shuffle(npc_pool)
         sorted_locs = sorted(locations, key=lambda l: l.danger_level)
         half = len(sorted_locs) // 2 + 1
-        npc_loc_pool = sorted_locs[:half]  # safer half of locations
+        npc_loc_pool = sorted_locs[:half]
+        extras_needed = max(0, min(len(npc_pool), max(1, len(npc_loc_pool) - len(fixed_npcs))))
+        selected_extras = npc_pool[:extras_needed]
+        all_selected = fixed_npcs + selected_extras
 
-        npc_count = min(len(npc_pool), max(4, len(npc_loc_pool)))
-        selected_npcs = npc_pool[:npc_count]
-
-        # Track used names to avoid duplicates
         name_pool = list(_NPC_NAMES.get(genre, _NPC_NAMES["fantasy"]))
         rng.shuffle(name_pool)
 
         npcs: list[NPC] = []
-        for i, npc_def in enumerate(selected_npcs):
-            # Distribute: first NPC at hub, rest spread across pool
+        npc_info = []
+        for i, npc_def in enumerate(all_selected):
             if i == 0:
+                loc_id = "tavern"
+            elif i == 1:
                 loc_id = "hub"
             else:
-                loc_id = npc_loc_pool[i % len(npc_loc_pool)].id
-            # Unique name
+                loc_id = npc_loc_pool[(i - 2) % len(npc_loc_pool)].id
             name = name_pool[i] if i < len(name_pool) else f"NPC_{i}"
             npcs.append(NPC(
                 id=npc_def["id"], name=name,
@@ -479,38 +554,51 @@ class WorldBuilder:
                     ScheduleEntry(hour_start=22, hour_end=6, activity="休息", location_id=loc_id),
                 ],
             ))
+            npc_info.append({"name": name, "role": npc_def["role"], "location_id": loc_id})
 
-        # ── Build region ──
-        region_name = world_name or g["region_default"]
-        atmo_tones = " ".join(_ATMO_MOD.get(a, {}).get("tone", "") for a in atmosphere)
-        desc_parts = [p for p in [description, atmo_tones, era_info.get("label", "")] if p]
-        region_desc = " ".join(desc_parts) if desc_parts else "由玩家创建的世界。"
+        for npc in npcs:
+            self.gm.world.add_character(npc.id, {
+                "location_id": npc.location_id, "name": npc.name, "type": "npc",
+            })
+            self.gm.tick_engine.register_npc(npc)
+        s["npcs"] = npcs
+        return {"step": "npcs", "count": len(npcs), "npcs": npc_info}
 
-        region = WorldRegion(
-            id="main_region", name=region_name,
-            description=region_desc,
-            region_type=g.get("region_type", "kingdom"),
+    def build_step_lore(self) -> dict[str, Any]:
+        """Step 4: Generate lore."""
+        s = self._state
+        locations = s.get("locations", [])
+        npcs = s.get("npcs", [])
+        lore = self._generate_lore(
+            s["genre"], s["era"], s["atmosphere"], s["terrain"],
+            s["magic"], s["danger"], s["region_name"],
+            locations, npcs,
         )
+        s["lore"] = lore
+        return {"step": "lore", "lore": lore}
 
-        # ── Setup world ──
-        self.gm.setup_world(
-            regions=[region], locations=locations, npcs=npcs,
-            player_data={
-                "location_id": "hub",
-                "inventory": _INVENTORIES.get(genre, _INVENTORIES["fantasy"]),
-                "name": "冒险者", "type": "player",
-            },
-        )
-
+    def build_step_finalize(self, lore: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Step 5: Finalize - add player and store lore."""
+        s = self._state
+        lore = lore or s.get("lore", {})
+        genre = s["genre"]
+        player_loc = "hub" if "hub" in self.gm.world.locations else next(iter(self.gm.world.locations), "")
+        self.gm.world.add_character(self.gm.player_id, {
+            "location_id": player_loc,
+            "inventory": _INVENTORIES.get(genre, _INVENTORIES["fantasy"]),
+            "name": "冒险者", "type": "player",
+        })
+        if lore:
+            self.gm.world_lore = lore
         return {
-            "ok": True, "world_name": region_name,
-            "locations": len(locations), "npcs": len(npcs),
-            "genre": genre, "description": description,
-            "tags_applied": {"genre": genre, "era": era, "atmosphere": atmosphere,
-                             "terrain": terrain, "magic": magic, "danger": danger},
+            "ok": True, "world_name": s["region_name"],
+            "locations": len(self.gm.world.locations),
+            "npcs": len(self.gm.tick_engine._npcs),
+            "genre": genre, "description": s["description"],
+            "tags_applied": {"genre": s["genre"], "era": s["era"],
+                             "atmosphere": s["atmosphere"], "terrain": s["terrain"],
+                             "magic": s["magic"], "danger": s["danger"]},
         }
-
-    # ── Connection builder ─────────────────────────────────────────────
 
     def _build_connections(self, locations: list[WorldLocation]) -> None:
         if len(locations) < 2:
@@ -553,12 +641,71 @@ class WorldBuilder:
         seed = int(hashlib.md5(str(sorted(tags.items())).encode()).hexdigest()[:8], 16)
         return random.Random(seed)
 
+    # ── Lore generation ─────────────────────────────────────────────────
+
+    def _generate_lore(
+        self, genre: str, era: str, atmosphere: list[str], terrain: list[str],
+        magic: str, danger: str, region_name: str,
+        locations: list[WorldLocation], npcs: list[NPC],
+    ) -> dict[str, Any]:
+        g = _GENRE.get(genre, _GENRE["fantasy"])
+        era_info = _ERA_INFO.get(era, _ERA_INFO["medieval"])
+        atmo_tones = " ".join(_ATMO_MOD.get(a, {}).get("tone", "") for a in atmosphere)
+        terrain_names = "、".join(
+            next((t["name"] for cat in TAG_CATEGORIES if cat["id"] == "terrain"
+                  for t in cat["tags"] if t["id"] == ter), ter)
+            for ter in terrain
+        ) if terrain else "多样"
+
+        magic_name = next(
+            (t["name"] for cat in TAG_CATEGORIES if cat["id"] == "magic"
+             for t in cat["tags"] if t["id"] == magic), magic)
+        danger_name = next(
+            (t["name"] for cat in TAG_CATEGORIES if cat["id"] == "danger"
+             for t in cat["tags"] if t["id"] == danger), danger)
+
+        # Main quest: derive from genre
+        main_quests = {
+            "fantasy": "传说中的黑暗领主正在集结大军，你必须找到传说中的神器，联合各势力，在末日降临前阻止他。",
+            "scifi": "星区核心的能源站即将失控，整个星系面临毁灭。你需要找到故障源头，修复或摧毁它。",
+            "postapoc": "废土深处有一座传说中完好无损的旧世界避难所，那里有重建文明的希望。找到它。",
+            "wuxia": "武林秘籍《天机卷》重现江湖，各门派蠢蠢欲动。你必须抢在阴谋得逞前揭开背后的真相。",
+            "mystery": "一连串离奇的失踪案指向城市最深处的秘密组织。真相就藏在阴影中，但你每接近一步，危险就增加一分。",
+            "steampunk": "蒸汽核心的稳定性正在崩溃，整座城市随时可能爆炸。你必须找到传说中的远古蓝图来修复它。",
+            "horror": "古老的邪恶正在苏醒，理智在恐惧中逐渐瓦解。你必须找到封印它的方法——在它彻底降临之前。",
+        }
+
+        lore = {
+            "world_name": region_name,
+            "genre": genre,
+            "era": era_info.get("label", ""),
+            "atmosphere": atmo_tones,
+            "terrain": terrain_names,
+            "magic_level": magic_name,
+            "danger_level": danger_name,
+            "description": f"这是一个{g.get('region_default', '未知')}风格的世界。{atmo_tones}",
+            "history": f"这片土地在{era_info.get('label', '远古')}时期便有人类活动的痕迹。历经无数变迁，如今形成了以{region_name}为中心的格局。{atmo_tones}",
+            "factions": [],
+            "main_quest": main_quests.get(genre, "探索这个世界，发现隐藏的秘密。"),
+            "npcs": [
+                {"name": n.name, "role": n.goal, "location": next(
+                    (l.name for l in locations if l.id == n.location_id), n.location_id)}
+                for n in npcs
+            ],
+            "locations": [
+                {"name": l.name, "description": l.description, "danger": l.danger_level}
+                for l in locations
+            ],
+        }
+        return lore
+
     # ── LLM generation ─────────────────────────────────────────────────
 
     async def build_with_llm(
         self, world_name: str = "", tags: dict[str, list[str]] | None = None,
         description: str = "",
     ) -> dict[str, Any]:
+        self.gm.clear_world()
         tags = tags or {}
         llm_cfg = self.gm.config.llm.default
         if not llm_cfg.api_key or llm_cfg.api_key == "your-api-key-here":
@@ -647,10 +794,16 @@ class WorldBuilder:
             ))
         genre = (tags.get("genre", ["fantasy"]) or ["fantasy"])[0]
         first = "hub" if any(l.id == "hub" for l in locations) else (locations[0].id if locations else "")
+        lore = self._generate_lore(genre, tags.get("era", ["medieval"])[0] if tags.get("era") else "medieval",
+                                    tags.get("atmosphere", []), tags.get("terrain", []),
+                                    tags.get("magic", ["medium"])[0] if tags.get("magic") else "medium",
+                                    tags.get("danger", ["moderate"])[0] if tags.get("danger") else "moderate",
+                                    region.name, locations, npcs)
         self.gm.setup_world(
             regions=[region], locations=locations, npcs=npcs,
             player_data={"location_id": first, "inventory": _INVENTORIES.get(genre, _INVENTORIES["fantasy"]),
                          "name": "冒险者", "type": "player"},
+            lore=lore,
         )
         return {"ok": True, "world_name": region.name, "locations": len(locations),
                 "npcs": len(npcs), "genre": genre, "method": "llm"}
