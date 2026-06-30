@@ -178,35 +178,51 @@ class NarrativeGenerator:
         """Template-based fallback narration."""
         parts = []
 
-        # Time and location
         loc_name = context["location"]["name"]
+        if loc_name == "unknown":
+            loc_name = "此地"
         time_str = context["time"]
-        parts.append(f"【{time_str}】你在{loc_name}。")
 
-        # Player action
         action = context.get("player_action", {})
         if action:
             action_type = action.get("type", "")
             target = action.get("target", "")
+            action_text = action.get("text", "")
 
-            if action_type == "move":
-                parts.append(f"你前往{target}。")
-            elif action_type == "attack":
-                parts.append(f"你攻击了{target}。")
-            elif action_type == "interact":
-                parts.append(f"你与{target}互动。")
+            if action_text and action_type not in ("move",):
+                parts.append(f"你尝试{action_text}。")
+            elif action_type == "move" and target:
+                parts.append(f"你动身前往{target}。")
             elif action_type == "speak":
-                parts.append(f"你与{target}交谈。")
-            elif action_type == "take":
-                parts.append(f"你拾取了{target}。")
-            elif action_type == "examine":
-                parts.append(f"你仔细检查了{target}。")
+                npc_name = ""
+                if target and result:
+                    from jag.world.world import WorldState
+                    if isinstance(result, object) and hasattr(result, 'npc_actions'):
+                        for na in result.npc_actions:
+                            if na.get("npc_id") == target:
+                                npc_name = na.get("npc_name", "")
+                                break
+                if not npc_name:
+                    npc_name = target or "附近的人"
+                parts.append(f"你走向{npc_name}，开始与对方交谈。")
+            elif action_type == "interact" and target:
+                parts.append(f"你试着与{target}互动。")
+            elif action_type == "attack" and target:
+                parts.append(f"你向{target}发起攻击！")
+            elif target:
+                action_desc = {
+                    "take": "拾取",
+                    "drop": "丢弃",
+                    "use": "使用",
+                    "examine": "检查",
+                    "rest": "休息",
+                }.get(action_type, action_type or "行动")
+                parts.append(f"你尝试{action_desc}{target}。")
             elif action_type == "rest":
                 parts.append("你稍作休息。")
-            else:
-                parts.append(f"你执行了{action_type}。")
+        else:
+            parts.append(f"【{time_str}】你在{loc_name}。")
 
-        # Dice result
         dice = context.get("dice_result")
         if dice:
             dice_result = dice.get("result", "")
@@ -219,19 +235,16 @@ class NarrativeGenerator:
             elif dice_result == "critical_failure":
                 parts.append("一场灾难性的大失败！")
 
-        # NPC actions
         for npc_act in context.get("npc_actions", [])[:3]:
             desc = npc_act.get("description", "")
             if desc:
                 parts.append(desc)
 
-        # World events
-        for evt in context.get("world_events", [])[:3]:
+        for evt in context.get("world_events", [])[:2]:
             desc = evt.get("description", "")
-            if desc:
+            if desc and "{" not in desc:
                 parts.append(desc)
 
-        # Quests
         for q in context.get("new_quests", []):
             parts.append(f"★ 新任务：{q['title']}")
 

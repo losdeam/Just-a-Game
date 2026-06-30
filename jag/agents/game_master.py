@@ -97,10 +97,25 @@ class GameMaster:
         self._turn_count = 0
         self.world_lore: dict[str, Any] = {}
 
+    def _is_valid_api_key(self, api_key: str) -> bool:
+        """Check if an API key is valid (not empty and not a placeholder)."""
+        if not api_key:
+            return False
+        placeholders = [
+            "your-api-key-here", "your_api_key_here", "sk-xxxx", "sk-xxx",
+            "placeholder", "example", "test", "demo", "changeme",
+        ]
+        normalized = api_key.strip().lower()
+        if normalized in placeholders:
+            return False
+        if normalized.startswith("your-") or normalized.startswith("your_"):
+            return False
+        return True
+
     def _init_llm(self) -> None:
         """Initialize LLM factory from config."""
         default_cfg = self.config.llm.default
-        if default_cfg.provider == "mock":
+        if default_cfg.provider == "mock" or not self._is_valid_api_key(default_cfg.api_key):
             default_llm_config = LLMConfig(provider="mock")
         else:
             default_llm_config = LLMConfig(
@@ -115,7 +130,7 @@ class GameMaster:
             )
         module_configs = {}
         for name, mod_cfg in self.config.llm.modules.items():
-            if mod_cfg.provider == "mock":
+            if mod_cfg.provider == "mock" or not self._is_valid_api_key(mod_cfg.api_key):
                 module_configs[name] = LLMConfig(provider="mock")
             else:
                 module_configs[name] = LLMConfig(

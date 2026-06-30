@@ -213,7 +213,7 @@ class ActionPlanner:
             return self._to_action_dict(plan, player_id, action_text)
         except Exception as e:
             logger.warning("LLM action planning failed: %s, using fallback", e)
-            return self._fallback_plan(action_text, player_id)
+            return self._fallback_plan(action_text, player_id, world)
 
     def _to_action_dict(
         self, plan: ActionPlanModel, player_id: str, original_text: str
@@ -239,25 +239,23 @@ class ActionPlanner:
             "params": plan.params,
         }
 
-    def _fallback_plan(self, action_text: str, player_id: str) -> dict[str, Any]:
+    def _fallback_plan(self, action_text: str, player_id: str, world: Any | None = None) -> dict[str, Any]:
         """Generate a fallback action plan when LLM fails.
 
-        Uses keyword matching to determine action type.
+        Uses keyword matching to determine action type and target.
         """
         text = action_text.lower()
 
-        # Keyword-based action detection
         keywords = {
-            "move": ["go", "walk", "travel", "run", "head", "move"],
-            "attack": ["attack", "fight", "hit", "strike", "kill", "slash"],
-            "take": ["take", "grab", "pick", "loot", "steal"],
-            "drop": ["drop", "discard", "throw"],
-            "use": ["use", "drink", "eat", "equip", "apply"],
-            "examine": ["examine", "look", "inspect", "search", "investigate"],
-            "speak": ["talk", "speak", "ask", "tell", "greet"],
-            "rest": ["rest", "sleep", "camp", "nap"],
-            "craft": ["craft", "make", "build", "forge"],
-            "interact": ["interact", "open", "close", "pull", "push", "touch"],
+            "move": ["go ", "walk", "travel", "run", "head", "move", "去", "前往", "走到", "去", "前往", "走到"],
+            "attack": ["attack", "fight", "hit", "strike", "kill", "slash", "攻击", "打", "杀", "砍", "揍"],
+            "take": ["take", "grab", "pick", "loot", "steal", "拿", "捡", "拾取", "拿取", "偷"],
+            "drop": ["drop", "discard", "throw", "丢弃", "扔", "放下"],
+            "use": ["use", "drink", "eat", "equip", "apply", "使用", "喝", "吃", "装备", "用"],
+            "examine": ["examine", "look", "inspect", "search", "investigate", "检查", "看", "观察", "搜索", "调查"],
+            "speak": ["talk", "speak", "ask", "tell", "greet", "交谈", "说话", "聊", "问", "打招呼", "与", "跟"],
+            "rest": ["rest", "sleep", "camp", "nap", "休息", "睡觉", "睡", "扎营", "小憩"],
+            "craft": ["craft", "make", "build", "forge", "制作", "打造", "建造", "锻造"],
         }
 
         detected_type = "interact"
@@ -266,9 +264,13 @@ class ActionPlanner:
                 detected_type = action_type
                 break
 
+        target = ""
+        if world and detected_type in ("speak", "interact", "attack"):
+            target = self._find_nearest_npc(action_text, world)
+
         return {
             "type": detected_type,
-            "target": "",
+            "target": target,
             "player_id": player_id,
             "text": action_text,
             "intent": action_text,
@@ -279,3 +281,25 @@ class ActionPlanner:
             "estimated_effects": [],
             "params": {},
         }
+
+    def _find_nearest_npc(self, action_text: str, world: Any) -> str:
+        """Find the nearest NPC matching action text, or first nearby NPC."""
+        player_data = world.characters.get("player", {})
+        loc_id = player_data.get("location_id", "")
+        if not loc_id:
+            return ""
+
+        nearby_npcs = [
+            (cid, c.get("name", ""))
+            for cid, c in world.characters.items()
+            if c.get("location_id") == loc_id and c.get("type") == "npc"
+        ]
+        if not nearby_npcs:
+            return ""
+
+        text = action_text.lower()
+        for cid, name in nearby_npcs:
+            if name and name in action_text:
+                return cid
+
+        return nearby_npcs[0][0]

@@ -41,6 +41,9 @@ class LiteLLMProvider:
         """Generate completion via litellm."""
         import litellm
 
+        if not self.api_key:
+            raise RuntimeError("No API key configured for LLM provider")
+
         messages = []
         if system:
             messages.append({"role": "system", "content": system})
@@ -72,6 +75,9 @@ class LiteLLMProvider:
         """Generate structured output via instructor."""
         import instructor
         import litellm
+
+        if not self.api_key:
+            raise RuntimeError("No API key configured for LLM provider")
 
         client = instructor.from_litellm(litellm.acompletion)
 

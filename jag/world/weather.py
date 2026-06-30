@@ -9,6 +9,15 @@ from typing import Any
 
 WEATHER_STATES = ["clear", "cloudy", "rain", "storm", "snow", "fog"]
 
+WEATHER_NAMES = {
+    "clear": "晴朗",
+    "cloudy": "多云",
+    "rain": "下雨",
+    "storm": "暴风雨",
+    "snow": "下雪",
+    "fog": "大雾",
+}
+
 # Transition probabilities per season: {season: {current_weather: {next_weather: prob}}}
 TRANSITION_WEIGHTS: dict[str, dict[str, dict[str, float]]] = {
     "spring": {
@@ -111,12 +120,15 @@ class WeatherSimulator:
             state.temperature = round(state.temperature, 1)
 
             if old_weather != new_weather:
+                old_name = WEATHER_NAMES.get(old_weather, old_weather)
+                new_name = WEATHER_NAMES.get(new_weather, new_weather)
                 events.append({
                     "type": "weather_change",
                     "region": region_id,
                     "from": old_weather,
                     "to": new_weather,
                     "temperature": state.temperature,
+                    "description": f"天气由{old_name}转为{new_name}，气温约{state.temperature}度。",
                 })
 
         return events
