@@ -152,6 +152,22 @@ class GameMaster:
         """Get LLM provider for a module."""
         return self._llm_factory.get(module)
 
+    def refresh_llm(self) -> None:
+        """Reinitialize LLM factory and all LLM-based components.
+        
+        Call this after updating config.llm to apply changes.
+        """
+        self._init_llm()
+        # Re-create LLM-dependent agents with new providers
+        self.action_planner = ActionPlanner(llm=self._get_llm("action_planner"))
+        self.npc_agent = NPCAgent(llm=self._get_llm("npc_agent"))
+        self.story_director = StoryDirector(
+            llm=self._get_llm("story_director"),
+            event_bus=self.event_bus,
+        )
+        self.narrator = NarrativeGenerator(llm=self._get_llm("narrator"))
+        logger.info("LLM components refreshed")
+
     # ── World setup ──────────────────────────────────────────────
 
     def setup_world(

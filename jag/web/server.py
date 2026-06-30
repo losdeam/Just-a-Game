@@ -148,13 +148,11 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
 
     @app.post("/api/config")
     async def update_config(body: dict) -> JSONResponse:  # type: ignore[type-arg]
-        """Update runtime configuration.
-
-        Note: LLM provider changes require restarting the game to take full effect.
-        """
+        """Update runtime configuration."""
         try:
             _apply_config_updates(gm.config, body)
-            return JSONResponse({"ok": True, "message": "配置已更新"})
+            gm.refresh_llm()
+            return JSONResponse({"ok": True, "message": "配置已更新，LLM 组件已刷新"})
         except Exception as e:
             return JSONResponse({"ok": False, "message": str(e)}, status_code=400)
 
@@ -537,9 +535,11 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                 elif msg_type == "update_config":
                     try:
                         _apply_config_updates(gm.config, msg.get("config", {}))
+                        # Reinitialize LLM components with new config
+                        gm.refresh_llm()
                         await websocket.send_text(json.dumps({
                             "type": "config_updated",
-                            "message": "配置已更新",
+                            "message": "配置已更新，LLM 组件已刷新",
                         }, ensure_ascii=False))
                     except Exception as e:
                         await websocket.send_text(json.dumps({
