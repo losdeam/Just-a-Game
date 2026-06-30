@@ -8,6 +8,7 @@ import random
 from typing import Any
 
 from jag.agents.game_master import GameMaster
+from jag.world.dynamic_npc_generator import DynamicNPCGenerator
 from jag.world.npc import NPC, ScheduleEntry
 from jag.world.world import WorldLocation, WorldRegion
 
@@ -380,11 +381,19 @@ class WorldBuilder:
         world_name: str = "",
         tags: dict[str, list[str]] | None = None,
         description: str = "",
+        background_npc_count: int = 0,
+        background_npc_seed: int | None = None,
     ) -> dict[str, Any]:
         self._parse_tags(world_name, tags, description)
         self.build_step_region()
-        self.build_step_locations()
-        self.build_step_npcs()
+        step_locs = self.build_step_locations()
+        # Default: 2 background NPCs per location if count not specified
+        if background_npc_count == 0 and step_locs.get("count", 0) > 0:
+            background_npc_count = step_locs["count"] * 2
+        self.build_step_npcs(
+            background_npc_count=background_npc_count,
+            background_npc_seed=background_npc_seed,
+        )
         step_lore = self.build_step_lore()
         result = self.build_step_finalize(step_lore.get("lore"))
         return result
@@ -495,13 +504,27 @@ class WorldBuilder:
         s["locations"] = locations
         return {"step": "locations", "count": len(locations), "names": [l.name for l in locations]}
 
-    def build_step_npcs(self) -> dict[str, Any]:
-        """Step 3: Create NPCs."""
+    def build_step_npcs(
+        self,
+        background_npc_count: int = 0,
+        background_npc_seed: int | None = None,
+    ) -> dict[str, Any]:
+        """Step 3: Create NPCs.
+
+        Uses hybrid strategy:
+        - Core NPCs (tavern_owner, knight, blacksmith): template-based for consistency
+        - Background NPCs: dynamically generated via DynamicNPCGenerator for quantity
+
+        Args:
+            background_npc_count: Number of extra background NPCs to generate (0 = disabled)
+            background_npc_seed: Random seed for reproducible background NPC generation
+        """
         s = self._state
         genre = s["genre"]
         rng = s["rng"]
         locations = s.get("locations", [])
 
+        # ── Core (template-based) NPCs ─────────────────────────────
         npc_pool = list(_NPC_ROLES.get(genre, _NPC_ROLES["fantasy"]))
         fixed_ids = ["tavern_owner", "knight", "blacksmith"]
         genre_fixed_map = {
@@ -554,15 +577,45 @@ class WorldBuilder:
                     ScheduleEntry(hour_start=22, hour_end=6, activity="休息", location_id=loc_id),
                 ],
             ))
-            npc_info.append({"name": name, "role": npc_def["role"], "location_id": loc_id})
+            npc_info.append({"Name": name, "role": npc_def["role"], "location_id": loc_id})
 
+        # ── Background (dynamically generated) NPCs ────────────────
+        bg_npc_count = 0
+        if background_npc_count > 0:
+            bg_gen = DynamicNPCGenerator(
+                genre=genre,
+                seed=background_npc_seed,
+                min_traits=2,
+                max_traits=4,
+            )
+            loc_ids = [loc.id for loc in locations]
+            bg_batch = bg_gen.generate_batch(background_npc_count, loc_ids)
+
+            for g in bg_batch:
+                npcs.append(g.npc)
+                npc_info.append({
+                    "name": g.npc.name,
+                    "role": g.role["name"],
+                    "location_id": g.npc.location_id,
+                    "traits": [t["name"] for t in g.traits],
+                })
+            bg_npc_count = len(bg_batch)
+
+        # Register all NPCs
         for npc in npcs:
             self.gm.world.add_character(npc.id, {
                 "location_id": npc.location_id, "name": npc.name, "type": "npc",
             })
             self.gm.tick_engine.register_npc(npc)
         s["npcs"] = npcs
-        return {"step": "npcs", "count": len(npcs), "npcs": npc_info}
+
+        return {
+            "step": "npcs",
+            "count": len(npcs),
+            "core_count": len(fixed_npcs) + extras_needed,
+            "background_count": bg_npc_count,
+            "npcs": npc_info,
+        }
 
     def build_step_lore(self) -> dict[str, Any]:
         """Step 4: Generate lore."""

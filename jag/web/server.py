@@ -219,6 +219,7 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
             use_llm = has_key  # auto-use LLM if key available and description provided
 
         try:
+            logger.info("create_world: starting, use_llm=%s", use_llm)
             if use_llm:
                 if not has_key:
                     return JSONResponse({
@@ -231,9 +232,12 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                 result = world_builder.build_from_tags(world_name, tags, description)
                 if description and not has_key:
                     result["warning"] = "未配置 LLM API Key，您的自定义描述无法用于 AI 生成，已使用词条模板生成。配置 API Key 后可获得 AI 驱动的自定义世界。"
+            logger.info("create_world: world built, building opening and options")
             _world_initialized = True
             opening = await gm.generate_opening()
+            logger.info("create_world: opening generated")
             options = await gm.get_suggested_options()
+            logger.info("create_world: options generated")
             result["opening"] = opening
             result["suggested_options"] = options
             result["lore"] = gm.world_lore or {}
@@ -432,19 +436,26 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                             }, ensure_ascii=False))
                             await asyncio.sleep(0.2)
 
-                            # Step 3: Create NPCs
+                            # Step 3: Create NPCs (hybrid: core + background)
                             await websocket.send_text(json.dumps({
                                 "type": "progress",
                                 "message": "正在生成 NPC...",
                             }, ensure_ascii=False))
-                            step_npcs = world_builder.build_step_npcs()
+                            # Generate 2 background NPCs per location (fast, no LLM)
+                            bg_count = step_locs["count"] * 2
+                            step_npcs = world_builder.build_step_npcs(
+                                background_npc_count=bg_count,
+                                background_npc_seed=None,
+                            )
                             npc_names = [n["name"] for n in step_npcs.get("npcs", [])]
+                            core_count = step_npcs.get("core_count", 0)
+                            bg_count_result = step_npcs.get("background_count", 0)
                             await websocket.send_text(json.dumps({
                                 "type": "step_result",
                                 "step": "npcs",
                                 "name": "生成NPC",
-                                "result": f"已创建 {step_npcs['count']} 个 NPC",
-                                "details": {"count": step_npcs["count"], "npcs": npc_names},
+                                "result": f"已创建 {step_npcs['count']} 个 NPC（核心{core_count} + 背景{bg_count_result}）",
+                                "details": {"core": core_count, "background": bg_count_result, "npcs": npc_names[:8]},
                             }, ensure_ascii=False))
                             await asyncio.sleep(0.2)
 

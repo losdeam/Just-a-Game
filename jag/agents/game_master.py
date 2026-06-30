@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from pathlib import Path
@@ -229,12 +230,17 @@ class GameMaster:
                     "请以第二人称「你」写一段沉浸式的开场白，描述玩家初次来到这个世界时的所见所感。"
                     "包括环境氛围、感官细节，暗示前方的冒险。不要提及具体NPC。3-5句。"
                 )
-                opening = await self.narrator.llm.complete(
-                    prompt=prompt,
-                    system="你是一个沉浸式开放世界RPG的叙事者。所有输出使用简体中文。",
-                    max_tokens=300,
+                opening = await asyncio.wait_for(
+                    self.narrator.llm.complete(
+                        prompt=prompt,
+                        system="你是一个沉浸式开放世界RPG的叙事者。所有输出使用简体中文。",
+                        max_tokens=300,
+                    ),
+                    timeout=10.0,
                 )
                 return opening.strip()
+            except asyncio.TimeoutError:
+                logger.warning("generate_opening timed out after 10 seconds")
             except Exception:
                 pass
 
@@ -298,7 +304,14 @@ class GameMaster:
 
     async def get_suggested_options(self) -> list[dict[str, Any]]:
         """Get suggested actions for the player."""
-        return await self.action_planner.suggest_options(self.player_id, self.world)
+        try:
+            return await asyncio.wait_for(
+                self.action_planner.suggest_options(self.player_id, self.world),
+                timeout=10.0,
+            )
+        except asyncio.TimeoutError:
+            logger.warning("get_suggested_options timed out after 10 seconds")
+            return self.action_planner._fallback_suggestions(3)
 
     def get_status(self) -> dict[str, Any]:
         """Get current game status."""

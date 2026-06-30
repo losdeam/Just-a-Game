@@ -49,6 +49,7 @@ class LiteLLMProvider:
         params: dict[str, Any] = {
             "model": self.model,
             "messages": messages,
+            "timeout": 10,  # 10 second timeout to avoid blocking
             **self._extra,
             **kwargs,
         }
@@ -59,8 +60,11 @@ class LiteLLMProvider:
         if self.disable_thinking:
             params.setdefault("extra_body", {})["thinking"] = {"type": "disabled"}
 
-        response = await litellm.acompletion(**params)
-        return response.choices[0].message.content or ""
+        try:
+            response = await litellm.acompletion(**params)
+            return response.choices[0].message.content or ""
+        except litellm.exceptions.Timeout:
+            raise TimeoutError("LLM request timed out after 10 seconds") from None
 
     async def structured(
         self, prompt: str, response_model: type[T], system: str = "", **kwargs: Any
@@ -80,6 +84,7 @@ class LiteLLMProvider:
             "model": self.model,
             "messages": messages,
             "response_model": response_model,
+            "timeout": 10,
             **self._extra,
             **kwargs,
         }
@@ -90,7 +95,12 @@ class LiteLLMProvider:
         if self.disable_thinking:
             params.setdefault("extra_body", {})["thinking"] = {"type": "disabled"}
 
-        return await client.create(**params)
+        try:
+            return await client.create(**params)
+        except Exception as e:
+            if "timeout" in str(e).lower():
+                raise TimeoutError("LLM structured request timed out after 10 seconds") from None
+            raise
 
 
 class MockLLMProvider:
