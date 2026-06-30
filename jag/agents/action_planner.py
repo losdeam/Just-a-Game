@@ -96,12 +96,21 @@ OPTIONS_SYSTEM_PROMPT = """你是一个开放世界RPG游戏的引导助手。
 根据当前世界上下文，生成3个适合玩家的自然语言行动建议。
 所有输出内容请使用简体中文。
 
-建议原则：
-1. 提供不同类型的选择（例如：探索、社交、互动）
-2. 根据当前地点和附近实体生成有意义的选项
-3. 包含1个低风险、1个中等风险、1个高风险选项
-4. 每个选项要简短，符合RPG游戏的行动描述
-5. 不要提及机制性词汇（如DC、属性），只描述玩家可以做什么
+建议生成规则：
+1. 根据当前地点的实际情况生成建议（观察附近的NPC、物品、连接地点）
+2. 如果附近有NPC，优先建议与NPC交谈（可以说出NPC的名字）
+3. 如果有可拾取的物品，建议探索或拾取
+4. 根据连接地点建议探索新区域
+5. 考虑玩家的背包物品，可以建议使用物品
+6. 每个选项要简短（不超过15字），符合RPG游戏的行动描述
+7. 不要提及机制性词汇（如DC、属性、掷骰），只描述玩家可以做什么
+8. 选项之间要有差异性，不能全是"交谈"或全是"探索"
+
+输出格式：
+options数组中包含3个选项，每个选项有：
+- text: 简短的动作描述（如"与铁匠交谈"、"探索铁匠铺"、"购买武器"）
+- description: 1-2句话的动作说明
+- risk: low/medium/high 表示风险等级
 """
 
 
@@ -111,21 +120,42 @@ def build_world_context(player_id: str, world: WorldState) -> str:
     loc_id = player.get("location_id", "")
     location = world.locations.get(loc_id)
 
-    parts = [f"时间: {world.time.time_of_day()}（{world.time.hour}时），第{world.time.day}天，{world.time.season}"]
+    parts = [
+        f"【时间】{world.time.time_of_day()}（{world.time.hour}时），第{world.time.day}天，{world.time.season}",
+        f"【玩家状态】生命: {player.get('health', 100)}/{player.get('max_health', 100)}",
+    ]
 
+    # Location info
     if location:
-        parts.append(f"地点: {location.name}（{location.location_type}）")
+        parts.append(f"\n【当前位置】{location.name}（{location.location_type}）")
         parts.append(f"  描述: {location.description}")
-        nearby = [e for e in location.entities if e != player_id]
-        if nearby:
-            parts.append(f"  附近: {', '.join(nearby[:5])}{'...' if len(nearby) > 5 else ''}")
-        items = location.items
-        if items:
-            parts.append(f"  物品: {', '.join(items[:5])}{'...' if len(items) > 5 else ''}")
+        parts.append(f"  连接地点: {', '.join(location.connected) if location.connected else '无'}")
 
+        # Nearby NPCs
+        nearby_chars = [e for e in location.entities if e != player_id]
+        if nearby_chars:
+            npc_names = []
+            for char_id in nearby_chars[:5]:
+                if char_id.startswith('npc_'):
+                    npc = world.characters.get(char_id)
+                    if npc:
+                        npc_names.append(f"{npc.get('name', char_id)}")
+            if npc_names:
+                parts.append(f"  附近人物: {', '.join(npc_names)}")
+
+        # Location items
+        if location.items:
+            parts.append(f"  可见物品: {', '.join(location.items[:5])}")
+
+    # Inventory
     inventory = player.get("inventory", [])
     if inventory:
-        parts.append(f"背包: {', '.join(inventory[:8])}{'...' if len(inventory) > 8 else ''}")
+        parts.append(f"\n【背包物品】{', '.join(inventory[:8])}{'...' if len(inventory) > 8 else ''}")
+
+    # Equipment
+    equipment = player.get("equipment", [])
+    if equipment:
+        parts.append(f"【已装备】{', '.join(equipment)}")
 
     return "\n".join(parts)
 

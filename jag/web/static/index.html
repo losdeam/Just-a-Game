@@ -155,6 +155,18 @@ textarea.wb-input { min-height: 80px; resize: vertical; line-height: 1.5; }
 .npc-loc { color: var(--text2); font-size: 10px; }
 .npc-state { font-size: 10px; color: var(--yellow); }
 
+/* Inventory */
+.inventory-list { padding: 6px 10px; overflow-y: auto; flex: 1; }
+.inventory-section { margin-bottom: 12px; }
+.inventory-section-title { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+.inventory-item { display: flex; align-items: flex-start; gap: 8px; padding: 6px 8px; background: var(--bg); border-radius: 6px; margin-bottom: 4px; font-size: 11px; }
+.inventory-item:hover { background: var(--bg3); }
+.inventory-icon { font-size: 16px; flex-shrink: 0; width: 24px; text-align: center; }
+.inventory-info { flex: 1; }
+.inventory-name { font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.inventory-desc { color: var(--text2); font-size: 10px; line-height: 1.4; }
+.inventory-empty { text-align: center; padding: 20px; color: var(--text2); font-size: 12px; }
+
 /* Lore */
 .lore-section { margin-bottom: 16px; }
 .lore-section-title { font-size: 12px; font-weight: 700; color: var(--accent); margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
@@ -568,6 +580,7 @@ textarea.wb-input { min-height: 80px; resize: vertical; line-height: 1.5; }
       <div class="tab active" data-tab="debug" onclick="switchTab('debug')">流水线</div>
       <div class="tab" data-tab="world" onclick="switchTab('world')">世界</div>
       <div class="tab" data-tab="npc" onclick="switchTab('npc')">NPC</div>
+      <div class="tab" data-tab="inventory" onclick="switchTab('inventory')">背包</div>
       <div class="tab" data-tab="lore" onclick="switchTab('lore')">世界观</div>
     </div>
     <div class="tab-content active" id="tab-debug">
@@ -585,6 +598,10 @@ textarea.wb-input { min-height: 80px; resize: vertical; line-height: 1.5; }
     <div class="tab-content" id="tab-npc">
       <div class="panel-title">NPC 状态 <span class="badge" id="npc-count">0</span></div>
       <div class="npc-list" id="npc-list"></div>
+    </div>
+    <div class="tab-content" id="tab-inventory">
+      <div class="panel-title">背包物品 <span class="badge" id="inv-count">0</span></div>
+      <div class="inventory-list" id="inventory-list"></div>
     </div>
     <div class="tab-content" id="tab-lore">
       <div class="panel-title">世界观</div>
@@ -1348,6 +1365,7 @@ function switchTab(name) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
   document.querySelectorAll('.tab-content').forEach(t => t.classList.toggle('active', t.id === `tab-${name}`));
   if (name === 'lore') loadLore();
+  if (name === 'inventory') loadInventory();
 }
 
 async function loadNPCs() {
@@ -1417,6 +1435,80 @@ async function loadLore() {
         </div>
       </div>`;
   } catch { document.getElementById('lore-content').innerHTML = '<div style="padding:12px;color:var(--text2);font-size:11px">加载失败</div>'; }
+}
+
+async function loadInventory() {
+  try {
+    const r = await fetch('/api/status');
+    const status = await r.json();
+    const inventory = status.inventory || [];
+    const equipment = status.equipment || [];
+
+    document.getElementById('inv-count').textContent = inventory.length + equipment.length;
+
+    if (inventory.length === 0 && equipment.length === 0) {
+      document.getElementById('inventory-list').innerHTML = '<div class="inventory-empty">背包空空如也</div>';
+      return;
+    }
+
+    let html = '';
+
+    // Equipment section
+    if (equipment.length > 0) {
+      html += `<div class="inventory-section"><div class="inventory-section-title">装备</div>`;
+      equipment.forEach(item => {
+        const icon = getItemIcon(item, 'equipment');
+        const desc = getItemDescription(item, 'equipment');
+        html += `<div class="inventory-item"><span class="inventory-icon">${icon}</span><div class="inventory-info"><div class="inventory-name">${escHtml(item)}</div><div class="inventory-desc">${escHtml(desc)}</div></div></div>`;
+      });
+      html += '</div>';
+    }
+
+    // Inventory section
+    if (inventory.length > 0) {
+      html += `<div class="inventory-section"><div class="inventory-section-title">物品</div>`;
+      inventory.forEach(item => {
+        const icon = getItemIcon(item, 'item');
+        const desc = getItemDescription(item, 'item');
+        html += `<div class="inventory-item"><span class="inventory-icon">${icon}</span><div class="inventory-info"><div class="inventory-name">${escHtml(item)}</div><div class="inventory-desc">${escHtml(desc)}</div></div></div>`;
+      });
+      html += '</div>';
+    }
+
+    document.getElementById('inventory-list').innerHTML = html;
+  } catch {
+    document.getElementById('inventory-list').innerHTML = '<div class="inventory-empty">加载失败</div>';
+  }
+}
+
+function getItemIcon(item, type) {
+  const itemLower = item.toLowerCase();
+  if (itemLower.includes('剑') || itemLower.includes('刀') || itemLower.includes('weapon')) return '⚔️';
+  if (itemLower.includes('盾') || itemLower.includes('护甲') || itemLower.includes('armor')) return '🛡️';
+  if (itemLower.includes('药') || itemLower.includes('药水') || itemLower.includes('potion')) return '🧪';
+  if (itemLower.includes('书') || itemLower.includes('卷轴') || itemLower.includes('scroll')) return '📜';
+  if (itemLower.includes('钱') || itemLower.includes('金') || itemLower.includes('coin')) return '💰';
+  if (itemLower.includes('钥') || itemLower.includes('key')) return '🔑';
+  if (itemLower.includes('食') || itemLower.includes('food')) return '🍖';
+  if (itemLower.includes('宝') || itemLower.includes('gem')) return '💎';
+  if (type === 'equipment') return '🎒';
+  return '📦';
+}
+
+function getItemDescription(item, type) {
+  const itemLower = item.toLowerCase();
+  if (itemLower.includes('剑') || itemLower.includes('刀')) return '近战武器，可用于战斗';
+  if (itemLower.includes('弓')) return '远程武器，攻击距离远';
+  if (itemLower.includes('盾')) return '防御装备，可抵挡伤害';
+  if (itemLower.includes('护甲')) return '身体防护装备';
+  if (itemLower.includes('药') || itemLower.includes('药水')) return '可恢复生命值';
+  if (itemLower.includes('书') || itemLower.includes('卷轴')) return '记载着知识的物品';
+  if (itemLower.includes('钱') || itemLower.includes('金')) return '用于交易和购买物品';
+  if (itemLower.includes('钥') || itemLower.includes('key')) return '开启特定门锁的钥匙';
+  if (itemLower.includes('食') || itemLower.includes('food')) return '可恢复饥饿度';
+  if (itemLower.includes('宝') || itemLower.includes('gem')) return '珍贵的宝石，价值不菲';
+  if (type === 'equipment') return '已装备的物品';
+  return '可使用的物品';
 }
 
 function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
