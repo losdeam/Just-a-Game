@@ -646,6 +646,9 @@ function handleMessage(msg) {
             case 'progress':
                 showProgress(msg.message);
                 break;
+            case 'step_result':
+                appendStepResult(msg.name, msg.result, msg.details);
+                break;
             case 'config': currentConfig = msg.config; populateSettings(msg.config); break;
             case 'config_updated': showToast(msg.message || '配置已更新'); break;
             case 'error': 
@@ -784,11 +787,64 @@ function createWorld() {
 function showProgress(msg) {
   const el = document.getElementById('wb-progress');
   el.style.display = 'block';
-  document.getElementById('wb-progress-text').textContent = msg;
+  const textEl = document.getElementById('wb-progress-text');
+  textEl.textContent = msg;
+}
+
+function appendStepResult(stepName, result, details) {
+  const el = document.getElementById('wb-progress');
+  el.style.display = 'block';
+
+  // Create step results container if doesn't exist
+  let container = document.getElementById('wb-step-results');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'wb-step-results';
+    container.style.cssText = 'margin-top:12px;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;max-height:200px;overflow-y:auto';
+    el.appendChild(container);
+  }
+
+  // Add step result
+  const stepDiv = document.createElement('div');
+  stepDiv.style.cssText = 'padding:6px 0;border-bottom:1px solid var(--border)';
+  stepDiv.innerHTML = `
+    <div style="display:flex;align-items:center;gap:6px">
+      <span style="color:var(--green)">✓</span>
+      <span style="color:var(--accent);font-weight:600">${escHtml(stepName)}</span>
+    </div>
+    <div style="color:var(--text);font-size:12px;margin-top:4px;padding-left:20px">${escHtml(result)}</div>
+  `;
+
+  // Add details if present
+  if (details) {
+    let detailsHtml = '<div style="padding-left:20px;margin-top:4px;font-size:11px;color:var(--text2)">';
+    if (details.locations && details.locations.length > 0) {
+      detailsHtml += `<div style="margin-bottom:2px">📍 ${details.locations.join('、')}${details.count > 5 ? '...' : ''}</div>`;
+    }
+    if (details.npcs && details.npcs.length > 0) {
+      detailsHtml += `<div style="margin-bottom:2px">👥 ${details.npcs.join('、')}</div>`;
+    }
+    if (details.genre) {
+      detailsHtml += `<div style="margin-bottom:2px">🏷 类型: ${escHtml(details.genre)}</div>`;
+    }
+    if (details.era) {
+      detailsHtml += `<div style="margin-bottom:2px">⏳ 时代: ${escHtml(details.era)}</div>`;
+    }
+    if (details.main_quest) {
+      detailsHtml += `<div style="margin-bottom:2px">📜 主线: ${escHtml(details.main_quest)}</div>`;
+    }
+    detailsHtml += '</div>';
+    stepDiv.innerHTML += detailsHtml;
+  }
+
+  container.appendChild(stepDiv);
+  container.scrollTop = container.scrollHeight;
 }
 
 function hideProgress() {
   document.getElementById('wb-progress').style.display = 'none';
+  const container = document.getElementById('wb-step-results');
+  if (container) container.remove();
 }
 
 function doCreateWorld() {
@@ -850,9 +906,59 @@ function onWorldCreated(msg) {
         }
         if (msg.status) updateStatus(msg.status);
         if (msg.suggested_options) updateOptions(msg.suggested_options);
+
+        // Use lore data directly from msg if available
+        if (msg.lore && msg.lore.world_name) {
+            displayLore(msg.lore);
+        } else {
+            loadLore();
+        }
+
         document.getElementById('wb-create-btn').disabled = false;
         document.getElementById('wb-create-btn').textContent = '创建世界';
-        loadLore();
+    }
+
+    function displayLore(lore) {
+        const tags = [
+            lore.genre && `类型: ${lore.genre}`,
+            lore.era,
+            lore.terrain && `地形: ${lore.terrain}`,
+            lore.magic_level && `魔法: ${lore.magic_level}`,
+            lore.danger_level && `危险: ${lore.danger_level}`,
+        ].filter(Boolean).map(t => `<span class="lore-tag">${escHtml(t)}</span>`).join('');
+
+        const npcsHtml = (lore.npcs||[]).map(n =>
+            `<div class="lore-npc"><span class="name">${escHtml(n.name)}</span> <span class="role">${escHtml(n.role)}</span> <span class="loc">📍 ${escHtml(n.location)}</span></div>`
+        ).join('');
+
+        const locsHtml = (lore.locations||[]).map(l =>
+            `<div class="lore-loc"><span class="name">${escHtml(l.name)}</span> <span class="danger">⚔ ${l.danger}/10</span><br><span class="desc">${escHtml(l.description)}</span></div>`
+        ).join('');
+
+        document.getElementById('lore-content').innerHTML = `
+            <div style="padding:10px 14px">
+                <div class="lore-section">
+                    <div class="lore-section-title">🌍 ${escHtml(lore.world_name)}</div>
+                    <div style="margin-bottom:8px">${tags}</div>
+                    <div class="lore-text">${escHtml(lore.description||'')}</div>
+                </div>
+                <div class="lore-section">
+                    <div class="lore-section-title">📜 历史</div>
+                    <div class="lore-text">${escHtml(lore.history||'')}</div>
+                </div>
+                <div class="lore-section">
+                    <div class="lore-section-title">⚔ 主线任务</div>
+                    <div class="lore-quest">${escHtml(lore.main_quest||'')}</div>
+                </div>
+                <div class="lore-section">
+                    <div class="lore-section-title">👥 关键人物</div>
+                    ${npcsHtml || '<div style="color:var(--text2);font-size:11px">无</div>'}
+                </div>
+                <div class="lore-section">
+                    <div class="lore-section-title">🏛 地点</div>
+                    ${locsHtml || '<div style="color:var(--text2);font-size:11px">无</div>'}
+                </div>
+            </div>`;
     }
 
 function quickStartDemo() {

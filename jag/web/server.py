@@ -218,6 +218,7 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
             options = await gm.get_suggested_options()
             result["opening"] = opening
             result["suggested_options"] = options
+            result["lore"] = gm.world_lore or {}
             return JSONResponse(result)
         except Exception as e:
             return JSONResponse({"ok": False, "message": str(e)}, status_code=500)
@@ -369,41 +370,73 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                             result = await world_builder.build_with_llm(world_name, tags, description)
                         else:
                             world_builder._parse_tags(world_name, tags, description)
+
+                            # Step 1: Create region
                             await websocket.send_text(json.dumps({
-                                "type": "progress", "message": "正在创建世界区域...",
+                                "type": "progress",
+                                "message": "正在创建世界区域...",
                             }, ensure_ascii=False))
                             step_region = world_builder.build_step_region()
                             await websocket.send_text(json.dumps({
-                                "type": "progress", "message": f"区域「{step_region['name']}」已创建",
+                                "type": "step_result",
+                                "step": "region",
+                                "name": "创建区域",
+                                "result": f"区域「{step_region['name']}」已创建",
+                                "details": step_region,
                             }, ensure_ascii=False))
-                            await asyncio.sleep(0.3)
+                            await asyncio.sleep(0.2)
 
+                            # Step 2: Create locations
                             await websocket.send_text(json.dumps({
-                                "type": "progress", "message": "正在生成地点...",
+                                "type": "progress",
+                                "message": "正在生成地点...",
                             }, ensure_ascii=False))
                             step_locs = world_builder.build_step_locations()
+                            loc_names = step_locs.get("names", [])
                             await websocket.send_text(json.dumps({
-                                "type": "progress", "message": f"已创建 {step_locs['count']} 个地点",
+                                "type": "step_result",
+                                "step": "locations",
+                                "name": "生成地点",
+                                "result": f"已创建 {step_locs['count']} 个地点",
+                                "details": {"count": step_locs["count"], "locations": loc_names[:5]},
                             }, ensure_ascii=False))
-                            await asyncio.sleep(0.3)
+                            await asyncio.sleep(0.2)
 
+                            # Step 3: Create NPCs
                             await websocket.send_text(json.dumps({
-                                "type": "progress", "message": "正在生成 NPC...",
+                                "type": "progress",
+                                "message": "正在生成 NPC...",
                             }, ensure_ascii=False))
                             step_npcs = world_builder.build_step_npcs()
+                            npc_names = [n["name"] for n in step_npcs.get("npcs", [])]
                             await websocket.send_text(json.dumps({
-                                "type": "progress", "message": f"已创建 {step_npcs['count']} 个 NPC",
+                                "type": "step_result",
+                                "step": "npcs",
+                                "name": "生成NPC",
+                                "result": f"已创建 {step_npcs['count']} 个 NPC",
+                                "details": {"count": step_npcs["count"], "npcs": npc_names},
                             }, ensure_ascii=False))
-                            await asyncio.sleep(0.3)
+                            await asyncio.sleep(0.2)
 
+                            # Step 4: Generate lore
                             await websocket.send_text(json.dumps({
-                                "type": "progress", "message": "正在生成世界观设定...",
+                                "type": "progress",
+                                "message": "正在生成世界观设定...",
                             }, ensure_ascii=False))
                             step_lore = world_builder.build_step_lore()
+                            lore_data = step_lore.get("lore", {})
                             await websocket.send_text(json.dumps({
-                                "type": "progress", "message": "世界观设定已生成",
+                                "type": "step_result",
+                                "step": "lore",
+                                "name": "世界观设定",
+                                "result": "世界观设定已生成",
+                                "details": {
+                                    "genre": lore_data.get("genre", ""),
+                                    "era": lore_data.get("era", ""),
+                                    "main_quest": lore_data.get("main_quest", "")[:100] + "..." if len(lore_data.get("main_quest", "")) > 100 else lore_data.get("main_quest", ""),
+                                },
                             }, ensure_ascii=False))
-                            await asyncio.sleep(0.3)
+                            await asyncio.sleep(0.2)
 
                             result = world_builder.build_step_finalize(step_lore.get("lore"))
                             if description and not has_key:
@@ -414,6 +447,10 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                             "type": "progress",
                             "message": "正在生成开场白...",
                         }, ensure_ascii=False))
+
+                        # Send complete lore data for the lore panel
+                        lore_for_frontend = gm.world_lore or {}
+
                         opening = await gm.generate_opening()
                         options = await gm.get_suggested_options()
                         await websocket.send_text(json.dumps({
@@ -422,6 +459,7 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                             "status": status,
                             "opening": opening,
                             "suggested_options": options,
+                            "lore": lore_for_frontend,
                         }, ensure_ascii=False))
                     except Exception as e:
                         await websocket.send_text(json.dumps({
