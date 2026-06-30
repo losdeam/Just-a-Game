@@ -199,7 +199,7 @@ class ActionPlanner:
             
             # Fill with fallback options if needed
             while len(options) < 3:
-                fallback_suggestions = self._fallback_suggestions()
+                fallback_suggestions = self._fallback_suggestions(player_id, world)
                 if len(options) < len(fallback_suggestions):
                     options.append(fallback_suggestions[len(options)])
                 else:
@@ -208,17 +208,131 @@ class ActionPlanner:
             return options
         except Exception as e:
             logger.warning("LLM option suggestion failed: %s, using fallback", e)
-            return self._fallback_suggestions(3)
+            return self._fallback_suggestions(player_id, world, 3)
 
-    def _fallback_suggestions(self, count: int = 3) -> list[dict[str, Any]]:
-        """Generate fallback suggestions when LLM fails."""
-        suggestions = [
-            {"text": "仔细观察周围环境", "description": "观察当前地点的细节", "risk": "low"},
-            {"text": "与附近的NPC交谈", "description": "与附近的角色互动", "risk": "low"},
-            {"text": "检查背包里的物品", "description": "查看并管理你的装备", "risk": "low"},
-            {"text": "前往下一个地点", "description": "移动到相邻的区域", "risk": "medium"},
-            {"text": "休息恢复体力", "description": "原地休息恢复状态", "risk": "low"},
+    def _fallback_suggestions(self, player_id: str, world: WorldState, count: int = 3) -> list[dict[str, Any]]:
+        """Generate dynamic fallback suggestions based on current world state."""
+        import random
+        
+        suggestions = []
+        player = world.characters.get(player_id, {})
+        loc_id = player.get("location_id", "")
+        location = world.locations.get(loc_id)
+        
+        if not location:
+            base_suggestions = [
+                {"text": "仔细观察周围环境", "description": "观察当前地点的细节", "risk": "low"},
+                {"text": "探索周边区域", "description": "移动到相邻的区域", "risk": "medium"},
+                {"text": "检查背包里的物品", "description": "查看并管理你的装备", "risk": "low"},
+            ]
+            return base_suggestions[:count]
+
+        nearby_npcs = [e for e in location.entities if e != player_id and e.startswith('npc_')]
+        npc_names = []
+        for npc_id in nearby_npcs[:3]:
+            npc = world.characters.get(npc_id)
+            if npc:
+                npc_names.append(npc.get('name', npc_id))
+
+        # NPC interaction suggestions
+        if npc_names:
+            npc_name = npc_names[0]
+            suggestions.append({
+                "text": f"与{npc_name}交谈",
+                "description": f"走上前去与{npc_name}打招呼，了解当地情况",
+                "risk": "low"
+            })
+            if len(npc_names) > 1:
+                suggestions.append({
+                    "text": f"向{npc_names[1]}打听消息",
+                    "description": f"向{npc_names[1]}询问有价值的情报",
+                    "risk": "low"
+                })
+
+        # Location exploration suggestions
+        loc_type = location.location_type
+        if loc_type == "shop" or loc_type == "market":
+            suggestions.append({
+                "text": "浏览商店货物",
+                "description": "看看店里有什么可以购买的物品",
+                "risk": "low"
+            })
+        elif loc_type == "tavern" or loc_type == "inn":
+            suggestions.append({
+                "text": "点一杯酒坐下休息",
+                "description": "在酒馆里歇歇脚，听听来往旅人的故事",
+                "risk": "low"
+            })
+        elif loc_type == "blacksmith" or loc_type == "forge":
+            suggestions.append({
+                "text": "查看锻造的武器",
+                "description": "看看铁匠铺里有什么趁手的兵器",
+                "risk": "low"
+            })
+        else:
+            suggestions.append({
+                "text": f"仔细观察{location.name}",
+                "description": f"仔细观察{location.name}的每一个角落",
+                "risk": "low"
+            })
+
+        # Movement suggestions
+        if location.connected:
+            next_loc_id = location.connected[0]
+            next_loc = world.locations.get(next_loc_id)
+            if next_loc:
+                suggestions.append({
+                    "text": f"前往{next_loc.name}",
+                    "description": f"离开此处，前往{next_loc.name}",
+                    "risk": "medium"
+                })
+
+        # Inventory/equipment suggestions
+        inventory = player.get("inventory", [])
+        if inventory:
+            suggestions.append({
+                "text": "检查背包物品",
+                "description": "整理背包，查看携带的物品",
+                "risk": "low"
+            })
+
+        # Time-based suggestions
+        time_of_day = world.time.time_of_day()
+        if time_of_day == "night":
+            suggestions.append({
+                "text": "找地方休息过夜",
+                "description": "天色已晚，找个安全的地方休息",
+                "risk": "medium"
+            })
+        elif time_of_day == "morning":
+            suggestions.append({
+                "text": "开始新的一天",
+                "description": "迎着晨光，开始今天的冒险",
+                "risk": "low"
+            })
+
+        # Always have these as backup
+        backup = [
+            {"text": "原地休息", "description": "休息片刻，恢复体力", "risk": "low"},
+            {"text": "四处走走", "description": "在附近随意逛逛", "risk": "low"},
+            {"text": "查看地图", "description": "打开地图确认方位", "risk": "low"},
         ]
+
+        # Deduplicate and ensure we have enough
+        seen_texts = {s["text"] for s in suggestions}
+        for b in backup:
+            if b["text"] not in seen_texts:
+                suggestions.append(b)
+                seen_texts.add(b["text"])
+
+        # Shuffle a bit for variety, but keep first 3 meaningful
+        if len(suggestions) > count:
+            result = suggestions[:2]
+            remaining = suggestions[2:]
+            random.shuffle(remaining)
+            result.extend(remaining[:count - 2])
+            return result[:count]
+        
         return suggestions[:count]
 
     async def plan(
