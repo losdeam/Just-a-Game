@@ -169,8 +169,11 @@ class ActionPlanner:
             
             # Fill with fallback options if needed
             while len(options) < 3:
-                fallback_opt = self._fallback_suggestions(len(options))[len(options)-1]
-                options.append(fallback_opt)
+                fallback_suggestions = self._fallback_suggestions()
+                if len(options) < len(fallback_suggestions):
+                    options.append(fallback_suggestions[len(options)])
+                else:
+                    options.append(fallback_suggestions[0])
             
             return options
         except Exception as e:

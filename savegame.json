@@ -9,20 +9,11 @@
   "regions": {
     "main_region": {
       "id": "main_region",
-      "name": "测试世界",
+      "name": "齿轮城",
       "description": "封建中世纪",
-      "region_type": "kingdom",
+      "region_type": "industrial",
       "danger_level": 0,
       "locations": [
-        "hub",
-        "tavern",
-        "market_district",
-        "back_alley",
-        "tower_building",
-        "deep_forest",
-        "forest_clearing",
-        "ancient_tree",
-        "shrine",
         "hub",
         "tavern",
         "market_district",
@@ -47,8 +38,8 @@
   "locations": {
     "hub": {
       "id": "hub",
-      "name": "村庄广场",
-      "description": "石板路交织的聚落，炊烟从茅草屋顶升起，旅人们在此交换消息。",
+      "name": "中央钟楼",
+      "description": "巨大齿轮和管道构成的城市中心，蒸汽机车在头顶的铁轨上呼啸。",
       "region_id": "main_region",
       "location_type": "outdoor",
       "light_level": 8,
@@ -59,8 +50,8 @@
         "back_alley"
       ],
       "entities": [
-        "knight",
-        "blacksmith",
+        "airship_captain",
+        "mechanic",
         "npc_dyn_0",
         "npc_dyn_9",
         "player"
@@ -70,8 +61,8 @@
     },
     "tavern": {
       "id": "tavern",
-      "name": "旅者酒馆",
-      "description": "温暖的壁炉映照着木质吧台，墙上挂着冒险者留下的旧盾。",
+      "name": "铜壶酒馆",
+      "description": "机械侍者端上冒着泡沫的蒸馏酒，齿轮装饰在墙上缓慢转动。",
       "region_id": "main_region",
       "location_type": "indoor",
       "light_level": 6,
@@ -81,8 +72,8 @@
         "market_district"
       ],
       "entities": [
-        "tavern_owner",
-        "ranger",
+        "inventor",
+        "alchemist",
         "npc_dyn_1",
         "npc_dyn_10"
       ],
@@ -103,7 +94,7 @@
         "tavern"
       ],
       "entities": [
-        "herbalist",
+        "union_boss",
         "npc_dyn_2",
         "npc_dyn_11"
       ],
@@ -225,128 +216,128 @@
     }
   },
   "characters": {
-    "tavern_owner": {
+    "inventor": {
       "location_id": "tavern",
-      "name": "梅丽莎",
+      "name": "铆钉",
       "type": "npc"
     },
-    "knight": {
+    "airship_captain": {
       "location_id": "hub",
-      "name": "格里芬",
+      "name": "黄铜",
       "type": "npc"
     },
-    "blacksmith": {
+    "mechanic": {
       "location_id": "hub",
-      "name": "贾维斯",
+      "name": "勋爵",
       "type": "npc"
     },
-    "ranger": {
+    "alchemist": {
       "location_id": "tavern",
-      "name": "老麦克",
+      "name": "蒸汽比尔",
       "type": "npc"
     },
-    "herbalist": {
+    "union_boss": {
       "location_id": "market_district",
-      "name": "奥丁",
+      "name": "阿奇博尔德",
       "type": "npc"
     },
     "npc_dyn_0": {
       "location_id": "hub",
-      "name": "芬里尔",
+      "name": "凯瑟琳",
       "type": "npc"
     },
     "npc_dyn_1": {
       "location_id": "tavern",
-      "name": "阿尔文",
+      "name": "玛格丽特",
       "type": "npc"
     },
     "npc_dyn_2": {
       "location_id": "market_district",
-      "name": "埃德蒙",
+      "name": "伊莎多拉",
       "type": "npc"
     },
     "npc_dyn_3": {
       "location_id": "back_alley",
-      "name": "艾米莉亚",
+      "name": "尼古拉斯",
       "type": "npc"
     },
     "npc_dyn_4": {
       "location_id": "tower_building",
-      "name": "薇拉",
+      "name": "塞缪尔",
       "type": "npc"
     },
     "npc_dyn_5": {
       "location_id": "deep_forest",
-      "name": "索恩",
+      "name": "埃德加",
       "type": "npc"
     },
     "npc_dyn_6": {
       "location_id": "forest_clearing",
-      "name": "西奥多",
+      "name": "珀西瓦尔",
       "type": "npc"
     },
     "npc_dyn_7": {
       "location_id": "ancient_tree",
-      "name": "马库斯",
+      "name": "阿方斯",
       "type": "npc"
     },
     "npc_dyn_8": {
       "location_id": "shrine",
-      "name": "罗兰",
+      "name": "阿奇博尔德",
       "type": "npc"
     },
     "npc_dyn_9": {
       "location_id": "hub",
-      "name": "鲁珀特",
+      "name": "威廉",
       "type": "npc"
     },
     "npc_dyn_10": {
       "location_id": "tavern",
-      "name": "格雷戈尔",
+      "name": "克莱拉",
       "type": "npc"
     },
     "npc_dyn_11": {
       "location_id": "market_district",
-      "name": "伊莲娜",
+      "name": "约瑟芬",
       "type": "npc"
     },
     "npc_dyn_12": {
       "location_id": "back_alley",
-      "name": "卡斯帕",
+      "name": "伊丽莎白",
       "type": "npc"
     },
     "npc_dyn_13": {
       "location_id": "tower_building",
-      "name": "伊莎贝拉",
+      "name": "维多利亚",
       "type": "npc"
     },
     "npc_dyn_14": {
       "location_id": "deep_forest",
-      "name": "塞琳娜",
+      "name": "维多利亚2",
       "type": "npc"
     },
     "npc_dyn_15": {
       "location_id": "forest_clearing",
-      "name": "格蕾丝",
+      "name": "塞缪尔2",
       "type": "npc"
     },
     "npc_dyn_16": {
       "location_id": "ancient_tree",
-      "name": "提里安",
+      "name": "玛格丽特2",
       "type": "npc"
     },
     "npc_dyn_17": {
       "location_id": "shrine",
-      "name": "奥古斯丁",
+      "name": "玛格丽特3",
       "type": "npc"
     },
     "player": {
       "location_id": "hub",
       "inventory": [
-        "铁剑",
-        "皮甲",
-        "面包",
-        "10枚金币"
+        "蒸汽手枪",
+        "护目镜",
+        "齿轮工具包",
+        "英镑"
       ],
       "name": "冒险者",
       "type": "player"
@@ -355,17 +346,17 @@
   "items": {},
   "global_flags": {},
   "npcs": {
-    "tavern_owner": {
-      "id": "tavern_owner",
-      "name": "梅丽莎",
-      "description": "酒馆老板。让每位旅客都感到宾至如归。",
-      "personality": "friendly",
-      "goal": "让每位旅客都感到宾至如归",
+    "inventor": {
+      "id": "inventor",
+      "name": "铆钉",
+      "description": "发明家。完成足以改变世界的永动机。",
+      "personality": "curious",
+      "goal": "完成足以改变世界的永动机",
       "schedule": [
         {
           "hour_start": 6,
           "hour_end": 22,
-          "activity": "照看吧台",
+          "activity": "发明创造",
           "location_id": "tavern"
         },
         {
@@ -383,17 +374,17 @@
         "current_action": ""
       }
     },
-    "knight": {
-      "id": "knight",
-      "name": "格里芬",
-      "description": "骑士队长。维护秩序与正义。",
+    "airship_captain": {
+      "id": "airship_captain",
+      "name": "黄铜",
+      "description": "飞艇船长。发现传说中的新大陆。",
       "personality": "stern",
-      "goal": "维护秩序与正义",
+      "goal": "发现传说中的新大陆",
       "schedule": [
         {
           "hour_start": 6,
           "hour_end": 22,
-          "activity": "操练士兵",
+          "activity": "驾驶飞艇",
           "location_id": "hub"
         },
         {
@@ -411,17 +402,17 @@
         "current_action": ""
       }
     },
-    "blacksmith": {
-      "id": "blacksmith",
-      "name": "贾维斯",
-      "description": "铁匠。锻造出传说中的神兵利器。",
+    "mechanic": {
+      "id": "mechanic",
+      "name": "勋爵",
+      "description": "机械师。维护城市赖以运转的蒸汽核心。",
       "personality": "friendly",
-      "goal": "锻造出传说中的神兵利器",
+      "goal": "维护城市赖以运转的蒸汽核心",
       "schedule": [
         {
           "hour_start": 6,
           "hour_end": 22,
-          "activity": "打铁铸剑",
+          "activity": "维修管道",
           "location_id": "hub"
         },
         {
@@ -439,17 +430,17 @@
         "current_action": ""
       }
     },
-    "ranger": {
-      "id": "ranger",
-      "name": "老麦克",
-      "description": "游侠。守护这片土地免受侵害。",
-      "personality": "stern",
-      "goal": "守护这片土地免受侵害",
+    "alchemist": {
+      "id": "alchemist",
+      "name": "蒸汽比尔",
+      "description": "炼金术士。破解贤者之石的终极配方。",
+      "personality": "curious",
+      "goal": "破解贤者之石的终极配方",
       "schedule": [
         {
           "hour_start": 6,
           "hour_end": 22,
-          "activity": "巡逻边境",
+          "activity": "化学实验",
           "location_id": "tavern"
         },
         {
@@ -467,17 +458,17 @@
         "current_action": ""
       }
     },
-    "herbalist": {
-      "id": "herbalist",
-      "name": "奥丁",
-      "description": "草药师。收集稀有草药治愈伤员。",
-      "personality": "neutral",
-      "goal": "收集稀有草药治愈伤员",
+    "union_boss": {
+      "id": "union_boss",
+      "name": "阿奇博尔德",
+      "description": "工会头目。为底层工人争取应有的权益。",
+      "personality": "stern",
+      "goal": "为底层工人争取应有的权益",
       "schedule": [
         {
           "hour_start": 6,
           "hour_end": 22,
-          "activity": "采药炼膏",
+          "activity": "组织工人",
           "location_id": "market_district"
         },
         {
@@ -497,20 +488,20 @@
     },
     "npc_dyn_0": {
       "id": "npc_dyn_0",
-      "name": "芬里尔",
-      "description": "酒馆老板。性格创意、暴躁、贪婪。",
+      "name": "凯瑟琳",
+      "description": "发明家。性格创意、野心。",
       "personality": "creative",
-      "goal": "赚更多的钱，经营好酒馆，让每位客人都满意而归",
+      "goal": "出人头地，做好发明家的本职工作",
       "schedule": [
         {
-          "hour_start": 7,
-          "hour_end": 22,
-          "activity": "打理酒馆",
+          "hour_start": 9,
+          "hour_end": 23,
+          "activity": "搞发明",
           "location_id": "hub"
         },
         {
-          "hour_start": 22,
-          "hour_end": 7,
+          "hour_start": 23,
+          "hour_end": 9,
           "activity": "休息",
           "location_id": "hub"
         }
@@ -525,19 +516,31 @@
     },
     "npc_dyn_1": {
       "id": "npc_dyn_1",
-      "name": "阿尔文",
-      "description": "铁匠。性格善良、开朗、诚实。",
-      "personality": "kind",
-      "goal": "打造出传世的神兵利器",
+      "name": "玛格丽特",
+      "description": "飞空艇船长。性格慷慨、懒惰、懦弱、沉默。",
+      "personality": "generous",
+      "goal": "做好飞空艇船长的本职工作",
       "schedule": [
         {
           "hour_start": 9,
-          "hour_end": 20,
-          "activity": "打铁",
+          "hour_end": 15,
+          "activity": "驾驶飞艇",
           "location_id": "tavern"
         },
         {
-          "hour_start": 20,
+          "hour_start": 15,
+          "hour_end": 16,
+          "activity": "午休",
+          "location_id": "tavern"
+        },
+        {
+          "hour_start": 16,
+          "hour_end": 21,
+          "activity": "驾驶飞艇",
+          "location_id": "tavern"
+        },
+        {
+          "hour_start": 21,
           "hour_end": 9,
           "activity": "休息",
           "location_id": "tavern"
@@ -553,20 +556,32 @@
     },
     "npc_dyn_2": {
       "id": "npc_dyn_2",
-      "name": "埃德蒙",
-      "description": "骑士。性格贪婪、骄傲。",
-      "personality": "greedy",
-      "goal": "赚更多的钱，守护这片土地的和平与正义",
+      "name": "伊莎多拉",
+      "description": "机修师。性格冷静、勤勉、懦弱、骄傲。",
+      "personality": "calm",
+      "goal": "做好机修师的本职工作",
       "schedule": [
         {
-          "hour_start": 7,
-          "hour_end": 20,
-          "activity": "巡逻",
+          "hour_start": 8,
+          "hour_end": 15,
+          "activity": "修理引擎",
           "location_id": "market_district"
         },
         {
-          "hour_start": 20,
-          "hour_end": 7,
+          "hour_start": 15,
+          "hour_end": 16,
+          "activity": "午休",
+          "location_id": "market_district"
+        },
+        {
+          "hour_start": 16,
+          "hour_end": 22,
+          "activity": "修理引擎",
+          "location_id": "market_district"
+        },
+        {
+          "hour_start": 22,
+          "hour_end": 8,
           "activity": "休息",
           "location_id": "market_district"
         }
@@ -581,15 +596,15 @@
     },
     "npc_dyn_3": {
       "id": "npc_dyn_3",
-      "name": "艾米莉亚",
-      "description": "商人。性格勇敢、善良、懦弱。",
-      "personality": "brave",
-      "goal": "积累财富，成为最富有的商人",
+      "name": "尼古拉斯",
+      "description": "贵族。性格创意、勤勉、沉默、节俭。",
+      "personality": "creative",
+      "goal": "做好贵族的本职工作",
       "schedule": [
         {
-          "hour_start": 6,
+          "hour_start": 9,
           "hour_end": 14,
-          "activity": "摆摊",
+          "activity": "参加舞会",
           "location_id": "back_alley"
         },
         {
@@ -600,13 +615,13 @@
         },
         {
           "hour_start": 15,
-          "hour_end": 22,
-          "activity": "摆摊",
+          "hour_end": 20,
+          "activity": "参加舞会",
           "location_id": "back_alley"
         },
         {
-          "hour_start": 22,
-          "hour_end": 6,
+          "hour_start": 20,
+          "hour_end": 9,
           "activity": "休息",
           "location_id": "back_alley"
         }
@@ -621,32 +636,32 @@
     },
     "npc_dyn_4": {
       "id": "npc_dyn_4",
-      "name": "薇拉",
-      "description": "法师。性格嫉妒、贪婪。",
-      "personality": "jealous",
-      "goal": "赚更多的钱，探索魔法的终极奥秘",
+      "name": "塞缪尔",
+      "description": "富商。性格暴躁、节俭。",
+      "personality": "hot_tempered",
+      "goal": "积累财富，成为最富有的商人",
       "schedule": [
         {
-          "hour_start": 8,
-          "hour_end": 14,
-          "activity": "研究魔法",
+          "hour_start": 9,
+          "hour_end": 16,
+          "activity": "谈生意",
           "location_id": "tower_building"
         },
         {
-          "hour_start": 14,
-          "hour_end": 15,
+          "hour_start": 16,
+          "hour_end": 17,
           "activity": "午休",
           "location_id": "tower_building"
         },
         {
-          "hour_start": 15,
-          "hour_end": 20,
-          "activity": "研究魔法",
+          "hour_start": 17,
+          "hour_end": 23,
+          "activity": "谈生意",
           "location_id": "tower_building"
         },
         {
-          "hour_start": 20,
-          "hour_end": 8,
+          "hour_start": 23,
+          "hour_end": 9,
           "activity": "休息",
           "location_id": "tower_building"
         }
@@ -661,20 +676,20 @@
     },
     "npc_dyn_5": {
       "id": "npc_dyn_5",
-      "name": "索恩",
-      "description": "牧师。性格勇敢、睿智。",
-      "personality": "brave",
-      "goal": "传播神的福音，救助苦难之人",
+      "name": "埃德加",
+      "description": "钟表匠。性格懒惰、谨慎。",
+      "personality": "lazy",
+      "goal": "做好钟表匠的本职工作",
       "schedule": [
         {
-          "hour_start": 9,
-          "hour_end": 20,
-          "activity": "主持仪式",
+          "hour_start": 6,
+          "hour_end": 22,
+          "activity": "钟表制作",
           "location_id": "deep_forest"
         },
         {
-          "hour_start": 20,
-          "hour_end": 9,
+          "hour_start": 22,
+          "hour_end": 6,
           "activity": "休息",
           "location_id": "deep_forest"
         }
@@ -689,32 +704,32 @@
     },
     "npc_dyn_6": {
       "id": "npc_dyn_6",
-      "name": "西奥多",
-      "description": "卫兵。性格善良、好奇。",
-      "personality": "kind",
-      "goal": "尽职尽责保护居民安全",
+      "name": "珀西瓦尔",
+      "description": "发明家。性格冷静、好奇、懒惰、懦弱。",
+      "personality": "calm",
+      "goal": "做好发明家的本职工作",
       "schedule": [
         {
-          "hour_start": 7,
-          "hour_end": 14,
-          "activity": "站岗",
+          "hour_start": 6,
+          "hour_end": 13,
+          "activity": "搞发明",
           "location_id": "forest_clearing"
         },
         {
-          "hour_start": 14,
-          "hour_end": 15,
+          "hour_start": 13,
+          "hour_end": 14,
           "activity": "午休",
           "location_id": "forest_clearing"
         },
         {
-          "hour_start": 15,
-          "hour_end": 21,
-          "activity": "站岗",
+          "hour_start": 14,
+          "hour_end": 20,
+          "activity": "搞发明",
           "location_id": "forest_clearing"
         },
         {
-          "hour_start": 21,
-          "hour_end": 7,
+          "hour_start": 20,
+          "hour_end": 6,
           "activity": "休息",
           "location_id": "forest_clearing"
         }
@@ -729,32 +744,20 @@
     },
     "npc_dyn_7": {
       "id": "npc_dyn_7",
-      "name": "马库斯",
-      "description": "农夫。性格开朗、骄傲。",
-      "personality": "cheerful",
-      "goal": "种出最好的庄稼，让家人衣食无忧",
+      "name": "阿方斯",
+      "description": "飞空艇船长。性格好奇、节俭、谨慎。",
+      "personality": "curious",
+      "goal": "做好飞空艇船长的本职工作",
       "schedule": [
         {
-          "hour_start": 7,
-          "hour_end": 13,
-          "activity": "耕田",
+          "hour_start": 6,
+          "hour_end": 22,
+          "activity": "驾驶飞艇",
           "location_id": "ancient_tree"
         },
         {
-          "hour_start": 13,
-          "hour_end": 14,
-          "activity": "午休",
-          "location_id": "ancient_tree"
-        },
-        {
-          "hour_start": 14,
-          "hour_end": 20,
-          "activity": "耕田",
-          "location_id": "ancient_tree"
-        },
-        {
-          "hour_start": 20,
-          "hour_end": 7,
+          "hour_start": 22,
+          "hour_end": 6,
           "activity": "休息",
           "location_id": "ancient_tree"
         }
@@ -769,32 +772,20 @@
     },
     "npc_dyn_8": {
       "id": "npc_dyn_8",
-      "name": "罗兰",
-      "description": "盗贼。性格开朗、懒惰、诚实。",
-      "personality": "cheerful",
-      "goal": "偷取最值钱的宝物而不被发现",
+      "name": "阿奇博尔德",
+      "description": "机修师。性格创意、谨慎、野心。",
+      "personality": "creative",
+      "goal": "出人头地，做好机修师的本职工作",
       "schedule": [
         {
-          "hour_start": 7,
-          "hour_end": 14,
-          "activity": "踩点",
-          "location_id": "shrine"
-        },
-        {
-          "hour_start": 14,
-          "hour_end": 15,
-          "activity": "午休",
-          "location_id": "shrine"
-        },
-        {
-          "hour_start": 15,
+          "hour_start": 9,
           "hour_end": 21,
-          "activity": "踩点",
+          "activity": "修理引擎",
           "location_id": "shrine"
         },
         {
           "hour_start": 21,
-          "hour_end": 7,
+          "hour_end": 9,
           "activity": "休息",
           "location_id": "shrine"
         }
@@ -809,19 +800,19 @@
     },
     "npc_dyn_9": {
       "id": "npc_dyn_9",
-      "name": "鲁珀特",
-      "description": "吟游诗人。性格创意、勤勉、贪婪。",
-      "personality": "creative",
-      "goal": "赚更多的钱，游遍天下，收集最动人的故事",
+      "name": "威廉",
+      "description": "贵族。性格开朗、懦弱、野心。",
+      "personality": "cheerful",
+      "goal": "出人头地，做好贵族的本职工作",
       "schedule": [
         {
           "hour_start": 7,
-          "hour_end": 23,
-          "activity": "表演",
+          "hour_end": 22,
+          "activity": "参加舞会",
           "location_id": "hub"
         },
         {
-          "hour_start": 23,
+          "hour_start": 22,
           "hour_end": 7,
           "activity": "休息",
           "location_id": "hub"
@@ -837,20 +828,20 @@
     },
     "npc_dyn_10": {
       "id": "npc_dyn_10",
-      "name": "格雷戈尔",
-      "description": "酒馆老板。性格嫉妒、开朗。",
-      "personality": "jealous",
-      "goal": "经营好酒馆，让每位客人都满意而归",
+      "name": "克莱拉",
+      "description": "富商。性格慷慨、懒惰。",
+      "personality": "generous",
+      "goal": "积累财富，成为最富有的商人",
       "schedule": [
         {
-          "hour_start": 7,
-          "hour_end": 22,
-          "activity": "打理酒馆",
+          "hour_start": 9,
+          "hour_end": 21,
+          "activity": "谈生意",
           "location_id": "tavern"
         },
         {
-          "hour_start": 22,
-          "hour_end": 7,
+          "hour_start": 21,
+          "hour_end": 9,
           "activity": "休息",
           "location_id": "tavern"
         }
@@ -865,32 +856,20 @@
     },
     "npc_dyn_11": {
       "id": "npc_dyn_11",
-      "name": "伊莲娜",
-      "description": "铁匠。性格勇敢、懒惰。",
-      "personality": "brave",
-      "goal": "打造出传世的神兵利器",
+      "name": "约瑟芬",
+      "description": "钟表匠。性格好奇、懦弱、谨慎。",
+      "personality": "curious",
+      "goal": "做好钟表匠的本职工作",
       "schedule": [
         {
-          "hour_start": 9,
-          "hour_end": 15,
-          "activity": "打铁",
+          "hour_start": 6,
+          "hour_end": 21,
+          "activity": "钟表制作",
           "location_id": "market_district"
         },
         {
-          "hour_start": 15,
-          "hour_end": 16,
-          "activity": "午休",
-          "location_id": "market_district"
-        },
-        {
-          "hour_start": 16,
-          "hour_end": 22,
-          "activity": "打铁",
-          "location_id": "market_district"
-        },
-        {
-          "hour_start": 22,
-          "hour_end": 9,
+          "hour_start": 21,
+          "hour_end": 6,
           "activity": "休息",
           "location_id": "market_district"
         }
@@ -905,20 +884,32 @@
     },
     "npc_dyn_12": {
       "id": "npc_dyn_12",
-      "name": "卡斯帕",
-      "description": "骑士。性格冷静、勇敢、睿智。",
-      "personality": "calm",
-      "goal": "守护这片土地的和平与正义",
+      "name": "伊丽莎白",
+      "description": "发明家。性格嫉妒、节俭。",
+      "personality": "jealous",
+      "goal": "做好发明家的本职工作",
       "schedule": [
         {
-          "hour_start": 9,
-          "hour_end": 23,
-          "activity": "巡逻",
+          "hour_start": 8,
+          "hour_end": 14,
+          "activity": "搞发明",
           "location_id": "back_alley"
         },
         {
-          "hour_start": 23,
-          "hour_end": 9,
+          "hour_start": 14,
+          "hour_end": 15,
+          "activity": "午休",
+          "location_id": "back_alley"
+        },
+        {
+          "hour_start": 15,
+          "hour_end": 20,
+          "activity": "搞发明",
+          "location_id": "back_alley"
+        },
+        {
+          "hour_start": 20,
+          "hour_end": 8,
           "activity": "休息",
           "location_id": "back_alley"
         }
@@ -933,20 +924,32 @@
     },
     "npc_dyn_13": {
       "id": "npc_dyn_13",
-      "name": "伊莎贝拉",
-      "description": "商人。性格善良、懒惰、沉默。",
-      "personality": "kind",
-      "goal": "积累财富，成为最富有的商人",
+      "name": "维多利亚",
+      "description": "飞空艇船长。性格开朗、节俭、贪婪。",
+      "personality": "cheerful",
+      "goal": "赚更多的钱，做好飞空艇船长的本职工作",
       "schedule": [
         {
-          "hour_start": 8,
-          "hour_end": 20,
-          "activity": "摆摊",
+          "hour_start": 7,
+          "hour_end": 14,
+          "activity": "驾驶飞艇",
           "location_id": "tower_building"
         },
         {
-          "hour_start": 20,
-          "hour_end": 8,
+          "hour_start": 14,
+          "hour_end": 15,
+          "activity": "午休",
+          "location_id": "tower_building"
+        },
+        {
+          "hour_start": 15,
+          "hour_end": 22,
+          "activity": "驾驶飞艇",
+          "location_id": "tower_building"
+        },
+        {
+          "hour_start": 22,
+          "hour_end": 7,
           "activity": "休息",
           "location_id": "tower_building"
         }
@@ -961,15 +964,15 @@
     },
     "npc_dyn_14": {
       "id": "npc_dyn_14",
-      "name": "塞琳娜",
-      "description": "法师。性格好奇、开朗。",
-      "personality": "curious",
-      "goal": "探索魔法的终极奥秘",
+      "name": "维多利亚2",
+      "description": "机修师。性格慷慨、骄傲。",
+      "personality": "generous",
+      "goal": "做好机修师的本职工作",
       "schedule": [
         {
-          "hour_start": 8,
+          "hour_start": 6,
           "hour_end": 14,
-          "activity": "研究魔法",
+          "activity": "修理引擎",
           "location_id": "deep_forest"
         },
         {
@@ -980,13 +983,13 @@
         },
         {
           "hour_start": 15,
-          "hour_end": 20,
-          "activity": "研究魔法",
+          "hour_end": 22,
+          "activity": "修理引擎",
           "location_id": "deep_forest"
         },
         {
-          "hour_start": 20,
-          "hour_end": 8,
+          "hour_start": 22,
+          "hour_end": 6,
           "activity": "休息",
           "location_id": "deep_forest"
         }
@@ -1001,32 +1004,32 @@
     },
     "npc_dyn_15": {
       "id": "npc_dyn_15",
-      "name": "格蕾丝",
-      "description": "牧师。性格善良、好奇、谨慎。",
-      "personality": "kind",
-      "goal": "传播神的福音，救助苦难之人",
+      "name": "塞缪尔2",
+      "description": "贵族。性格懒惰、暴躁、节俭、野心。",
+      "personality": "lazy",
+      "goal": "出人头地，做好贵族的本职工作",
       "schedule": [
         {
-          "hour_start": 6,
-          "hour_end": 14,
-          "activity": "主持仪式",
+          "hour_start": 9,
+          "hour_end": 16,
+          "activity": "参加舞会",
           "location_id": "forest_clearing"
         },
         {
-          "hour_start": 14,
-          "hour_end": 15,
+          "hour_start": 16,
+          "hour_end": 17,
           "activity": "午休",
           "location_id": "forest_clearing"
         },
         {
-          "hour_start": 15,
-          "hour_end": 22,
-          "activity": "主持仪式",
+          "hour_start": 17,
+          "hour_end": 23,
+          "activity": "参加舞会",
           "location_id": "forest_clearing"
         },
         {
-          "hour_start": 22,
-          "hour_end": 6,
+          "hour_start": 23,
+          "hour_end": 9,
           "activity": "休息",
           "location_id": "forest_clearing"
         }
@@ -1041,20 +1044,32 @@
     },
     "npc_dyn_16": {
       "id": "npc_dyn_16",
-      "name": "提里安",
-      "description": "卫兵。性格勤勉、节俭。",
-      "personality": "diligent",
-      "goal": "尽职尽责保护居民安全",
+      "name": "玛格丽特2",
+      "description": "富商。性格慷慨、懦弱、沉默、睿智。",
+      "personality": "generous",
+      "goal": "积累财富，成为最富有的商人",
       "schedule": [
         {
-          "hour_start": 9,
-          "hour_end": 20,
-          "activity": "站岗",
+          "hour_start": 7,
+          "hour_end": 14,
+          "activity": "谈生意",
           "location_id": "ancient_tree"
         },
         {
-          "hour_start": 20,
-          "hour_end": 9,
+          "hour_start": 14,
+          "hour_end": 15,
+          "activity": "午休",
+          "location_id": "ancient_tree"
+        },
+        {
+          "hour_start": 15,
+          "hour_end": 21,
+          "activity": "谈生意",
+          "location_id": "ancient_tree"
+        },
+        {
+          "hour_start": 21,
+          "hour_end": 7,
           "activity": "休息",
           "location_id": "ancient_tree"
         }
@@ -1069,32 +1084,32 @@
     },
     "npc_dyn_17": {
       "id": "npc_dyn_17",
-      "name": "奥古斯丁",
-      "description": "农夫。性格开朗、沉默、骄傲。",
-      "personality": "cheerful",
-      "goal": "种出最好的庄稼，让家人衣食无忧",
+      "name": "玛格丽特3",
+      "description": "钟表匠。性格好奇、暴躁。",
+      "personality": "curious",
+      "goal": "做好钟表匠的本职工作",
       "schedule": [
         {
-          "hour_start": 7,
-          "hour_end": 13,
-          "activity": "耕田",
+          "hour_start": 8,
+          "hour_end": 15,
+          "activity": "钟表制作",
           "location_id": "shrine"
         },
         {
-          "hour_start": 13,
-          "hour_end": 14,
+          "hour_start": 15,
+          "hour_end": 16,
           "activity": "午休",
           "location_id": "shrine"
         },
         {
-          "hour_start": 14,
-          "hour_end": 20,
-          "activity": "耕田",
+          "hour_start": 16,
+          "hour_end": 23,
+          "activity": "钟表制作",
           "location_id": "shrine"
         },
         {
-          "hour_start": 20,
-          "hour_end": 7,
+          "hour_start": 23,
+          "hour_end": 8,
           "activity": "休息",
           "location_id": "shrine"
         }
@@ -1109,143 +1124,143 @@
     }
   },
   "lore": {
-    "world_name": "测试世界",
-    "genre": "fantasy",
+    "world_name": "齿轮城",
+    "genre": "steampunk",
     "era": "封建中世纪",
     "atmosphere": "",
     "terrain": "多样",
     "magic_level": "中魔",
     "danger_level": "适中",
-    "description": "这是一个艾尔文大陆风格的世界。",
-    "history": "这片土地在封建中世纪时期便有人类活动的痕迹。历经无数变迁，如今形成了以测试世界为中心的格局。",
+    "description": "这是一个齿轮城风格的世界。",
+    "history": "这片土地在封建中世纪时期便有人类活动的痕迹。历经无数变迁，如今形成了以齿轮城为中心的格局。",
     "factions": [],
-    "main_quest": "传说中的黑暗领主正在集结大军，你必须找到传说中的神器，联合各势力，在末日降临前阻止他。",
+    "main_quest": "蒸汽核心的稳定性正在崩溃，整座城市随时可能爆炸。你必须找到传说中的远古蓝图来修复它。",
     "npcs": [
       {
-        "name": "梅丽莎",
-        "role": "让每位旅客都感到宾至如归",
-        "location": "旅者酒馆"
+        "name": "铆钉",
+        "role": "完成足以改变世界的永动机",
+        "location": "铜壶酒馆"
       },
       {
-        "name": "格里芬",
-        "role": "维护秩序与正义",
-        "location": "村庄广场"
+        "name": "黄铜",
+        "role": "发现传说中的新大陆",
+        "location": "中央钟楼"
       },
       {
-        "name": "贾维斯",
-        "role": "锻造出传说中的神兵利器",
-        "location": "村庄广场"
+        "name": "勋爵",
+        "role": "维护城市赖以运转的蒸汽核心",
+        "location": "中央钟楼"
       },
       {
-        "name": "老麦克",
-        "role": "守护这片土地免受侵害",
-        "location": "旅者酒馆"
+        "name": "蒸汽比尔",
+        "role": "破解贤者之石的终极配方",
+        "location": "铜壶酒馆"
       },
       {
-        "name": "奥丁",
-        "role": "收集稀有草药治愈伤员",
+        "name": "阿奇博尔德",
+        "role": "为底层工人争取应有的权益",
         "location": "商业区"
       },
       {
-        "name": "芬里尔",
-        "role": "赚更多的钱，经营好酒馆，让每位客人都满意而归",
-        "location": "村庄广场"
+        "name": "凯瑟琳",
+        "role": "出人头地，做好发明家的本职工作",
+        "location": "中央钟楼"
       },
       {
-        "name": "阿尔文",
-        "role": "打造出传世的神兵利器",
-        "location": "旅者酒馆"
+        "name": "玛格丽特",
+        "role": "做好飞空艇船长的本职工作",
+        "location": "铜壶酒馆"
       },
       {
-        "name": "埃德蒙",
-        "role": "赚更多的钱，守护这片土地的和平与正义",
+        "name": "伊莎多拉",
+        "role": "做好机修师的本职工作",
         "location": "商业区"
       },
       {
-        "name": "艾米莉亚",
-        "role": "积累财富，成为最富有的商人",
+        "name": "尼古拉斯",
+        "role": "做好贵族的本职工作",
         "location": "暗巷"
       },
       {
-        "name": "薇拉",
-        "role": "赚更多的钱，探索魔法的终极奥秘",
+        "name": "塞缪尔",
+        "role": "积累财富，成为最富有的商人",
         "location": "高塔"
       },
       {
-        "name": "索恩",
-        "role": "传播神的福音，救助苦难之人",
+        "name": "埃德加",
+        "role": "做好钟表匠的本职工作",
         "location": "密林深处"
       },
       {
-        "name": "西奥多",
-        "role": "尽职尽责保护居民安全",
+        "name": "珀西瓦尔",
+        "role": "做好发明家的本职工作",
         "location": "林中空地"
       },
       {
-        "name": "马库斯",
-        "role": "种出最好的庄稼，让家人衣食无忧",
+        "name": "阿方斯",
+        "role": "做好飞空艇船长的本职工作",
         "location": "巨树"
       },
       {
-        "name": "罗兰",
-        "role": "偷取最值钱的宝物而不被发现",
+        "name": "阿奇博尔德",
+        "role": "出人头地，做好机修师的本职工作",
         "location": "神殿"
       },
       {
-        "name": "鲁珀特",
-        "role": "赚更多的钱，游遍天下，收集最动人的故事",
-        "location": "村庄广场"
+        "name": "威廉",
+        "role": "出人头地，做好贵族的本职工作",
+        "location": "中央钟楼"
       },
       {
-        "name": "格雷戈尔",
-        "role": "经营好酒馆，让每位客人都满意而归",
-        "location": "旅者酒馆"
+        "name": "克莱拉",
+        "role": "积累财富，成为最富有的商人",
+        "location": "铜壶酒馆"
       },
       {
-        "name": "伊莲娜",
-        "role": "打造出传世的神兵利器",
+        "name": "约瑟芬",
+        "role": "做好钟表匠的本职工作",
         "location": "商业区"
       },
       {
-        "name": "卡斯帕",
-        "role": "守护这片土地的和平与正义",
+        "name": "伊丽莎白",
+        "role": "做好发明家的本职工作",
         "location": "暗巷"
       },
       {
-        "name": "伊莎贝拉",
-        "role": "积累财富，成为最富有的商人",
+        "name": "维多利亚",
+        "role": "赚更多的钱，做好飞空艇船长的本职工作",
         "location": "高塔"
       },
       {
-        "name": "塞琳娜",
-        "role": "探索魔法的终极奥秘",
+        "name": "维多利亚2",
+        "role": "做好机修师的本职工作",
         "location": "密林深处"
       },
       {
-        "name": "格蕾丝",
-        "role": "传播神的福音，救助苦难之人",
+        "name": "塞缪尔2",
+        "role": "出人头地，做好贵族的本职工作",
         "location": "林中空地"
       },
       {
-        "name": "提里安",
-        "role": "尽职尽责保护居民安全",
+        "name": "玛格丽特2",
+        "role": "积累财富，成为最富有的商人",
         "location": "巨树"
       },
       {
-        "name": "奥古斯丁",
-        "role": "种出最好的庄稼，让家人衣食无忧",
+        "name": "玛格丽特3",
+        "role": "做好钟表匠的本职工作",
         "location": "神殿"
       }
     ],
     "locations": [
       {
-        "name": "村庄广场",
-        "description": "石板路交织的聚落，炊烟从茅草屋顶升起，旅人们在此交换消息。",
+        "name": "中央钟楼",
+        "description": "巨大齿轮和管道构成的城市中心，蒸汽机车在头顶的铁轨上呼啸。",
         "danger": 0
       },
       {
-        "name": "旅者酒馆",
-        "description": "温暖的壁炉映照着木质吧台，墙上挂着冒险者留下的旧盾。",
+        "name": "铜壶酒馆",
+        "description": "机械侍者端上冒着泡沫的蒸馏酒，齿轮装饰在墙上缓慢转动。",
         "danger": 0
       },
       {
@@ -1285,7 +1300,7 @@
       }
     ]
   },
-  "turn_count": 5,
+  "turn_count": 2,
   "knowledge": {
     "nodes": [],
     "edges": []
