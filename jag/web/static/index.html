@@ -623,6 +623,7 @@ function connect() {
 function handleMessage(msg) {
         switch (msg.type) {
             case 'init': updateStatus(msg.status); if (msg.opening) addNarrative('system', msg.opening); break;
+            case 'opening_update': if (msg.opening) addNarrative('system', msg.opening); break;
             case 'trace': case 'tick': addTraceCard(msg); break;
             case 'action_result': 
                 addNarrative('player', msg.narrative, msg.status?.turn); 
@@ -679,10 +680,25 @@ function openWorldBuilder() {
     }
   });
   if (tagCategories.length === 0) {
-    fetch('/api/world/tags').then(r => r.json()).then(data => {
-      tagCategories = data;
-      renderTagSections();
-    }).catch(() => showToast('加载词条失败'));
+    let retries = 0;
+    function loadTags() {
+      fetch('/api/world/tags').then(r => {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      }).then(data => {
+        if (!Array.isArray(data) || data.length === 0) throw new Error('Empty data');
+        tagCategories = data;
+        renderTagSections();
+      }).catch(err => {
+        retries++;
+        if (retries < 3) {
+          setTimeout(loadTags, retries * 500);
+        } else {
+          showToast('加载词条失败: ' + err.message);
+        }
+      });
+    }
+    loadTags();
   }
 }
 

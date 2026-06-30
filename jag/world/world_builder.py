@@ -385,8 +385,8 @@ class WorldBuilder:
         self.build_step_region()
         self.build_step_locations()
         self.build_step_npcs()
-        lore = self.build_step_lore()
-        result = self.build_step_finalize(lore)
+        step_lore = self.build_step_lore()
+        result = self.build_step_finalize(step_lore.get("lore"))
         return result
 
     # ── Step-by-step build (for progressive UI) ─────────────────────

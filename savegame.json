@@ -1,0 +1,460 @@
+{
+  "version": 1,
+  "time": {
+    "turn": 0,
+    "hour": 8,
+    "day": 1,
+    "season": "spring"
+  },
+  "regions": {
+    "main_region": {
+      "id": "main_region",
+      "name": "测试世界",
+      "description": "恢弘的气势弥漫在空气中，命运的齿轮正在转动。 封建中世纪",
+      "region_type": "kingdom",
+      "danger_level": 0,
+      "locations": [
+        "hub",
+        "tavern",
+        "deep_forest",
+        "forest_clearing",
+        "ancient_tree",
+        "market_district",
+        "back_alley",
+        "tower_building",
+        "shrine"
+      ]
+    }
+  },
+  "locations": {
+    "hub": {
+      "id": "hub",
+      "name": "村庄广场",
+      "description": "石板路交织的聚落，炊烟从茅草屋顶升起，旅人们在此交换消息。",
+      "region_id": "main_region",
+      "location_type": "outdoor",
+      "light_level": 8,
+      "danger_level": 0,
+      "connected": [
+        "tavern",
+        "deep_forest",
+        "forest_clearing"
+      ],
+      "entities": [
+        "knight",
+        "blacksmith",
+        "player"
+      ],
+      "items": [],
+      "tags": []
+    },
+    "tavern": {
+      "id": "tavern",
+      "name": "旅者酒馆",
+      "description": "温暖的壁炉映照着木质吧台，墙上挂着冒险者留下的旧盾。",
+      "region_id": "main_region",
+      "location_type": "indoor",
+      "light_level": 6,
+      "danger_level": 0,
+      "connected": [
+        "hub",
+        "deep_forest"
+      ],
+      "entities": [
+        "tavern_owner",
+        "wandering_mage"
+      ],
+      "items": [],
+      "tags": []
+    },
+    "deep_forest": {
+      "id": "deep_forest",
+      "name": "密林深处",
+      "description": "参天古树遮天蔽日，粗壮的藤蔓缠绕其间，远处传来不明生物的低吼声。",
+      "region_id": "main_region",
+      "location_type": "outdoor",
+      "light_level": 3,
+      "danger_level": 5,
+      "connected": [
+        "hub",
+        "forest_clearing",
+        "tavern"
+      ],
+      "entities": [],
+      "items": [],
+      "tags": []
+    },
+    "forest_clearing": {
+      "id": "forest_clearing",
+      "name": "林中空地",
+      "description": "阳光透过树冠洒落，地面上散落着营火遗迹和不知名的足迹。",
+      "region_id": "main_region",
+      "location_type": "outdoor",
+      "light_level": 6,
+      "danger_level": 3,
+      "connected": [
+        "deep_forest",
+        "ancient_tree"
+      ],
+      "entities": [],
+      "items": [],
+      "tags": []
+    },
+    "ancient_tree": {
+      "id": "ancient_tree",
+      "name": "巨树",
+      "description": "一棵无法估量年龄的巨树拔地而起，树根延伸数十米，树洞深处似有微光闪烁。",
+      "region_id": "main_region",
+      "location_type": "outdoor",
+      "light_level": 4,
+      "danger_level": 4,
+      "connected": [
+        "forest_clearing",
+        "market_district"
+      ],
+      "entities": [],
+      "items": [],
+      "tags": []
+    },
+    "market_district": {
+      "id": "market_district",
+      "name": "商业区",
+      "description": "拥挤繁华的街区，各色摊位和商铺鳞次栉比，叫卖声不绝于耳。",
+      "region_id": "main_region",
+      "location_type": "outdoor",
+      "light_level": 7,
+      "danger_level": 2,
+      "connected": [
+        "ancient_tree",
+        "back_alley"
+      ],
+      "entities": [
+        "thief"
+      ],
+      "items": [],
+      "tags": []
+    },
+    "back_alley": {
+      "id": "back_alley",
+      "name": "暗巷",
+      "description": "贫民区的窄巷，阳光难以到达，可疑的身影在阴影中出没。",
+      "region_id": "main_region",
+      "location_type": "outdoor",
+      "light_level": 3,
+      "danger_level": 5,
+      "connected": [
+        "market_district",
+        "tower_building"
+      ],
+      "entities": [],
+      "items": [],
+      "tags": []
+    },
+    "tower_building": {
+      "id": "tower_building",
+      "name": "高塔",
+      "description": "矗立在城市中心的标志性建筑，从顶端可以俯瞰整个城区。",
+      "region_id": "main_region",
+      "location_type": "indoor",
+      "light_level": 6,
+      "danger_level": 3,
+      "connected": [
+        "back_alley",
+        "shrine"
+      ],
+      "entities": [],
+      "items": [],
+      "tags": []
+    },
+    "shrine": {
+      "id": "shrine",
+      "name": "神殿",
+      "description": "祭祀场所，石台上残留着微弱的光芒，祈祷者在此寻求启示。",
+      "region_id": "main_region",
+      "location_type": "indoor",
+      "light_level": 4,
+      "danger_level": 4,
+      "connected": [
+        "tower_building"
+      ],
+      "entities": [],
+      "items": [],
+      "tags": []
+    }
+  },
+  "characters": {
+    "tavern_owner": {
+      "location_id": "tavern",
+      "name": "老麦克",
+      "type": "npc"
+    },
+    "knight": {
+      "location_id": "hub",
+      "name": "艾琳",
+      "type": "npc"
+    },
+    "blacksmith": {
+      "location_id": "hub",
+      "name": "铁锤汤姆",
+      "type": "npc"
+    },
+    "wandering_mage": {
+      "location_id": "tavern",
+      "name": "索林",
+      "type": "npc"
+    },
+    "thief": {
+      "location_id": "market_district",
+      "name": "贝拉",
+      "type": "npc"
+    },
+    "player": {
+      "location_id": "hub",
+      "inventory": [
+        "铁剑",
+        "皮甲",
+        "面包",
+        "10枚金币"
+      ],
+      "name": "冒险者",
+      "type": "player"
+    }
+  },
+  "items": {},
+  "global_flags": {},
+  "npcs": {
+    "tavern_owner": {
+      "id": "tavern_owner",
+      "name": "老麦克",
+      "description": "酒馆老板。让每位旅客都感到宾至如归。",
+      "personality": "friendly",
+      "goal": "让每位旅客都感到宾至如归",
+      "schedule": [
+        {
+          "hour_start": 6,
+          "hour_end": 22,
+          "activity": "照看吧台",
+          "location_id": "tavern"
+        },
+        {
+          "hour_start": 22,
+          "hour_end": 6,
+          "activity": "休息",
+          "location_id": "tavern"
+        }
+      ],
+      "state": {
+        "current_location_id": "tavern",
+        "mood": "neutral",
+        "energy": 1.0,
+        "hunger": 0.0,
+        "current_action": ""
+      }
+    },
+    "knight": {
+      "id": "knight",
+      "name": "艾琳",
+      "description": "骑士队长。维护秩序与正义。",
+      "personality": "stern",
+      "goal": "维护秩序与正义",
+      "schedule": [
+        {
+          "hour_start": 6,
+          "hour_end": 22,
+          "activity": "操练士兵",
+          "location_id": "hub"
+        },
+        {
+          "hour_start": 22,
+          "hour_end": 6,
+          "activity": "休息",
+          "location_id": "hub"
+        }
+      ],
+      "state": {
+        "current_location_id": "hub",
+        "mood": "neutral",
+        "energy": 1.0,
+        "hunger": 0.0,
+        "current_action": ""
+      }
+    },
+    "blacksmith": {
+      "id": "blacksmith",
+      "name": "铁锤汤姆",
+      "description": "铁匠。锻造出传说中的神兵利器。",
+      "personality": "friendly",
+      "goal": "锻造出传说中的神兵利器",
+      "schedule": [
+        {
+          "hour_start": 6,
+          "hour_end": 22,
+          "activity": "打铁铸剑",
+          "location_id": "hub"
+        },
+        {
+          "hour_start": 22,
+          "hour_end": 6,
+          "activity": "休息",
+          "location_id": "hub"
+        }
+      ],
+      "state": {
+        "current_location_id": "hub",
+        "mood": "neutral",
+        "energy": 1.0,
+        "hunger": 0.0,
+        "current_action": ""
+      }
+    },
+    "wandering_mage": {
+      "id": "wandering_mage",
+      "name": "索林",
+      "description": "流浪法师。寻找失落的远古魔法典籍。",
+      "personality": "curious",
+      "goal": "寻找失落的远古魔法典籍",
+      "schedule": [
+        {
+          "hour_start": 6,
+          "hour_end": 22,
+          "activity": "研究魔法",
+          "location_id": "tavern"
+        },
+        {
+          "hour_start": 22,
+          "hour_end": 6,
+          "activity": "休息",
+          "location_id": "tavern"
+        }
+      ],
+      "state": {
+        "current_location_id": "tavern",
+        "mood": "neutral",
+        "energy": 1.0,
+        "hunger": 0.0,
+        "current_action": ""
+      }
+    },
+    "thief": {
+      "id": "thief",
+      "name": "贝拉",
+      "description": "盗贼。偷到世间最珍贵的宝物。",
+      "personality": "charming",
+      "goal": "偷到世间最珍贵的宝物",
+      "schedule": [
+        {
+          "hour_start": 6,
+          "hour_end": 22,
+          "activity": "潜行探查",
+          "location_id": "market_district"
+        },
+        {
+          "hour_start": 22,
+          "hour_end": 6,
+          "activity": "休息",
+          "location_id": "market_district"
+        }
+      ],
+      "state": {
+        "current_location_id": "market_district",
+        "mood": "neutral",
+        "energy": 1.0,
+        "hunger": 0.0,
+        "current_action": ""
+      }
+    }
+  },
+  "lore": {
+    "world_name": "测试世界",
+    "genre": "fantasy",
+    "era": "封建中世纪",
+    "atmosphere": "恢弘的气势弥漫在空气中，命运的齿轮正在转动。",
+    "terrain": "密林、都市",
+    "magic_level": "中魔",
+    "danger_level": "适中",
+    "description": "这是一个艾尔文大陆风格的世界。恢弘的气势弥漫在空气中，命运的齿轮正在转动。",
+    "history": "这片土地在封建中世纪时期便有人类活动的痕迹。历经无数变迁，如今形成了以测试世界为中心的格局。恢弘的气势弥漫在空气中，命运的齿轮正在转动。",
+    "factions": [],
+    "main_quest": "传说中的黑暗领主正在集结大军，你必须找到传说中的神器，联合各势力，在末日降临前阻止他。",
+    "npcs": [
+      {
+        "name": "老麦克",
+        "role": "让每位旅客都感到宾至如归",
+        "location": "旅者酒馆"
+      },
+      {
+        "name": "艾琳",
+        "role": "维护秩序与正义",
+        "location": "村庄广场"
+      },
+      {
+        "name": "铁锤汤姆",
+        "role": "锻造出传说中的神兵利器",
+        "location": "村庄广场"
+      },
+      {
+        "name": "索林",
+        "role": "寻找失落的远古魔法典籍",
+        "location": "旅者酒馆"
+      },
+      {
+        "name": "贝拉",
+        "role": "偷到世间最珍贵的宝物",
+        "location": "商业区"
+      }
+    ],
+    "locations": [
+      {
+        "name": "村庄广场",
+        "description": "石板路交织的聚落，炊烟从茅草屋顶升起，旅人们在此交换消息。",
+        "danger": 0
+      },
+      {
+        "name": "旅者酒馆",
+        "description": "温暖的壁炉映照着木质吧台，墙上挂着冒险者留下的旧盾。",
+        "danger": 0
+      },
+      {
+        "name": "密林深处",
+        "description": "参天古树遮天蔽日，粗壮的藤蔓缠绕其间，远处传来不明生物的低吼声。",
+        "danger": 5
+      },
+      {
+        "name": "林中空地",
+        "description": "阳光透过树冠洒落，地面上散落着营火遗迹和不知名的足迹。",
+        "danger": 3
+      },
+      {
+        "name": "巨树",
+        "description": "一棵无法估量年龄的巨树拔地而起，树根延伸数十米，树洞深处似有微光闪烁。",
+        "danger": 4
+      },
+      {
+        "name": "商业区",
+        "description": "拥挤繁华的街区，各色摊位和商铺鳞次栉比，叫卖声不绝于耳。",
+        "danger": 2
+      },
+      {
+        "name": "暗巷",
+        "description": "贫民区的窄巷，阳光难以到达，可疑的身影在阴影中出没。",
+        "danger": 5
+      },
+      {
+        "name": "高塔",
+        "description": "矗立在城市中心的标志性建筑，从顶端可以俯瞰整个城区。",
+        "danger": 3
+      },
+      {
+        "name": "神殿",
+        "description": "祭祀场所，石台上残留着微弱的光芒，祈祷者在此寻求启示。",
+        "danger": 4
+      }
+    ]
+  },
+  "turn_count": 0,
+  "knowledge": {
+    "nodes": [],
+    "edges": []
+  },
+  "active_quests": []
+}

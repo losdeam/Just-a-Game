@@ -36,10 +36,28 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
     gm = GameMaster(config=cfg)
     world_builder = WorldBuilder(gm)
     _world_initialized = False  # Track if world has been set up
+    SAVE_FILE = "savegame.json"
+
+    def _auto_save() -> None:
+        """Auto-save game state if world is initialized."""
+        if _world_initialized:
+            try:
+                gm.save_game(SAVE_FILE)
+            except Exception as e:
+                logger.warning("Auto-save failed: %s", e)
 
     def _ensure_world() -> None:
         """Ensure a world is loaded; does nothing if none was created."""
         pass  # World must be explicitly created via create_world or load_demo
+
+    # Try to load saved game on startup
+    if Path(SAVE_FILE).exists():
+        try:
+            if gm.load_game(SAVE_FILE):
+                _world_initialized = True
+                logger.info("Loaded saved game from %s", SAVE_FILE)
+        except Exception as e:
+            logger.warning("Failed to load saved game: %s", e)
 
     # WebSocket connections
     connections: list[WebSocket] = []
@@ -219,6 +237,7 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
             result["opening"] = opening
             result["suggested_options"] = options
             result["lore"] = gm.world_lore or {}
+            _auto_save()
             return JSONResponse(result)
         except Exception as e:
             return JSONResponse({"ok": False, "message": str(e)}, status_code=500)
@@ -232,6 +251,7 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
             _world_initialized = True
         opening = await gm.generate_opening()
         options = await gm.get_suggested_options()
+        _auto_save()
         return JSONResponse({"ok": True, "message": "演示世界已加载", "opening": opening, "suggested_options": options})
 
     @app.get("/api/inventory")
@@ -263,12 +283,20 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
         # Send initial state
         try:
             status = gm.get_status()
-            opening = await gm.generate_opening() if _world_initialized else ""
             await websocket.send_text(json.dumps({
                 "type": "init",
                 "status": status,
-                "opening": opening,
+                "opening": "",
             }, ensure_ascii=False))
+            if _world_initialized:
+                try:
+                    opening = await gm.generate_opening()
+                    await websocket.send_text(json.dumps({
+                        "type": "opening_update",
+                        "opening": opening,
+                    }, ensure_ascii=False))
+                except Exception:
+                    pass
         except Exception:
             pass
 
@@ -292,6 +320,7 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                                 "status": status,
                                 "suggested_options": options,
                             }, ensure_ascii=False))
+                            _auto_save()
                         except Exception as e:
                             await websocket.send_text(json.dumps({
                                 "type": "error",
@@ -310,6 +339,7 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                             "status": status,
                             "suggested_options": options,
                         }, ensure_ascii=False))
+                        _auto_save()
                     except Exception as e:
                         await websocket.send_text(json.dumps({
                             "type": "error",
@@ -461,6 +491,7 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                             "suggested_options": options,
                             "lore": lore_for_frontend,
                         }, ensure_ascii=False))
+                        _auto_save()
                     except Exception as e:
                         await websocket.send_text(json.dumps({
                             "type": "error",
@@ -488,7 +519,9 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                         "status": status,
                         "opening": opening,
                         "suggested_options": options,
+                        "lore": gm.world_lore or {},
                     }, ensure_ascii=False))
+                    _auto_save()
 
                 elif msg_type == "update_config":
                     try:

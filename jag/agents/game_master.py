@@ -338,28 +338,80 @@ class GameMaster:
 
     def save_game(self, path: str = "savegame.json") -> None:
         """Save current game state to JSON."""
+        regions_data = {
+            rid: {
+                "id": r.id,
+                "name": r.name,
+                "description": r.description,
+                "region_type": r.region_type,
+                "danger_level": r.danger_level,
+                "locations": r.locations,
+            }
+            for rid, r in self.world.regions.items()
+        }
+
+        locations_data = {
+            lid: {
+                "id": l.id,
+                "name": l.name,
+                "description": l.description,
+                "region_id": l.region_id,
+                "location_type": l.location_type,
+                "light_level": l.light_level,
+                "danger_level": l.danger_level,
+                "connected": l.connected,
+                "entities": l.entities,
+                "items": l.items,
+                "tags": l.tags,
+            }
+            for lid, l in self.world.locations.items()
+        }
+
+        npc_states = {}
+        for npc_id, npc in self.tick_engine._npcs.items():
+            npc_states[npc_id] = {
+                "id": npc.id,
+                "name": npc.name,
+                "description": npc.description,
+                "personality": npc.personality,
+                "goal": npc.goal,
+                "schedule": [
+                    {"hour_start": s.hour_start, "hour_end": s.hour_end,
+                     "activity": s.activity, "location_id": s.location_id}
+                    for s in npc.schedule
+                ],
+                "state": {
+                    "current_location_id": npc.state.current_location_id,
+                    "mood": npc.state.mood,
+                    "energy": npc.state.energy,
+                    "hunger": npc.state.hunger,
+                    "current_action": npc.state.current_action,
+                },
+            }
+
         state = {
-            "world": self.world.snapshot(),
+            "version": 1,
             "time": {
                 "turn": self.world.time.turn,
                 "hour": self.world.time.hour,
                 "day": self.world.time.day,
                 "season": self.world.time.season,
             },
-            "characters": {
-                cid: {
-                    "location_id": c.get("location_id", ""),
-                    "inventory": c.get("inventory", []),
-                    "name": c.get("name", ""),
-                }
-                for cid, c in self.world.characters.items()
-            },
+            "regions": regions_data,
+            "locations": locations_data,
+            "characters": self.world.characters,
+            "items": self.world.items,
             "global_flags": self.world.global_flags,
+            "npcs": npc_states,
+            "lore": self.world_lore,
+            "turn_count": self._turn_count,
             "knowledge": self.knowledge.to_dict(),
+            "active_quests": [q.to_dict() if hasattr(q, "to_dict") else str(q) for q in self.quest_gen.active_quests]
+            if hasattr(self.quest_gen, "active_quests") else [],
         }
 
         Path(path).parent.mkdir(parents=True, exist_ok=True)
-        with open(path, "w") as f:
+        with open(path, "w", encoding="utf-8") as f:
             json.dump(state, f, indent=2, ensure_ascii=False)
         logger.info("Game saved to %s", path)
 
@@ -371,8 +423,48 @@ class GameMaster:
             return False
 
         try:
-            with open(p) as f:
+            with open(p, encoding="utf-8") as f:
                 state = json.load(f)
+
+            self.clear_world()
+
+            # Restore regions
+            for rid, rdata in state.get("regions", {}).items():
+                region = WorldRegion(
+                    id=rdata["id"],
+                    name=rdata["name"],
+                    description=rdata.get("description", ""),
+                    region_type=rdata.get("region_type", "settlement"),
+                    danger_level=rdata.get("danger_level", 0),
+                    locations=rdata.get("locations", []),
+                )
+                self.world.add_region(region)
+                self.weather.add_region(region.id)
+
+            # Restore locations
+            for lid, ldata in state.get("locations", {}).items():
+                location = WorldLocation(
+                    id=ldata["id"],
+                    name=ldata["name"],
+                    description=ldata.get("description", ""),
+                    region_id=ldata.get("region_id", ""),
+                    location_type=ldata.get("location_type", "room"),
+                    light_level=ldata.get("light_level", 5),
+                    danger_level=ldata.get("danger_level", 0),
+                    connected=ldata.get("connected", []),
+                    entities=ldata.get("entities", []),
+                    items=ldata.get("items", []),
+                    tags=ldata.get("tags", []),
+                )
+                self.world.add_location(location)
+
+            # Restore characters
+            for cid, cdata in state.get("characters", {}).items():
+                self.world.characters[cid] = cdata
+
+            # Restore items
+            for iid, idata in state.get("items", {}).items():
+                self.world.items[iid] = idata
 
             # Restore time
             time_data = state.get("time", {})
@@ -380,9 +472,43 @@ class GameMaster:
             self.world.time.hour = time_data.get("hour", 8)
             self.world.time.day = time_data.get("day", 1)
             self.world.time.season = time_data.get("season", "spring")
+            self._turn_count = state.get("turn_count", 0)
 
             # Restore global flags
             self.world.global_flags = state.get("global_flags", {})
+
+            # Restore NPCs
+            from jag.world.npc import NPC, ScheduleEntry
+            for npc_id, ndata in state.get("npcs", {}).items():
+                schedule = [
+                    ScheduleEntry(
+                        hour_start=s["hour_start"],
+                        hour_end=s["hour_end"],
+                        activity=s["activity"],
+                        location_id=s["location_id"],
+                    )
+                    for s in ndata.get("schedule", [])
+                ]
+                npc = NPC(
+                    id=ndata["id"],
+                    name=ndata["name"],
+                    description=ndata.get("description", ""),
+                    location_id=ndata.get("state", {}).get("current_location_id", ""),
+                    personality=ndata.get("personality", "neutral"),
+                    goal=ndata.get("goal", ""),
+                    schedule=schedule,
+                )
+                if "state" in ndata:
+                    st = ndata["state"]
+                    npc.state.current_location_id = st.get("current_location_id", npc.state.current_location_id)
+                    npc.state.mood = st.get("mood", npc.state.mood)
+                    npc.state.energy = st.get("energy", npc.state.energy)
+                    npc.state.hunger = st.get("hunger", npc.state.hunger)
+                    npc.state.current_action = st.get("current_action", npc.state.current_action)
+                self.tick_engine.register_npc(npc)
+
+            # Restore lore
+            self.world_lore = state.get("lore", {})
 
             # Restore knowledge graph
             kg_data = state.get("knowledge", {})
