@@ -189,37 +189,68 @@ class NarrativeGenerator:
             target = action.get("target", "")
             action_text = action.get("text", "")
 
-            if action_text and action_type not in ("move",):
-                parts.append(f"你尝试{action_text}。")
-            elif action_type == "move" and target:
-                parts.append(f"你动身前往{target}。")
+            if action_type == "move" and target:
+                loc = None
+                if hasattr(result, 'world'):
+                    loc = result.world.locations.get(target)
+                if not loc:
+                    loc_name = target
+                else:
+                    loc_name = loc.name if hasattr(loc, 'name') else target
+                parts.append(f"你动身前往{loc_name}。")
             elif action_type == "speak":
                 npc_name = ""
+                npc_desc = ""
                 if target and result:
-                    from jag.world.world import WorldState
                     if isinstance(result, object) and hasattr(result, 'npc_actions'):
                         for na in result.npc_actions:
                             if na.get("npc_id") == target:
                                 npc_name = na.get("npc_name", "")
+                                npc_desc = na.get("description", "")
                                 break
                 if not npc_name:
                     npc_name = target or "附近的人"
                 parts.append(f"你走向{npc_name}，开始与对方交谈。")
+                
+                if not npc_desc:
+                    import random
+                    dialogues = [
+                        f"{npc_name}抬起头，微笑着说：'你好，旅行者。有什么我可以帮你的吗？'",
+                        f"{npc_name}看了你一眼：'哦，是外地人啊。这镇子最近可不太平。'",
+                        f"'欢迎来到这里。'{npc_name}说道，'你是来做生意的，还是来冒险的？'",
+                        f"{npc_name}放下手中的活计：'今天天气真不错，对吧？'",
+                        f"'小心点，朋友。'{npc_name}压低声音，'最近夜里有奇怪的声音。'",
+                    ]
+                    parts.append(random.choice(dialogues))
+                else:
+                    parts.append(npc_desc)
             elif action_type == "interact" and target:
-                parts.append(f"你试着与{target}互动。")
+                npc_data = None
+                if hasattr(result, 'world'):
+                    npc_data = result.world.characters.get(target, {})
+                if npc_data and npc_data.get('name'):
+                    parts.append(f"你与{npc_data['name']}进行了互动。")
+                else:
+                    parts.append(f"你试着与{target}互动。")
             elif action_type == "attack" and target:
                 parts.append(f"你向{target}发起攻击！")
+            elif action_type == "rest":
+                parts.append("你稍作休息，恢复体力。")
+            elif action_type == "examine":
+                if target:
+                    parts.append(f"你仔细检查{target}。")
+                else:
+                    parts.append("你仔细观察周围的环境。")
             elif target:
                 action_desc = {
                     "take": "拾取",
                     "drop": "丢弃",
                     "use": "使用",
-                    "examine": "检查",
-                    "rest": "休息",
+                    "craft": "制作",
                 }.get(action_type, action_type or "行动")
                 parts.append(f"你尝试{action_desc}{target}。")
-            elif action_type == "rest":
-                parts.append("你稍作休息。")
+            elif action_text:
+                parts.append(f"你尝试{action_text}。")
         else:
             parts.append(f"【{time_str}】你在{loc_name}。")
 

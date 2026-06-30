@@ -278,6 +278,7 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
 
     @app.websocket("/ws")
     async def websocket_endpoint(websocket: WebSocket) -> None:
+        nonlocal _world_initialized
         await websocket.accept()
         connections.append(websocket)
         logger.info("WebSocket client connected")
