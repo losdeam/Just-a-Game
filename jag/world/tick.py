@@ -451,7 +451,7 @@ class TickEngine:
                         player_id=player_action.get("player_id", "player"),
                         world=self.world,
                     ),
-                    timeout=8.0,
+                    timeout=60.0,
                 )
                 result.player_action = planned
                 if step and self.tracer:
@@ -735,7 +735,7 @@ class TickEngine:
                     try:
                         action = await asyncio.wait_for(
                             self.npc_agent.decide(npc, self.world, observation),
-                            timeout=5.0,
+                            timeout=30.0,
                         )
                     except asyncio.TimeoutError:
                         action = self._default_npc_action(npc, observation, schedule)
@@ -907,7 +907,7 @@ class TickEngine:
         try:
             story_beats = await asyncio.wait_for(
                 self.story_director.process(result.world_events, self.world),
-                timeout=8.0,
+                timeout=60.0,
             )
             result.story_beats = story_beats
             if step and self.tracer:
@@ -988,7 +988,7 @@ class TickEngine:
             try:
                 result.narrative = await asyncio.wait_for(
                     self.narrator.narrate(result, self.world),
-                    timeout=8.0,
+                    timeout=60.0,
                 )
             except asyncio.TimeoutError:
                 logger.warning("Narrative generation timed out, using fallback")

@@ -52,7 +52,7 @@ class LiteLLMProvider:
         params: dict[str, Any] = {
             "model": self.model,
             "messages": messages,
-            "timeout": 10,  # 10 second timeout to avoid blocking
+            "timeout": 60,  # 60 second timeout for slow APIs
             **self._extra,
             **kwargs,
         }
@@ -90,7 +90,7 @@ class LiteLLMProvider:
             "model": self.model,
             "messages": messages,
             "response_model": response_model,
-            "timeout": 10,
+            "timeout": 60,
             **self._extra,
             **kwargs,
         }

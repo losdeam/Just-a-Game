@@ -272,11 +272,11 @@ class GameMaster:
                         system="你是一个沉浸式开放世界RPG的叙事者。所有输出使用简体中文。",
                         max_tokens=300,
                     ),
-                    timeout=10.0,
+                    timeout=60.0,
                 )
                 return opening.strip()
             except asyncio.TimeoutError:
-                logger.warning("generate_opening timed out after 10 seconds")
+                logger.warning("generate_opening timed out after 60 seconds")
             except Exception:
                 pass
 
@@ -343,11 +343,11 @@ class GameMaster:
         try:
             return await asyncio.wait_for(
                 self.action_planner.suggest_options(self.player_id, self.world),
-                timeout=10.0,
+                timeout=60.0,
             )
         except asyncio.TimeoutError:
-            logger.warning("get_suggested_options timed out after 10 seconds")
-            return self.action_planner._fallback_suggestions(3)
+            logger.warning("get_suggested_options timed out after 60 seconds")
+            return self.action_planner._fallback_suggestions(self.player_id, self.world, 3)
 
     def get_status(self) -> dict[str, Any]:
         """Get current game status."""
