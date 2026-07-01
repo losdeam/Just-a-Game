@@ -391,6 +391,7 @@ textarea.wb-input { min-height: 80px; resize: vertical; line-height: 1.5; }
     }
     
     @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 </head>
 <body>
@@ -454,11 +455,16 @@ textarea.wb-input { min-height: 80px; resize: vertical; line-height: 1.5; }
       <button class="wb-btn wb-btn-primary" id="wb-create-btn" onclick="createWorld()">创建世界</button>
       <button class="wb-btn wb-btn-secondary" onclick="closeWorldBuilder()">返回</button>
     </div>
-    <div id="wb-progress" style="display:none;margin-top:16px;padding:12px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:8px">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div class="spinner" style="width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite"></div>
-        <span id="wb-progress-text" style="font-size:12px;color:var(--text)">正在生成...</span>
+    <div id="wb-progress" style="display:none;margin-top:16px;padding:16px 18px;background:var(--bg2);border:1px solid var(--border);border-radius:10px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div class="spinner" style="width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite"></div>
+        <span id="wb-progress-text" style="font-size:13px;color:var(--text);font-weight:600">正在生成...</span>
+        <span id="wb-progress-step" style="margin-left:auto;font-size:11px;color:var(--text2)"></span>
       </div>
+      <div id="wb-progress-bar-wrap" style="display:none;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-bottom:12px">
+        <div id="wb-progress-bar" style="height:100%;background:var(--accent);width:0%;transition:width 0.3s ease"></div>
+      </div>
+      <div id="wb-step-results"></div>
     </div>
   </div>
 </div>
@@ -662,7 +668,7 @@ function handleMessage(msg) {
                 updateOptions(msg.suggested_options);
                 break;
             case 'progress':
-                showProgress(msg.message);
+                showProgress(msg.message, msg.step, msg.total);
                 break;
             case 'step_result':
                 appendStepResult(msg.name, msg.result, msg.details);
@@ -817,58 +823,94 @@ function createWorld() {
   }
 }
 
-function showProgress(msg) {
+function showProgress(msg, step, total) {
   const el = document.getElementById('wb-progress');
   el.style.display = 'block';
   const textEl = document.getElementById('wb-progress-text');
   textEl.textContent = msg;
+
+  if (step !== undefined && total !== undefined && total > 0) {
+    const stepEl = document.getElementById('wb-progress-step');
+    stepEl.textContent = `${step} / ${total}`;
+    const barWrap = document.getElementById('wb-progress-bar-wrap');
+    const bar = document.getElementById('wb-progress-bar');
+    barWrap.style.display = 'block';
+    const pct = Math.min(100, Math.round((step / total) * 100));
+    bar.style.width = pct + '%';
+  } else {
+    document.getElementById('wb-progress-step').textContent = '';
+  }
 }
 
 function appendStepResult(stepName, result, details) {
-  const el = document.getElementById('wb-progress');
-  el.style.display = 'block';
-
-  // Create step results container if doesn't exist
-  let container = document.getElementById('wb-step-results');
-  if (!container) {
-    container = document.createElement('div');
-    container.id = 'wb-step-results';
-    container.style.cssText = 'margin-top:12px;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;max-height:200px;overflow-y:auto';
-    el.appendChild(container);
-  }
+  const container = document.getElementById('wb-step-results');
 
   // Add step result
   const stepDiv = document.createElement('div');
-  stepDiv.style.cssText = 'padding:6px 0;border-bottom:1px solid var(--border)';
-  stepDiv.innerHTML = `
-    <div style="display:flex;align-items:center;gap:6px">
-      <span style="color:var(--green)">✓</span>
-      <span style="color:var(--accent);font-weight:600">${escHtml(stepName)}</span>
-    </div>
-    <div style="color:var(--text);font-size:12px;margin-top:4px;padding-left:20px">${escHtml(result)}</div>
-  `;
+  stepDiv.className = 'wb-step-item';
+  stepDiv.style.cssText = 'padding:8px 10px;background:var(--bg);border-radius:8px;margin-bottom:6px;border:1px solid var(--border);animation:fadeIn 0.3s ease';
 
-  // Add details if present
+  let icon = '✓';
+  if (stepName.includes('地点')) icon = '📍';
+  else if (stepName.includes('角色') || stepName.includes('NPC')) icon = '👥';
+  else if (stepName.includes('世界观')) icon = '📜';
+  else if (stepName.includes('区域')) icon = '🗺️';
+  else if (stepName.includes('AI')) icon = '🤖';
+  else if (stepName.includes('模板')) icon = '⚡';
+
+  let detailsHtml = '';
   if (details) {
-    let detailsHtml = '<div style="padding-left:20px;margin-top:4px;font-size:11px;color:var(--text2)">';
+    detailsHtml = '<div style="padding-left:26px;margin-top:6px;font-size:11px;color:var(--text2);line-height:1.5">';
     if (details.locations && details.locations.length > 0) {
-      detailsHtml += `<div style="margin-bottom:2px">📍 ${details.locations.join('、')}${details.count > 5 ? '...' : ''}</div>`;
+      const locs = details.locations.slice(0, 6);
+      const more = details.locations.length > 6 ? `...等${details.locations.length}个` : '';
+      detailsHtml += `<div style="margin-bottom:3px">📍 ${locs.join('、')}${more}</div>`;
     }
-    if (details.npcs && details.npcs.length > 0) {
-      detailsHtml += `<div style="margin-bottom:2px">👥 ${details.npcs.join('、')}</div>`;
+    if (details.npc_details && details.npc_details.length > 0) {
+      detailsHtml += '<div style="margin-bottom:3px">';
+      details.npc_details.slice(0, 3).forEach(n => {
+        detailsHtml += `<div>👤 <b style="color:var(--text)">${escHtml(n.name || '')}</b> - ${escHtml(n.location || '')}</div>`;
+      });
+      if (details.npc_details.length > 3) {
+        detailsHtml += `<div style="color:var(--text2)">...还有${details.count - 3}个NPC</div>`;
+      }
+      detailsHtml += '</div>';
+    }
+    if (details.npcs && details.npcs.length > 0 && !details.npc_details) {
+      detailsHtml += `<div style="margin-bottom:3px">👥 ${details.npcs.slice(0, 5).join('、')}${details.npcs.length > 5 ? '...' : ''}</div>`;
+    }
+    if (details.region_name) {
+      detailsHtml += `<div style="margin-bottom:3px">🌍 区域: ${escHtml(details.region_name)}</div>`;
     }
     if (details.genre) {
-      detailsHtml += `<div style="margin-bottom:2px">🏷 类型: ${escHtml(details.genre)}</div>`;
+      detailsHtml += `<div style="margin-bottom:3px">🏷 类型: ${escHtml(details.genre)}</div>`;
     }
     if (details.era) {
-      detailsHtml += `<div style="margin-bottom:2px">⏳ 时代: ${escHtml(details.era)}</div>`;
+      detailsHtml += `<div style="margin-bottom:3px">⏳ 时代: ${escHtml(details.era)}</div>`;
     }
     if (details.main_quest) {
-      detailsHtml += `<div style="margin-bottom:2px">📜 主线: ${escHtml(details.main_quest)}</div>`;
+      detailsHtml += `<div style="margin-bottom:3px">📜 主线: ${escHtml(details.main_quest)}</div>`;
+    }
+    if (details.factions && details.factions.length > 0) {
+      detailsHtml += `<div style="margin-bottom:3px">🏰 势力: ${details.factions.join('、')}</div>`;
+    }
+    if (details.reason) {
+      detailsHtml += `<div style="color:var(--yellow)">${escHtml(details.reason)}</div>`;
     }
     detailsHtml += '</div>';
-    stepDiv.innerHTML += detailsHtml;
   }
+
+  stepDiv.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:16px">${icon}</span>
+      <div style="flex:1">
+        <div style="color:var(--accent);font-weight:700;font-size:12px">${escHtml(stepName)}</div>
+        <div style="color:var(--text);font-size:11px;margin-top:2px">${escHtml(result)}</div>
+      </div>
+      <span style="color:var(--green);font-size:14px">✓</span>
+    </div>
+    ${detailsHtml}
+  `;
 
   container.appendChild(stepDiv);
   container.scrollTop = container.scrollHeight;
@@ -876,8 +918,10 @@ function appendStepResult(stepName, result, details) {
 
 function hideProgress() {
   document.getElementById('wb-progress').style.display = 'none';
+  document.getElementById('wb-progress-bar-wrap').style.display = 'none';
+  document.getElementById('wb-progress-bar').style.width = '0%';
   const container = document.getElementById('wb-step-results');
-  if (container) container.remove();
+  if (container) container.innerHTML = '';
 }
 
 function doCreateWorld() {

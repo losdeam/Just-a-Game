@@ -396,11 +396,79 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                                     "message": "使用 AI 生成需要配置 LLM API Key。请在配置设置中填写并测试。",
                                 }, ensure_ascii=False))
                                 continue
+
+                            async def llm_progress_cb(step: str, data: dict[str, Any]) -> None:
+                                """Callback for LLM world building progress."""
+                                msg_type = data.get("message", "")
+                                step_num = data.get("step", 0)
+                                total = data.get("total", 4)
+
+                                await websocket.send_text(json.dumps({
+                                    "type": "progress",
+                                    "message": msg_type,
+                                    "step": step_num,
+                                    "total": total,
+                                }, ensure_ascii=False))
+
+                                if step == "locations_done":
+                                    locs = data.get("locations", [])
+                                    await websocket.send_text(json.dumps({
+                                        "type": "step_result",
+                                        "step": "locations",
+                                        "name": "🤖 AI生成地点",
+                                        "result": f"已生成 {len(locs)} 个地点",
+                                        "details": {
+                                            "count": len(locs),
+                                            "locations": locs[:6],
+                                            "region_name": data.get("region_name", ""),
+                                        },
+                                    }, ensure_ascii=False))
+                                elif step == "npcs_done":
+                                    npcs = data.get("npcs", [])
+                                    npc_names = [n.get("name", "") for n in npcs]
+                                    await websocket.send_text(json.dumps({
+                                        "type": "step_result",
+                                        "step": "npcs",
+                                        "name": "🤖 AI生成角色",
+                                        "result": f"已生成 {len(npcs)} 个NPC",
+                                        "details": {
+                                            "count": len(npcs),
+                                            "npcs": npc_names[:6],
+                                            "npc_details": npcs[:4],
+                                        },
+                                    }, ensure_ascii=False))
+                                elif step == "lore_done":
+                                    lore = data.get("lore", {})
+                                    await websocket.send_text(json.dumps({
+                                        "type": "step_result",
+                                        "step": "lore",
+                                        "name": "🤖 AI生成世界观",
+                                        "result": "世界观设定已完成",
+                                        "details": {
+                                            "main_quest": lore.get("main_quest", "")[:120] + "..." if len(lore.get("main_quest", "")) > 120 else lore.get("main_quest", ""),
+                                            "factions": lore.get("factions", []),
+                                        },
+                                    }, ensure_ascii=False))
+                                elif step == "fallback":
+                                    await websocket.send_text(json.dumps({
+                                        "type": "step_result",
+                                        "step": "fallback",
+                                        "name": "⚡ 模板模式",
+                                        "result": "AI不可用，使用模板生成",
+                                        "details": {"reason": data.get("message", "")},
+                                    }, ensure_ascii=False))
+
                             await websocket.send_text(json.dumps({
                                 "type": "progress",
-                                "message": "正在调用 AI 生成世界观...（可能需要 30-60 秒）",
+                                "message": "🤖 AI正在构建你的世界...",
+                                "step": 0,
+                                "total": 4,
                             }, ensure_ascii=False))
-                            result = await world_builder.build_with_llm(world_name, tags, description)
+
+                            result = await world_builder.build_with_llm_step_by_step(
+                                world_name, tags, description,
+                                progress_callback=llm_progress_cb,
+                            )
                         else:
                             world_builder._parse_tags(world_name, tags, description)
 

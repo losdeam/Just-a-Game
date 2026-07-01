@@ -817,6 +817,324 @@ class WorldBuilder:
             logger.warning("LLM world generation failed: %s, falling back", e)
             return self.build_from_tags(world_name, tags, description)
 
+    async def build_with_llm_step_by_step(
+        self, world_name: str = "", tags: dict[str, list[str]] | None = None,
+        description: str = "",
+        progress_callback: Any = None,
+    ) -> dict[str, Any]:
+        """Build world with LLM step by step, with progress callbacks.
+        
+        Args:
+            world_name: Name of the world
+            tags: World tags
+            description: Player's description
+            progress_callback: Async callback function(step, data) for progress updates
+        """
+        self.gm.clear_world()
+        tags = tags or {}
+        llm_cfg = self.gm.config.llm.default
+        if not llm_cfg.api_key or llm_cfg.api_key == "your-api-key-here":
+            logger.info("LLM not configured, falling back to tag-based generation")
+            if progress_callback:
+                await progress_callback("fallback", {"message": "LLM未配置，使用模板生成"})
+            return self.build_from_tags(world_name, tags, description)
+
+        async def _report(step: str, data: dict[str, Any]) -> None:
+            if progress_callback:
+                try:
+                    await progress_callback(step, data)
+                except Exception:
+                    pass
+
+        try:
+            llm = self.gm._get_llm("narrator")
+            genre = (tags.get("genre", ["fantasy"]) or ["fantasy"])[0]
+            era = (tags.get("era", ["medieval"]) or ["medieval"])[0]
+            atmosphere = tags.get("atmosphere", [])
+            terrain = tags.get("terrain", [])
+            magic = (tags.get("magic", ["medium"]) or ["medium"])[0]
+            danger = (tags.get("danger", ["moderate"]) or ["moderate"])[0]
+
+            tag_names = {}
+            for cat in TAG_CATEGORIES:
+                for t in cat["tags"]:
+                    tag_names[t["id"]] = t["name"]
+
+            # Step 1: Generate region and locations
+            await _report("generating_locations", {
+                "message": "AI正在构思世界区域和地点...",
+                "step": 1,
+                "total": 4,
+            })
+
+            loc_prompt = f"""请用JSON格式创建RPG游戏世界的区域和地点，要求如下：
+
+世界名称: {world_name or '由AI生成'}
+类型: {tag_names.get(genre, genre)}
+时代: {tag_names.get(era, era)}
+氛围: {'、'.join(tag_names.get(a, a) for a in atmosphere) or '适中'}
+地形: {'、'.join(tag_names.get(t, t) for t in terrain) or '多样'}
+魔法等级: {tag_names.get(magic, magic)}
+危险等级: {tag_names.get(danger, danger)}
+玩家额外描述: {description or '无特别要求'}
+
+请输出以下JSON结构（所有文字使用中文）:
+{{
+  "region_name": "区域名称",
+  "region_description": "区域整体描述（2-3句话）",
+  "locations": [
+    {{"id": "英文id", "name": "地点名称", "description": "地点描述（1-2句话）", "type": "indoor或outdoor", "light_level": 1-10, "danger_level": 0-10}}
+  ],
+  "connections": {{"地点id": ["连接的地点id"]}}
+}}
+
+要求：创建6-8个地点（第一个id=hub为安全中心，是城镇广场或类似的枢纽地点）。地点类型要多样，包括室内和室外。只输出JSON。"""
+
+            loc_response = await llm.complete(loc_prompt, system="你是一个专业的RPG世界设计师。严格按照JSON格式输出。")
+            loc_text = loc_response.strip()
+            if loc_text.startswith("```"):
+                lines = loc_text.split("\n")
+                loc_text = "\n".join(lines[1:-1]) if lines[-1].strip() == "```" else "\n".join(lines[1:])
+            import json
+            loc_data = json.loads(loc_text)
+
+            # Apply region and locations
+            region = WorldRegion(
+                id="main_region",
+                name=loc_data.get("region_name", world_name or "AI World"),
+                description=loc_data.get("region_description", ""),
+                region_type="kingdom",
+            )
+            self.gm.world.add_region(region)
+            self.gm.weather.add_region(region.id)
+
+            locations = []
+            for loc in loc_data.get("locations", []):
+                locations.append(WorldLocation(
+                    id=loc["id"], name=loc["name"],
+                    description=loc.get("description", ""),
+                    region_id="main_region",
+                    location_type=loc.get("type", "outdoor"),
+                    light_level=loc.get("light_level", 5),
+                    danger_level=loc.get("danger_level", 0),
+                ))
+            conns = loc_data.get("connections", {})
+            for loc in locations:
+                if loc.id in conns:
+                    loc.connected = conns[loc.id]
+            for loc in locations:
+                self.gm.world.add_location(loc)
+
+            self._state = {
+                "region": region,
+                "locations": locations,
+                "region_name": region.name,
+            }
+
+            await _report("locations_done", {
+                "message": f"已生成 {len(locations)} 个地点",
+                "step": 1,
+                "total": 4,
+                "locations": [l.name for l in locations],
+                "region_name": region.name,
+            })
+
+            # Step 2: Generate NPCs
+            await _report("generating_npcs", {
+                "message": "AI正在设计世界中的角色...",
+                "step": 2,
+                "total": 4,
+            })
+
+            loc_names_str = "、".join(f"{l.id}({l.name})" for l in locations)
+            npc_prompt = f"""请用JSON格式为RPG游戏世界创建NPC角色，要求如下：
+
+区域: {region.name}
+地点列表: {loc_names_str}
+类型: {tag_names.get(genre, genre)}
+时代: {tag_names.get(era, era)}
+氛围: {'、'.join(tag_names.get(a, a) for a in atmosphere) or '适中'}
+玩家额外描述: {description or '无特别要求'}
+
+请输出以下JSON结构（所有文字使用中文）:
+{{
+  "npcs": [
+    {{
+      "id": "英文id（如npc_blacksmith）",
+      "name": "NPC名称",
+      "description": "NPC外貌和背景描述（1-2句话）",
+      "location_id": "所在地点id（从上面的地点列表中选）",
+      "personality": "friendly/stern/curious/charming/neutral 中的一个",
+      "goal": "NPC的当前目标或动机"
+    }}
+  ]
+}}
+
+要求：创建4-6个NPC，分散在不同地点，角色类型多样（如商人、铁匠、守卫、酒馆老板、神秘人等）。只输出JSON。"""
+
+            npc_response = await llm.complete(npc_prompt, system="你是一个专业的RPG世界设计师。严格按照JSON格式输出。")
+            npc_text = npc_response.strip()
+            if npc_text.startswith("```"):
+                lines = npc_text.split("\n")
+                npc_text = "\n".join(lines[1:-1]) if lines[-1].strip() == "```" else "\n".join(lines[1:])
+            npc_data = json.loads(npc_text)
+
+            npcs = []
+            for nd in npc_data.get("npcs", []):
+                lid = nd.get("location_id", locations[0].id if locations else "")
+                npcs.append(NPC(
+                    id=nd["id"], name=nd["name"],
+                    description=nd.get("description", ""),
+                    location_id=lid,
+                    personality=nd.get("personality", "neutral"),
+                    goal=nd.get("goal", ""),
+                    schedule=[
+                        ScheduleEntry(hour_start=6, hour_end=22, activity="日常活动", location_id=lid),
+                        ScheduleEntry(hour_start=22, hour_end=6, activity="休息", location_id=lid),
+                    ],
+                ))
+            for npc in npcs:
+                self.gm.tick_engine.register_npc(npc)
+                npc_data_dict = {
+                    "location_id": npc.location_id,
+                    "name": npc.name,
+                    "type": "npc",
+                    "health": 100,
+                    "max_health": 100,
+                }
+                self.gm.world.add_character(npc.id, npc_data_dict)
+
+            self._state["npcs"] = npcs
+
+            await _report("npcs_done", {
+                "message": f"已生成 {len(npcs)} 个NPC",
+                "step": 2,
+                "total": 4,
+                "npcs": [{"name": n.name, "location": next((l.name for l in locations if l.id == n.location_id), "")} for n in npcs],
+            })
+
+            # Step 3: Generate lore
+            await _report("generating_lore", {
+                "message": "AI正在编织世界观设定...",
+                "step": 3,
+                "total": 4,
+            })
+
+            first_loc_id = "hub" if any(l.id == "hub" for l in locations) else (locations[0].id if locations else "")
+            self.gm.world.add_character(self.gm.player_id, {
+                "location_id": first_loc_id,
+                "inventory": _INVENTORIES.get(genre, _INVENTORIES["fantasy"]),
+                "name": "冒险者",
+                "type": "player",
+                "health": 100,
+                "max_health": 100,
+            })
+
+            lore_prompt = f"""请为这个RPG游戏世界生成世界观设定和主线任务，要求如下：
+
+世界名称: {region.name}
+世界描述: {region.description}
+类型: {tag_names.get(genre, genre)}
+时代: {tag_names.get(era, era)}
+氛围: {'、'.join(tag_names.get(a, a) for a in atmosphere) or '适中'}
+地点: {'、'.join(l.name for l in locations)}
+NPC: {'、'.join(n.name for n in npcs)}
+玩家额外描述: {description or '无特别要求'}
+
+请输出以下JSON结构（所有文字使用中文）:
+{{
+  "world_description": "世界整体背景设定（3-5句话，描述这个世界的历史、现状、主要势力）",
+  "main_quest": "主线任务描述（2-3句话，玩家的终极目标是什么）",
+  "factions": ["主要势力1", "主要势力2"],
+  "secrets": ["隐藏的秘密1", "隐藏的秘密2"]
+}}
+
+只输出JSON。"""
+
+            lore_response = await llm.complete(lore_prompt, system="你是一个专业的RPG游戏世界观设计师。严格按照JSON格式输出。")
+            lore_text = lore_response.strip()
+            if lore_text.startswith("```"):
+                lines = lore_text.split("\n")
+                lore_text = "\n".join(lines[1:-1]) if lines[-1].strip() == "```" else "\n".join(lines[1:])
+            lore_ai = json.loads(lore_text)
+
+            era_info = _ERA_INFO.get(era, _ERA_INFO["medieval"])
+            atmo_tones = " ".join(_ATMO_MOD.get(a, {}).get("tone", "") for a in atmosphere)
+            terrain_names = "、".join(
+                next((t["name"] for cat in TAG_CATEGORIES if cat["id"] == "terrain"
+                      for t in cat["tags"] if t["id"] == ter), ter)
+                for ter in terrain
+            ) if terrain else "多样"
+            magic_name = next(
+                (t["name"] for cat in TAG_CATEGORIES if cat["id"] == "magic"
+                 for t in cat["tags"] if t["id"] == magic), magic)
+            danger_name = next(
+                (t["name"] for cat in TAG_CATEGORIES if cat["id"] == "danger"
+                 for t in cat["tags"] if t["id"] == danger), danger)
+
+            lore = {
+                "world_name": region.name,
+                "genre": tag_names.get(genre, genre),
+                "era": era_info.get("label", ""),
+                "atmosphere": atmo_tones,
+                "terrain": terrain_names,
+                "magic_level": magic_name,
+                "danger_level": danger_name,
+                "description": lore_ai.get("world_description", ""),
+                "main_quest": lore_ai.get("main_quest", ""),
+                "factions": lore_ai.get("factions", []),
+                "secrets": lore_ai.get("secrets", []),
+                "npc_summaries": {n.id: n.description for n in npcs},
+                "location_summaries": {l.id: l.description for l in locations},
+            }
+            self.gm.world_lore = lore
+
+            await _report("lore_done", {
+                "message": "世界观设定已完成",
+                "step": 3,
+                "total": 4,
+                "lore": {
+                    "main_quest": lore.get("main_quest", ""),
+                    "factions": lore.get("factions", []),
+                },
+            })
+
+            # Step 4: Finalize
+            await _report("finalizing", {
+                "message": "正在整合世界数据...",
+                "step": 4,
+                "total": 4,
+            })
+
+            result = {
+                "ok": True,
+                "world_name": region.name,
+                "locations": len(locations),
+                "npcs": len(npcs),
+                "genre": genre,
+                "method": "llm",
+            }
+
+            await _report("complete", {
+                "message": "世界生成完成！",
+                "step": 4,
+                "total": 4,
+                "result": result,
+            })
+
+            return result
+
+        except Exception as e:
+            logger.warning("LLM world generation failed: %s, falling back", e)
+            if progress_callback:
+                try:
+                    await progress_callback("fallback", {
+                        "message": f"AI生成失败，使用模板生成: {e}",
+                    })
+                except Exception:
+                    pass
+            return self.build_from_tags(world_name, tags, description)
+
     def _apply_llm_world(self, world_name: str, data: dict, tags: dict) -> dict[str, Any]:
         region = WorldRegion(
             id="main_region", name=data.get("region_name", world_name or "AI World"),

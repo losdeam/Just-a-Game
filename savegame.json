@@ -22,15 +22,6 @@
         "deep_forest",
         "forest_clearing",
         "ancient_tree",
-        "shrine",
-        "hub",
-        "tavern",
-        "market_district",
-        "back_alley",
-        "tower_building",
-        "deep_forest",
-        "forest_clearing",
-        "ancient_tree",
         "shrine"
       ]
     }
@@ -243,42 +234,42 @@
     },
     "npc_dyn_0": {
       "location_id": "hub",
-      "name": "孙志远",
+      "name": "徐明辉",
       "type": "npc"
     },
     "npc_dyn_1": {
       "location_id": "tavern",
-      "name": "李美玲",
+      "name": "郑海涛",
       "type": "npc"
     },
     "npc_dyn_2": {
       "location_id": "market_district",
-      "name": "周雪",
+      "name": "孙志远",
       "type": "npc"
     },
     "npc_dyn_3": {
       "location_id": "back_alley",
-      "name": "何静怡",
+      "name": "冯佳怡",
       "type": "npc"
     },
     "npc_dyn_4": {
       "location_id": "tower_building",
-      "name": "徐明辉",
+      "name": "朱梦琪",
       "type": "npc"
     },
     "npc_dyn_5": {
       "location_id": "deep_forest",
-      "name": "刘浩然",
+      "name": "钱文博",
       "type": "npc"
     },
     "npc_dyn_6": {
       "location_id": "forest_clearing",
-      "name": "王建国",
+      "name": "刘浩然",
       "type": "npc"
     },
     "npc_dyn_7": {
       "location_id": "ancient_tree",
-      "name": "陈默",
+      "name": "周雪",
       "type": "npc"
     },
     "npc_dyn_8": {
@@ -288,7 +279,7 @@
     },
     "npc_dyn_9": {
       "location_id": "hub",
-      "name": "林婉清",
+      "name": "陈默",
       "type": "npc"
     },
     "npc_dyn_10": {
@@ -298,37 +289,37 @@
     },
     "npc_dyn_11": {
       "location_id": "market_district",
-      "name": "冯佳怡",
+      "name": "何静怡",
       "type": "npc"
     },
     "npc_dyn_12": {
       "location_id": "back_alley",
-      "name": "钱文博",
+      "name": "吴晓燕",
       "type": "npc"
     },
     "npc_dyn_13": {
       "location_id": "tower_building",
-      "name": "郑海涛",
+      "name": "林婉清",
       "type": "npc"
     },
     "npc_dyn_14": {
       "location_id": "deep_forest",
-      "name": "吴晓燕",
+      "name": "李美玲",
       "type": "npc"
     },
     "npc_dyn_15": {
       "location_id": "forest_clearing",
-      "name": "朱梦琪",
+      "name": "王建国",
       "type": "npc"
     },
     "npc_dyn_16": {
       "location_id": "ancient_tree",
-      "name": "冯佳怡2",
+      "name": "钱文博2",
       "type": "npc"
     },
     "npc_dyn_17": {
       "location_id": "shrine",
-      "name": "孙志远2",
+      "name": "何静怡2",
       "type": "npc"
     },
     "player": {
@@ -488,13 +479,25 @@
     },
     "npc_dyn_0": {
       "id": "npc_dyn_0",
-      "name": "孙志远",
-      "description": "侦探。性格好奇、慷慨、沉默。",
-      "personality": "curious",
+      "name": "徐明辉",
+      "description": "侦探。性格嫉妒、暴躁。",
+      "personality": "jealous",
       "goal": "做好侦探的本职工作",
       "schedule": [
         {
           "hour_start": 6,
+          "hour_end": 14,
+          "activity": "调查案件",
+          "location_id": "hub"
+        },
+        {
+          "hour_start": 14,
+          "hour_end": 15,
+          "activity": "午休",
+          "location_id": "hub"
+        },
+        {
+          "hour_start": 15,
           "hour_end": 22,
           "activity": "调查案件",
           "location_id": "hub"
@@ -516,20 +519,32 @@
     },
     "npc_dyn_1": {
       "id": "npc_dyn_1",
-      "name": "李美玲",
-      "description": "记者。性格冷静、嫉妒、懒惰、骄傲。",
-      "personality": "calm",
-      "goal": "做好记者的本职工作",
+      "name": "郑海涛",
+      "description": "记者。性格嫉妒、慷慨、野心。",
+      "personality": "jealous",
+      "goal": "出人头地，做好记者的本职工作",
       "schedule": [
         {
-          "hour_start": 8,
-          "hour_end": 20,
+          "hour_start": 6,
+          "hour_end": 14,
           "activity": "采访",
           "location_id": "tavern"
         },
         {
-          "hour_start": 20,
-          "hour_end": 8,
+          "hour_start": 14,
+          "hour_end": 15,
+          "activity": "午休",
+          "location_id": "tavern"
+        },
+        {
+          "hour_start": 15,
+          "hour_end": 23,
+          "activity": "采访",
+          "location_id": "tavern"
+        },
+        {
+          "hour_start": 23,
+          "hour_end": 6,
           "activity": "休息",
           "location_id": "tavern"
         }
@@ -544,32 +559,20 @@
     },
     "npc_dyn_2": {
       "id": "npc_dyn_2",
-      "name": "周雪",
-      "description": "酒保。性格好奇、慷慨、节俭、诚实。",
-      "personality": "curious",
+      "name": "孙志远",
+      "description": "酒保。性格创意、懦弱、诚实。",
+      "personality": "creative",
       "goal": "做好酒保的本职工作",
       "schedule": [
         {
-          "hour_start": 8,
-          "hour_end": 14,
-          "activity": "调酒",
-          "location_id": "market_district"
-        },
-        {
-          "hour_start": 14,
-          "hour_end": 15,
-          "activity": "午休",
-          "location_id": "market_district"
-        },
-        {
-          "hour_start": 15,
+          "hour_start": 9,
           "hour_end": 20,
           "activity": "调酒",
           "location_id": "market_district"
         },
         {
           "hour_start": 20,
-          "hour_end": 8,
+          "hour_end": 9,
           "activity": "休息",
           "location_id": "market_district"
         }
@@ -584,20 +587,32 @@
     },
     "npc_dyn_3": {
       "id": "npc_dyn_3",
-      "name": "何静怡",
-      "description": "律师。性格创意、好奇。",
-      "personality": "creative",
+      "name": "冯佳怡",
+      "description": "律师。性格开朗、暴躁、节俭、诚实。",
+      "personality": "cheerful",
       "goal": "做好律师的本职工作",
       "schedule": [
         {
-          "hour_start": 7,
+          "hour_start": 8,
+          "hour_end": 14,
+          "activity": "研究卷宗",
+          "location_id": "back_alley"
+        },
+        {
+          "hour_start": 14,
+          "hour_end": 15,
+          "activity": "午休",
+          "location_id": "back_alley"
+        },
+        {
+          "hour_start": 15,
           "hour_end": 20,
           "activity": "研究卷宗",
           "location_id": "back_alley"
         },
         {
           "hour_start": 20,
-          "hour_end": 7,
+          "hour_end": 8,
           "activity": "休息",
           "location_id": "back_alley"
         }
@@ -612,32 +627,20 @@
     },
     "npc_dyn_4": {
       "id": "npc_dyn_4",
-      "name": "徐明辉",
-      "description": "医生。性格创意、善良、懦弱。",
-      "personality": "creative",
-      "goal": "做好医生的本职工作",
+      "name": "朱梦琪",
+      "description": "医生。性格懦弱、沉默、野心。",
+      "personality": "cowardly",
+      "goal": "出人头地，做好医生的本职工作",
       "schedule": [
         {
-          "hour_start": 6,
-          "hour_end": 13,
-          "activity": "看病",
-          "location_id": "tower_building"
-        },
-        {
-          "hour_start": 13,
-          "hour_end": 14,
-          "activity": "午休",
-          "location_id": "tower_building"
-        },
-        {
-          "hour_start": 14,
+          "hour_start": 7,
           "hour_end": 21,
           "activity": "看病",
           "location_id": "tower_building"
         },
         {
           "hour_start": 21,
-          "hour_end": 6,
+          "hour_end": 7,
           "activity": "休息",
           "location_id": "tower_building"
         }
@@ -652,20 +655,32 @@
     },
     "npc_dyn_5": {
       "id": "npc_dyn_5",
-      "name": "刘浩然",
-      "description": "警察。性格创意、慷慨、暴躁、野心。",
-      "personality": "creative",
-      "goal": "出人头地，做好警察的本职工作",
+      "name": "钱文博",
+      "description": "警察。性格冷静、勤勉、嫉妒、懦弱。",
+      "personality": "calm",
+      "goal": "做好警察的本职工作",
       "schedule": [
         {
-          "hour_start": 9,
-          "hour_end": 23,
+          "hour_start": 6,
+          "hour_end": 13,
           "activity": "巡逻",
           "location_id": "deep_forest"
         },
         {
-          "hour_start": 23,
-          "hour_end": 9,
+          "hour_start": 13,
+          "hour_end": 14,
+          "activity": "午休",
+          "location_id": "deep_forest"
+        },
+        {
+          "hour_start": 14,
+          "hour_end": 20,
+          "activity": "巡逻",
+          "location_id": "deep_forest"
+        },
+        {
+          "hour_start": 20,
+          "hour_end": 6,
           "activity": "休息",
           "location_id": "deep_forest"
         }
@@ -680,20 +695,20 @@
     },
     "npc_dyn_6": {
       "id": "npc_dyn_6",
-      "name": "王建国",
-      "description": "侦探。性格嫉妒、睿智、节俭、谨慎。",
-      "personality": "jealous",
+      "name": "刘浩然",
+      "description": "侦探。性格冷静、骄傲。",
+      "personality": "calm",
       "goal": "做好侦探的本职工作",
       "schedule": [
         {
-          "hour_start": 6,
-          "hour_end": 23,
+          "hour_start": 8,
+          "hour_end": 21,
           "activity": "调查案件",
           "location_id": "forest_clearing"
         },
         {
-          "hour_start": 23,
-          "hour_end": 6,
+          "hour_start": 21,
+          "hour_end": 8,
           "activity": "休息",
           "location_id": "forest_clearing"
         }
@@ -708,20 +723,32 @@
     },
     "npc_dyn_7": {
       "id": "npc_dyn_7",
-      "name": "陈默",
-      "description": "记者。性格冷静、勇敢、睿智。",
-      "personality": "calm",
-      "goal": "做好记者的本职工作",
+      "name": "周雪",
+      "description": "记者。性格勇敢、勤勉、谨慎、野心。",
+      "personality": "brave",
+      "goal": "出人头地，做好记者的本职工作",
       "schedule": [
         {
-          "hour_start": 8,
-          "hour_end": 23,
+          "hour_start": 7,
+          "hour_end": 14,
           "activity": "采访",
           "location_id": "ancient_tree"
         },
         {
-          "hour_start": 23,
-          "hour_end": 8,
+          "hour_start": 14,
+          "hour_end": 15,
+          "activity": "午休",
+          "location_id": "ancient_tree"
+        },
+        {
+          "hour_start": 15,
+          "hour_end": 22,
+          "activity": "采访",
+          "location_id": "ancient_tree"
+        },
+        {
+          "hour_start": 22,
+          "hour_end": 7,
           "activity": "休息",
           "location_id": "ancient_tree"
         }
@@ -737,30 +764,18 @@
     "npc_dyn_8": {
       "id": "npc_dyn_8",
       "name": "张伟",
-      "description": "酒保。性格慷慨、节俭、诚实、贪婪。",
-      "personality": "generous",
-      "goal": "赚更多的钱，做好酒保的本职工作",
+      "description": "酒保。性格勇敢、勤勉。",
+      "personality": "brave",
+      "goal": "做好酒保的本职工作",
       "schedule": [
         {
           "hour_start": 6,
-          "hour_end": 13,
+          "hour_end": 22,
           "activity": "调酒",
           "location_id": "shrine"
         },
         {
-          "hour_start": 13,
-          "hour_end": 14,
-          "activity": "午休",
-          "location_id": "shrine"
-        },
-        {
-          "hour_start": 14,
-          "hour_end": 20,
-          "activity": "调酒",
-          "location_id": "shrine"
-        },
-        {
-          "hour_start": 20,
+          "hour_start": 22,
           "hour_end": 6,
           "activity": "休息",
           "location_id": "shrine"
@@ -776,31 +791,31 @@
     },
     "npc_dyn_9": {
       "id": "npc_dyn_9",
-      "name": "林婉清",
-      "description": "律师。性格冷静、嫉妒、暴躁、骄傲。",
+      "name": "陈默",
+      "description": "律师。性格冷静、勤勉、开朗、贪婪。",
       "personality": "calm",
-      "goal": "做好律师的本职工作",
+      "goal": "赚更多的钱，做好律师的本职工作",
       "schedule": [
         {
           "hour_start": 7,
-          "hour_end": 15,
+          "hour_end": 13,
           "activity": "研究卷宗",
           "location_id": "hub"
         },
         {
-          "hour_start": 15,
-          "hour_end": 16,
+          "hour_start": 13,
+          "hour_end": 14,
           "activity": "午休",
           "location_id": "hub"
         },
         {
-          "hour_start": 16,
-          "hour_end": 23,
+          "hour_start": 14,
+          "hour_end": 20,
           "activity": "研究卷宗",
           "location_id": "hub"
         },
         {
-          "hour_start": 23,
+          "hour_start": 20,
           "hour_end": 7,
           "activity": "休息",
           "location_id": "hub"
@@ -817,12 +832,12 @@
     "npc_dyn_10": {
       "id": "npc_dyn_10",
       "name": "赵雅琴",
-      "description": "医生。性格善良、嫉妒、节俭、贪婪。",
-      "personality": "kind",
-      "goal": "赚更多的钱，做好医生的本职工作",
+      "description": "医生。性格勤勉、慷慨、暴躁、骄傲。",
+      "personality": "diligent",
+      "goal": "做好医生的本职工作",
       "schedule": [
         {
-          "hour_start": 9,
+          "hour_start": 8,
           "hour_end": 15,
           "activity": "看病",
           "location_id": "tavern"
@@ -835,13 +850,13 @@
         },
         {
           "hour_start": 16,
-          "hour_end": 21,
+          "hour_end": 23,
           "activity": "看病",
           "location_id": "tavern"
         },
         {
-          "hour_start": 21,
-          "hour_end": 9,
+          "hour_start": 23,
+          "hour_end": 8,
           "activity": "休息",
           "location_id": "tavern"
         }
@@ -856,32 +871,32 @@
     },
     "npc_dyn_11": {
       "id": "npc_dyn_11",
-      "name": "冯佳怡",
-      "description": "警察。性格冷静、善良、懒惰。",
-      "personality": "calm",
+      "name": "何静怡",
+      "description": "警察。性格勇敢、懦弱、暴躁。",
+      "personality": "brave",
       "goal": "做好警察的本职工作",
       "schedule": [
         {
-          "hour_start": 9,
-          "hour_end": 15,
+          "hour_start": 7,
+          "hour_end": 14,
           "activity": "巡逻",
           "location_id": "market_district"
         },
         {
-          "hour_start": 15,
-          "hour_end": 16,
+          "hour_start": 14,
+          "hour_end": 15,
           "activity": "午休",
           "location_id": "market_district"
         },
         {
-          "hour_start": 16,
-          "hour_end": 22,
+          "hour_start": 15,
+          "hour_end": 21,
           "activity": "巡逻",
           "location_id": "market_district"
         },
         {
-          "hour_start": 22,
-          "hour_end": 9,
+          "hour_start": 21,
+          "hour_end": 7,
           "activity": "休息",
           "location_id": "market_district"
         }
@@ -896,32 +911,20 @@
     },
     "npc_dyn_12": {
       "id": "npc_dyn_12",
-      "name": "钱文博",
-      "description": "侦探。性格勤勉、好奇、野心、骄傲。",
-      "personality": "diligent",
-      "goal": "出人头地，做好侦探的本职工作",
+      "name": "吴晓燕",
+      "description": "侦探。性格善良、开朗、懦弱、骄傲。",
+      "personality": "kind",
+      "goal": "做好侦探的本职工作",
       "schedule": [
         {
-          "hour_start": 9,
-          "hour_end": 15,
+          "hour_start": 8,
+          "hour_end": 22,
           "activity": "调查案件",
           "location_id": "back_alley"
         },
         {
-          "hour_start": 15,
-          "hour_end": 16,
-          "activity": "午休",
-          "location_id": "back_alley"
-        },
-        {
-          "hour_start": 16,
-          "hour_end": 21,
-          "activity": "调查案件",
-          "location_id": "back_alley"
-        },
-        {
-          "hour_start": 21,
-          "hour_end": 9,
+          "hour_start": 22,
+          "hour_end": 8,
           "activity": "休息",
           "location_id": "back_alley"
         }
@@ -936,20 +939,20 @@
     },
     "npc_dyn_13": {
       "id": "npc_dyn_13",
-      "name": "郑海涛",
-      "description": "记者。性格善良、好奇、懒惰、懦弱。",
-      "personality": "kind",
+      "name": "林婉清",
+      "description": "记者。性格懒惰、懦弱、沉默、诚实。",
+      "personality": "lazy",
       "goal": "做好记者的本职工作",
       "schedule": [
         {
-          "hour_start": 6,
-          "hour_end": 23,
+          "hour_start": 9,
+          "hour_end": 21,
           "activity": "采访",
           "location_id": "tower_building"
         },
         {
-          "hour_start": 23,
-          "hour_end": 6,
+          "hour_start": 21,
+          "hour_end": 9,
           "activity": "休息",
           "location_id": "tower_building"
         }
@@ -964,32 +967,32 @@
     },
     "npc_dyn_14": {
       "id": "npc_dyn_14",
-      "name": "吴晓燕",
-      "description": "酒保。性格善良、野心。",
-      "personality": "kind",
-      "goal": "出人头地，做好酒保的本职工作",
+      "name": "李美玲",
+      "description": "酒保。性格勇敢、慷慨、暴躁、骄傲。",
+      "personality": "brave",
+      "goal": "做好酒保的本职工作",
       "schedule": [
         {
-          "hour_start": 6,
-          "hour_end": 13,
-          "activity": "调酒",
-          "location_id": "deep_forest"
-        },
-        {
-          "hour_start": 13,
+          "hour_start": 7,
           "hour_end": 14,
-          "activity": "午休",
+          "activity": "调酒",
           "location_id": "deep_forest"
         },
         {
           "hour_start": 14,
-          "hour_end": 21,
+          "hour_end": 15,
+          "activity": "午休",
+          "location_id": "deep_forest"
+        },
+        {
+          "hour_start": 15,
+          "hour_end": 22,
           "activity": "调酒",
           "location_id": "deep_forest"
         },
         {
-          "hour_start": 21,
-          "hour_end": 6,
+          "hour_start": 22,
+          "hour_end": 7,
           "activity": "休息",
           "location_id": "deep_forest"
         }
@@ -1004,20 +1007,20 @@
     },
     "npc_dyn_15": {
       "id": "npc_dyn_15",
-      "name": "朱梦琪",
-      "description": "律师。性格创意、诚实。",
+      "name": "王建国",
+      "description": "律师。性格创意、好奇、懦弱、诚实。",
       "personality": "creative",
       "goal": "做好律师的本职工作",
       "schedule": [
         {
-          "hour_start": 6,
+          "hour_start": 9,
           "hour_end": 20,
           "activity": "研究卷宗",
           "location_id": "forest_clearing"
         },
         {
           "hour_start": 20,
-          "hour_end": 6,
+          "hour_end": 9,
           "activity": "休息",
           "location_id": "forest_clearing"
         }
@@ -1032,20 +1035,20 @@
     },
     "npc_dyn_16": {
       "id": "npc_dyn_16",
-      "name": "冯佳怡2",
-      "description": "医生。性格创意、慷慨、骄傲。",
+      "name": "钱文博2",
+      "description": "医生。性格创意、善良、节俭、贪婪。",
       "personality": "creative",
-      "goal": "做好医生的本职工作",
+      "goal": "赚更多的钱，做好医生的本职工作",
       "schedule": [
         {
-          "hour_start": 9,
-          "hour_end": 20,
+          "hour_start": 7,
+          "hour_end": 22,
           "activity": "看病",
           "location_id": "ancient_tree"
         },
         {
-          "hour_start": 20,
-          "hour_end": 9,
+          "hour_start": 22,
+          "hour_end": 7,
           "activity": "休息",
           "location_id": "ancient_tree"
         }
@@ -1060,32 +1063,32 @@
     },
     "npc_dyn_17": {
       "id": "npc_dyn_17",
-      "name": "孙志远2",
-      "description": "警察。性格勤勉、懒惰、骄傲。",
-      "personality": "diligent",
+      "name": "何静怡2",
+      "description": "警察。性格创意、勇敢、懒惰、沉默。",
+      "personality": "creative",
       "goal": "做好警察的本职工作",
       "schedule": [
         {
-          "hour_start": 8,
-          "hour_end": 14,
+          "hour_start": 6,
+          "hour_end": 13,
           "activity": "巡逻",
           "location_id": "shrine"
         },
         {
-          "hour_start": 14,
-          "hour_end": 15,
+          "hour_start": 13,
+          "hour_end": 14,
           "activity": "午休",
           "location_id": "shrine"
         },
         {
-          "hour_start": 15,
+          "hour_start": 14,
           "hour_end": 21,
           "activity": "巡逻",
           "location_id": "shrine"
         },
         {
           "hour_start": 21,
-          "hour_end": 8,
+          "hour_end": 6,
           "activity": "休息",
           "location_id": "shrine"
         }
@@ -1138,92 +1141,92 @@
         "location": "商业区"
       },
       {
-        "name": "孙志远",
+        "name": "徐明辉",
         "role": "做好侦探的本职工作",
         "location": "中央广场"
       },
       {
-        "name": "李美玲",
-        "role": "做好记者的本职工作",
+        "name": "郑海涛",
+        "role": "出人头地，做好记者的本职工作",
         "location": "深夜咖啡馆"
       },
       {
-        "name": "周雪",
+        "name": "孙志远",
         "role": "做好酒保的本职工作",
         "location": "商业区"
       },
       {
-        "name": "何静怡",
+        "name": "冯佳怡",
         "role": "做好律师的本职工作",
         "location": "暗巷"
       },
       {
-        "name": "徐明辉",
-        "role": "做好医生的本职工作",
+        "name": "朱梦琪",
+        "role": "出人头地，做好医生的本职工作",
         "location": "高塔"
       },
       {
-        "name": "刘浩然",
-        "role": "出人头地，做好警察的本职工作",
+        "name": "钱文博",
+        "role": "做好警察的本职工作",
         "location": "密林深处"
       },
       {
-        "name": "王建国",
+        "name": "刘浩然",
         "role": "做好侦探的本职工作",
         "location": "林中空地"
       },
       {
-        "name": "陈默",
-        "role": "做好记者的本职工作",
+        "name": "周雪",
+        "role": "出人头地，做好记者的本职工作",
         "location": "巨树"
       },
       {
         "name": "张伟",
-        "role": "赚更多的钱，做好酒保的本职工作",
+        "role": "做好酒保的本职工作",
         "location": "神殿"
       },
       {
-        "name": "林婉清",
-        "role": "做好律师的本职工作",
+        "name": "陈默",
+        "role": "赚更多的钱，做好律师的本职工作",
         "location": "中央广场"
       },
       {
         "name": "赵雅琴",
-        "role": "赚更多的钱，做好医生的本职工作",
+        "role": "做好医生的本职工作",
         "location": "深夜咖啡馆"
       },
       {
-        "name": "冯佳怡",
+        "name": "何静怡",
         "role": "做好警察的本职工作",
         "location": "商业区"
       },
       {
-        "name": "钱文博",
-        "role": "出人头地，做好侦探的本职工作",
+        "name": "吴晓燕",
+        "role": "做好侦探的本职工作",
         "location": "暗巷"
       },
       {
-        "name": "郑海涛",
+        "name": "林婉清",
         "role": "做好记者的本职工作",
         "location": "高塔"
       },
       {
-        "name": "吴晓燕",
-        "role": "出人头地，做好酒保的本职工作",
+        "name": "李美玲",
+        "role": "做好酒保的本职工作",
         "location": "密林深处"
       },
       {
-        "name": "朱梦琪",
+        "name": "王建国",
         "role": "做好律师的本职工作",
         "location": "林中空地"
       },
       {
-        "name": "冯佳怡2",
-        "role": "做好医生的本职工作",
+        "name": "钱文博2",
+        "role": "赚更多的钱，做好医生的本职工作",
         "location": "巨树"
       },
       {
-        "name": "孙志远2",
+        "name": "何静怡2",
         "role": "做好警察的本职工作",
         "location": "神殿"
       }
