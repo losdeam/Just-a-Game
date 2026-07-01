@@ -339,15 +339,12 @@ class GameMaster:
         return (narratives, options)
 
     async def get_suggested_options(self) -> list[dict[str, Any]]:
-        """Get suggested actions for the player."""
-        try:
-            return await asyncio.wait_for(
-                self.action_planner.suggest_options(self.player_id, self.world),
-                timeout=60.0,
-            )
-        except asyncio.TimeoutError:
-            logger.warning("get_suggested_options timed out after 60 seconds")
-            return self.action_planner._fallback_suggestions(self.player_id, self.world, 3)
+        """Get suggested actions for the player.
+        
+        Uses dynamic fallback for speed - it generates context-aware suggestions
+        based on current location, nearby NPCs, inventory, and time of day.
+        """
+        return self.action_planner._fallback_suggestions(self.player_id, self.world, 3)
 
     def get_status(self) -> dict[str, Any]:
         """Get current game status."""

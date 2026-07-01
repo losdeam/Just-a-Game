@@ -342,6 +342,19 @@ class ActionPlanner:
 
         Returns a dict compatible with TickEngine.tick() player_action parameter.
         """
+        # Fast path: use keyword matching for simple actions to avoid LLM latency
+        simple_keywords = {
+            "examine": ["检查", "看", "观察", "搜索", "调查", "examine", "look", "inspect", "search", "investigate", "查看"],
+            "rest": ["休息", "睡觉", "睡", "扎营", "小憩", "rest", "sleep", "nap"],
+            "take": ["拿", "捡", "拾取", "拿取", "take", "grab", "pick", "loot"],
+            "drop": ["丢弃", "扔", "放下", "drop", "discard"],
+        }
+        text_lower = action_text.lower()
+        for action_type, keywords in simple_keywords.items():
+            if any(k in text_lower for k in keywords):
+                logger.debug("Fast path: action '%s' matched as %s", action_text, action_type)
+                return self._fallback_plan(action_text, player_id, world)
+
         world_context = build_world_context(player_id, world)
 
         prompt = (

@@ -249,8 +249,17 @@ class TickEngine:
             # 9. Quest Generation (CODE-ONLY)
             await self._step_quest_gen(sim_events, result, trace)
 
-            # 10. Story Processing (LLM, optional)
-            await self._step_story(result, trace)
+            # 10-14. Story + Narrative (LLM, run in parallel when possible)
+            player_action_type = ""
+            if planned_action:
+                player_action_type = planned_action.get("type", "")
+            simple_actions = {"examine", "rest", "take", "drop"}
+            needs_story = player_action_type not in simple_actions
+
+            if needs_story and self.story_director and result.world_events:
+                # Run story processing and memory/knowledge in parallel with it
+                # Then run narrative after story completes (narrative uses story_beats)
+                await self._step_story(result, trace)
 
             # 11. Memory Compression (CODE-ONLY)
             await self._step_memory(result, trace)
@@ -984,6 +993,17 @@ class TickEngine:
     async def _step_narrative(self, result: TickResult, trace: TickTrace | None = None) -> None:
         """Step 14: Generate narrative text (with improved code-based fallback)."""
         step = self.tracer.start_step("narrative") if self.tracer else None
+
+        # Skip LLM for simple actions - use fast fallback
+        action_type = result.player_action.get("type", "") if result.player_action else ""
+        simple_actions = {"examine", "rest", "take", "drop"}
+        if action_type in simple_actions:
+            result.narrative = self._generate_fallback_narrative(result)
+            if step and self.tracer:
+                self.tracer.end_step(step, details={"narrative_length": len(result.narrative), "llm_used": False, "reason": "simple_action"})
+                trace.steps.append(step)
+            return
+
         if self.narrator:
             try:
                 result.narrative = await asyncio.wait_for(

@@ -13,27 +13,7 @@ from jag.world.world import WorldState
 logger = logging.getLogger(__name__)
 
 
-NARRATOR_SYSTEM_PROMPT = """你是一个沉浸式开放世界RPG的叙事者。
-根据游戏事件生成生动、有氛围的叙事文本。
-所有输出必须使用简体中文。
-
-风格指南：
-- 用第二人称（"你"）描述玩家行动
-- 描述性但简洁（每段叙事2-4句）
-- 包含感官细节（视觉、声音、气味）
-- 保持一致的奇幻风格语调
-- 不要打破第四面墙
-- 自然地引用NPC名字和地名
-- 展现而非叙述：描述结果而非陈述机制
-- 只有当玩家主动与NPC互动或NPC做出值得注意的行动时，才描述NPC
-- 不要仅仅因为NPC存在就描述他们
-
-涉及骰子检定时：
-- 大成功：描述一次精湛的、令人印象深刻的行动
-- 成功：描述一次熟练的、有效的行动
-- 失败：描述出了什么问题，但保持趣味性
-- 大失败：描述一次戏剧性的、令人难忘的失误
-"""
+NARRATOR_SYSTEM_PROMPT = """你是一个沉浸式RPG叙事者。用第二人称（"你"）描述。每段2-3句，包含感官细节。使用简体中文。展现结果而非陈述机制。"""
 
 
 class NarrativeGenerator:
@@ -132,42 +112,38 @@ class NarrativeGenerator:
         """Generate narrative via LLM."""
         assert self.llm is not None
 
+        # Build a concise prompt
         parts = []
-        parts.append(f"时间: {context['time']}，第{context['day']}天，{context['season']}")
-        parts.append(f"地点: {context['location']['name']}（{context['location']['description']}）")
+        parts.append(f"时间:{context['time']} 地点:{context['location']['name']}")
 
         if context["player_action"]:
             action = context["player_action"]
-            parts.append(f"\nPlayer attempted: {action.get('type', 'act')} — \"{action.get('text', action.get('intent', ''))}\"")
+            parts.append(f"动作:{action.get('type', 'act')}-\"{action.get('text', action.get('intent', ''))}\"")
 
         if context["dice_result"]:
-            parts.append(f"骰子结果: {context['dice_result']['summary']}")
+            parts.append(f"骰子:{context['dice_result']['summary']}")
 
+        # Include only key NPC actions (max 2)
         if context["npc_actions"]:
-            parts.append("\nNPC actions:")
-            for npc_act in context["npc_actions"]:
-                parts.append(f"  - {npc_act.get('description', '')}")
+            for npc_act in context["npc_actions"][:2]:
+                desc = npc_act.get("description", "")
+                if desc:
+                    parts.append(f"NPC:{desc}")
 
+        # Include only key world events (max 2)
         if context["world_events"]:
-            parts.append("\nWorld events:")
-            for evt in context["world_events"]:
-                parts.append(f"  - {evt['description']}")
-
-        if context["new_quests"]:
-            parts.append("\nNew quests available:")
-            for q in context["new_quests"]:
-                parts.append(f"  - {q['title']}: {q['description']}")
+            for evt in context["world_events"][:2]:
+                parts.append(f"事件:{evt['description']}")
 
         if context["story_beats"]:
-            parts.append("\nStory developments:")
-            for beat in context["story_beats"]:
-                parts.append(f"  - {beat.get('description', '')}")
+            for beat in context["story_beats"][:1]:
+                parts.append(f"剧情:{beat.get('description', '')}")
 
         prompt = "\n".join(parts)
         narrative = await self.llm.complete(
             prompt=prompt,
             system=NARRATOR_SYSTEM_PROMPT,
-            max_tokens=300,
+            max_tokens=200,
         )
 
         return narrative.strip() if narrative else self._fallback_narrate(context, result, world)

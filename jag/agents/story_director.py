@@ -195,6 +195,7 @@ class StoryDirector:
         response = await self.llm.complete(
             prompt=prompt,
             system=STORY_DIRECTOR_PROMPT,
+            max_tokens=256,
         )
 
         # Parse response into beats (simple extraction)
