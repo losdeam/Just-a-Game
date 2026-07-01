@@ -35,7 +35,13 @@ class LiteLLMProvider:
         self.api_base = api_base
         self.disable_thinking = disable_thinking
         self._extra = kwargs
-        self.model = f"{provider}/{model}" if provider and "/" not in model else model
+        if provider == "openai-compatible":
+            # litellm uses the "openai/" prefix for OpenAI-API-compatible endpoints with a custom api_base
+            self.model = f"openai/{model}" if "/" not in model else model
+        elif provider and "/" not in model:
+            self.model = f"{provider}/{model}"
+        else:
+            self.model = model
 
     async def complete(self, prompt: str, system: str = "", **kwargs: Any) -> str:
         """Generate completion via litellm."""

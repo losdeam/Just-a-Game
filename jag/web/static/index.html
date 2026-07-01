@@ -466,6 +466,7 @@ textarea.wb-input { min-height: 80px; resize: vertical; line-height: 1.5; }
             <option value="openai">OpenAI</option><option value="anthropic">Anthropic</option>
             <option value="groq">Groq</option><option value="deepseek">DeepSeek</option>
             <option value="ollama">Ollama (本地)</option><option value="azure">Azure OpenAI</option>
+            <option value="openai-compatible">OpenAI-API-compatible</option>
           </select>
         </div>
         <div class="form-row"><span class="form-label">Model</span><input class="form-input" id="cfg-llm-model" placeholder="gpt-4"></div>
@@ -890,13 +891,17 @@ async function testLLMKey() {
   const btn = document.getElementById('test-key-btn');
   const resultDiv = document.getElementById('test-key-result');
   const apiKey = document.getElementById('cfg-llm-apikey').value.trim();
+  const provider = document.getElementById('cfg-llm-provider').value;
 
-  if (!apiKey || apiKey.includes('*')) {
-    resultDiv.style.display = 'block';
-    resultDiv.style.background = 'rgba(248,81,73,0.1)';
-    resultDiv.style.color = 'var(--red)';
-    resultDiv.textContent = '⚠ 请先填写有效的 API Key';
-    return;
+  // For openai-compatible provider, skip pre-validation — only the direct connection validates the key
+  if (provider !== 'openai-compatible') {
+    if (!apiKey || apiKey.includes('*')) {
+      resultDiv.style.display = 'block';
+      resultDiv.style.background = 'rgba(248,81,73,0.1)';
+      resultDiv.style.color = 'var(--red)';
+      resultDiv.textContent = '⚠ 请先填写有效的 API Key';
+      return;
+    }
   }
 
   btn.disabled = true;

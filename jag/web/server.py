@@ -171,8 +171,13 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
         api_key = api_key or llm_cfg.api_key
         api_base = api_base or llm_cfg.api_base
 
-        if not api_key or api_key == "your-api-key-here" or "*" in api_key:
-            return JSONResponse({"ok": False, "message": "未配置有效的 API Key"}, status_code=400)
+        if provider != "openai-compatible":
+            if not api_key or api_key == "your-api-key-here" or "*" in api_key:
+                return JSONResponse({"ok": False, "message": "未配置有效的 API Key"}, status_code=400)
+        else:
+            # For openai-compatible, skip pre-validation; fall back to stored key if masked/empty
+            if not api_key or "*" in api_key or api_key == "your-api-key-here":
+                api_key = llm_cfg.api_key
 
         try:
             from jag.agents.llm import LiteLLMProvider
