@@ -166,6 +166,11 @@ class GameMaster:
             event_bus=self.event_bus,
         )
         self.narrator = NarrativeGenerator(llm=self._get_llm("narrator"))
+        # Update TickEngine's references so it uses the new agents
+        self.tick_engine.action_planner = self.action_planner
+        self.tick_engine.npc_agent = self.npc_agent
+        self.tick_engine.narrator = self.narrator
+        self.tick_engine.story_director = self.story_director
         logger.info("LLM components refreshed")
 
     # ── World setup ──────────────────────────────────────────────
