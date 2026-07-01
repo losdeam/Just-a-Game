@@ -1,29 +1,33 @@
-"""Simple server startup script that bypasses .env loading issues."""
+"""Simple server startup script."""
 
 from __future__ import annotations
 
 import os
-import sys
 
-os.environ.pop("DOTENV", None)
-
-from jag.config import GameConfig
+from jag.config import load_config
 from jag.web.server import create_app
 import uvicorn
 
 
 def main() -> None:
-    config = GameConfig()
-    config.llm.default.provider = "mock"
-    config.llm.default.model = "mock"
+    config = load_config()
 
     app = create_app(config)
 
-    host = os.environ.get("WEB_HOST", "127.0.0.1")
-    port = int(os.environ.get("WEB_PORT", "8080"))
+    host = os.environ.get("WEB_HOST", config.web_host)
+    port = int(os.environ.get("WEB_PORT", str(config.web_port)))
+
+    provider = config.llm.default.provider
+    model = config.llm.default.model
+    has_key = bool(config.llm.default.api_key and config.llm.default.api_key != "your-api-key-here")
 
     print(f"JAG Debug Server starting at http://{host}:{port}")
-    print("Using Mock LLM (no API key required)")
+    if provider == "mock":
+        print("Using Mock LLM (no API key required)")
+    elif has_key:
+        print(f"Using LLM: {provider}/{model}")
+    else:
+        print(f"LLM provider: {provider}/{model} (no API key configured)")
     print("Press Ctrl+C to stop")
 
     uvicorn.run(app, host=host, port=port, log_level="info")

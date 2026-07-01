@@ -135,7 +135,9 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
         Note: LLM provider changes require restarting the game to take full effect.
         """
         try:
-            _apply_config_updates(gm.config, body)
+            llm_changed = _apply_config_updates(gm.config, body)
+            if llm_changed:
+                gm.reload_llm()
             return JSONResponse({"ok": True, "message": "配置已更新"})
         except Exception as e:
             return JSONResponse({"ok": False, "message": str(e)}, status_code=400)
@@ -459,7 +461,9 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
 
                 elif msg_type == "update_config":
                     try:
-                        _apply_config_updates(gm.config, msg.get("config", {}))
+                        llm_changed = _apply_config_updates(gm.config, msg.get("config", {}))
+                        if llm_changed:
+                            gm.reload_llm()
                         await websocket.send_text(json.dumps({
                             "type": "config_updated",
                             "message": "配置已更新",
@@ -488,8 +492,9 @@ def _mask_key(key: str) -> str:
     return key[:4] + "*" * (len(key) - 8) + key[-4:]
 
 
-def _apply_config_updates(cfg: GameConfig, updates: dict) -> None:  # type: ignore[type-arg]
-    """Apply partial config updates from a dict."""
+def _apply_config_updates(cfg: GameConfig, updates: dict) -> bool:  # type: ignore[type-arg]
+    """Apply partial config updates from a dict. Returns True if LLM config changed."""
+    llm_changed = False
     # LLM default
     llm = updates.get("llm", {})
     if llm:
@@ -502,6 +507,8 @@ def _apply_config_updates(cfg: GameConfig, updates: dict) -> None:  # type: igno
                 # Don't overwrite with masked value
                 if field == "api_key" and "*" in str(val):
                     continue
+                if getattr(cfg.llm.default, field) != val:
+                    llm_changed = True
                 setattr(cfg.llm.default, field, val)
         # Per-module overrides
         modules = llm.get("modules", {})
@@ -516,6 +523,8 @@ def _apply_config_updates(cfg: GameConfig, updates: dict) -> None:  # type: igno
                         continue
                     if field == "api_key" and "*" in str(val):
                         continue
+                    if getattr(mod_cfg, field) != val:
+                        llm_changed = True
                     setattr(mod_cfg, field, val)
 
     # Database
@@ -530,6 +539,8 @@ def _apply_config_updates(cfg: GameConfig, updates: dict) -> None:  # type: igno
                   "short_term_memory_size", "memory_compression_threshold"):
         if field in updates:
             setattr(cfg, field, updates[field])
+
+    return llm_changed
 
 
 def run_server(host: str | None = None, port: int | None = None, config: str | None = None) -> None:

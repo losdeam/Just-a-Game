@@ -132,6 +132,18 @@ class GameMaster:
             module_configs=module_configs,
         )
 
+    def reload_llm(self) -> None:
+        """Reinitialize LLM providers after config change."""
+        self._init_llm()
+        # Clear factory cache so new providers are created
+        self._llm_factory._cache.clear()
+        # Update agent LLM references
+        self.action_planner.llm = self._get_llm("action_planner")
+        self.npc_agent.llm = self._get_llm("npc_agent")
+        self.story_director.llm = self._get_llm("story_director")
+        self.narrator.llm = self._get_llm("narrator")
+        logger.info("LLM providers reloaded from config")
+
     def _get_llm(self, module: str) -> LLMProvider:
         """Get LLM provider for a module."""
         return self._llm_factory.get(module)
