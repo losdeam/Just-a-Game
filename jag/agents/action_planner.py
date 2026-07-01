@@ -414,6 +414,8 @@ class ActionPlanner:
         target = ""
         if world and detected_type in ("speak", "interact", "attack"):
             target = self._find_nearest_npc(action_text, world)
+        elif world and detected_type == "move":
+            target = self._find_target_location(action_text, world)
 
         return {
             "type": detected_type,
@@ -450,3 +452,26 @@ class ActionPlanner:
                 return cid
 
         return nearby_npcs[0][0]
+
+    def _find_target_location(self, action_text: str, world: Any) -> str:
+        """Find the target location matching action text, or first connected location."""
+        player_data = world.characters.get("player", {})
+        loc_id = player_data.get("location_id", "")
+        if not loc_id:
+            return ""
+
+        current_loc = world.locations.get(loc_id)
+        if not current_loc:
+            return ""
+
+        text = action_text.lower()
+
+        for conn_loc_id in current_loc.connected:
+            conn_loc = world.locations.get(conn_loc_id)
+            if conn_loc and conn_loc.name in action_text:
+                return conn_loc_id
+
+        if current_loc.connected:
+            return current_loc.connected[0]
+
+        return ""

@@ -595,11 +595,19 @@ class TickEngine:
             current_loc = player_data.get("location_id", "")
             if current_loc and target_loc:
                 self.world.move_character(player_id, current_loc, target_loc)
+                from_loc_name = current_loc
+                to_loc_name = target_loc
+                from_loc = self.world.locations.get(current_loc)
+                if from_loc:
+                    from_loc_name = from_loc.name
+                to_loc = self.world.locations.get(target_loc)
+                if to_loc:
+                    to_loc_name = to_loc.name
                 result.world_events.append(
                     GameEvent(
                         event_type=EventType.INTERACTION,
                         source_id=player_id,
-                        description=f"Moved from {current_loc} to {target_loc}",
+                        description=f"你从{from_loc_name}来到了{to_loc_name}。",
                         data={"from": current_loc, "to": target_loc},
                         turn=self.world.time.turn,
                     )
@@ -1005,45 +1013,55 @@ class TickEngine:
         if player_data:
             player_loc_id = player_data.get("location_id", "")
 
+        action_type = ""
+        target = ""
         if result.player_action:
             action_type = result.player_action.get("type", "act")
             action_text = result.player_action.get("text", "")
             target = result.player_action.get("target", "")
 
-            if action_text and action_type not in ("move",):
-                parts.append(f"你尝试{action_text}。")
-            else:
+            if action_type == "move" and target:
+                loc = self.world.locations.get(target)
+                loc_name = loc.name if loc else target
+                parts.append(f"你动身前往{loc_name}。")
+            elif action_type == "speak" and target:
+                npc_data = self.world.characters.get(target, {})
+                npc_name = npc_data.get("name", target)
+                parts.append(f"你走向{npc_name}，开始与对方交谈。")
+                import random
+                dialogues = [
+                    f"{npc_name}抬起头，微笑着说：'你好，旅行者。有什么我可以帮你的吗？'",
+                    f"{npc_name}看了你一眼：'哦，是外地人啊。这镇子最近可不太平。'",
+                    f"'欢迎来到这里。'{npc_name}说道，'你是来做生意的，还是来冒险的？'",
+                    f"{npc_name}放下手中的活计：'今天天气真不错，对吧？'",
+                    f"'小心点，朋友。'{npc_name}压低声音，'最近夜里有奇怪的声音。'",
+                ]
+                parts.append(random.choice(dialogues))
+            elif action_type == "interact" and target:
+                npc_data = self.world.characters.get(target, {})
+                if npc_data:
+                    parts.append(f"你与{npc_data.get('name', target)}进行了互动。")
+                else:
+                    parts.append(f"你试着与{target}互动。")
+            elif action_type == "attack" and target:
+                parts.append(f"你向{target}发起攻击！")
+            elif action_type == "rest":
+                parts.append("你稍作休息，恢复体力。")
+            elif action_type == "examine":
+                if target:
+                    parts.append(f"你仔细检查{target}。")
+                else:
+                    parts.append("你仔细观察周围的环境。")
+            elif target:
                 action_desc = {
-                    "move": "前往",
-                    "attack": "攻击",
-                    "interact": "互动",
                     "take": "拾取",
                     "drop": "丢弃",
                     "use": "使用",
-                    "examine": "检查",
-                    "rest": "休息",
-                    "speak": "与...交谈",
                     "craft": "制作",
-                }.get(action_type, "行动")
-
-                if action_type == "move" and target:
-                    loc = self.world.locations.get(target)
-                    loc_name = loc.name if loc else target
-                    parts.append(f"你动身前往{loc_name}。")
-                elif action_type == "speak" and target:
-                    npc_data = self.world.characters.get(target, {})
-                    npc_name = npc_data.get("name", target)
-                    parts.append(f"你走向{npc_name}，开始与对方交谈。")
-                elif action_type == "interact" and target:
-                    npc_data = self.world.characters.get(target, {})
-                    if npc_data:
-                        parts.append(f"你与{npc_data.get('name', target)}进行了互动。")
-                    else:
-                        parts.append(f"你试着与{target}互动。")
-                elif target:
-                    parts.append(f"你尝试{action_desc}{target}。")
-                else:
-                    parts.append(f"你尝试{action_desc}。")
+                }.get(action_type, action_type or "行动")
+                parts.append(f"你尝试{action_desc}{target}。")
+            elif action_text:
+                parts.append(f"你尝试{action_text}。")
 
         if result.dice_result:
             roll = result.dice_result
@@ -1065,6 +1083,8 @@ class TickEngine:
             if a.get("location_id") == player_loc_id or a.get("action") == "spawn"
         ]
         for npc_act in nearby_npc_actions[:5]:
+            if action_type == "speak" and target and npc_act.get("npc_id") == target:
+                continue
             if npc_act.get("action") == "spawn":
                 parts.append(npc_act.get("description", ""))
             elif npc_act.get("description"):
