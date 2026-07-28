@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JAG — 调试控制台</title>
+<title>JAG — 单人跑团 · AI 主持人</title>
 <style>
 :root {
   --bg: #0d1117; --bg2: #161b22; --bg3: #21262d; --border: #30363d;
@@ -110,10 +110,15 @@ textarea.wb-input { min-height: 80px; resize: vertical; line-height: 1.5; }
 .narrative-panel { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
 .narrative-log { flex: 1; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
 .narrative-entry { padding: 10px 14px; border-radius: 6px; line-height: 1.6; }
-.narrative-entry.player { background: rgba(88,166,255,0.08); border-left: 3px solid var(--accent); }
+.narrative-entry.player { background: rgba(88,166,255,0.08); border-left: 3px solid var(--accent); align-self: flex-end; max-width: 80%; }
+.narrative-entry.gm { background: rgba(188,140,255,0.08); border-left: 3px solid var(--purple); max-width: 92%; }
 .narrative-entry.system { background: rgba(63,185,80,0.06); border-left: 3px solid var(--green); }
 .narrative-entry.error { background: rgba(248,81,73,0.08); border-left: 3px solid var(--red); }
 .narrative-entry .turn-tag { font-size: 10px; color: var(--text2); margin-bottom: 4px; }
+.narrative-entry .speaker { font-size: 10px; font-weight: 700; margin-bottom: 4px; letter-spacing: 0.5px; }
+.narrative-entry.gm .speaker { color: var(--purple); }
+.narrative-entry.player .speaker { color: var(--accent); }
+.narrative-entry .body { white-space: pre-wrap; }
 
 /* Input */
 .input-bar { display: flex; padding: 10px 12px; background: var(--bg2); border-top: 1px solid var(--border); gap: 8px; }
@@ -169,6 +174,24 @@ textarea.wb-input { min-height: 80px; resize: vertical; line-height: 1.5; }
 .lore-loc .desc { color: var(--text2); font-size: 10px; }
 .lore-loc .danger { color: var(--orange); font-size: 10px; }
 .lore-quest { padding: 10px 12px; background: rgba(210,153,34,0.08); border: 1px solid rgba(210,153,34,0.2); border-radius: 8px; font-size: 12px; line-height: 1.6; color: var(--yellow); }
+
+/* Campaign book / character cards */
+.camp-section { margin-bottom: 16px; }
+.camp-section-title { font-size: 12px; font-weight: 700; color: var(--purple); margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+.char-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; margin-bottom: 6px; }
+.char-card.player { border-color: var(--accent); background: rgba(88,166,255,0.05); }
+.char-card .cc-name { font-weight: 700; color: var(--text); }
+.char-card .cc-role { font-size: 10px; color: var(--purple); margin-left: 6px; }
+.char-card .cc-desc { font-size: 11px; color: var(--text2); margin-top: 4px; line-height: 1.5; }
+.char-card .cc-meta { font-size: 10px; color: var(--text2); margin-top: 4px; }
+.char-card .cc-meta b { color: var(--text); font-weight: 600; }
+.lore-entry { background: var(--bg); border-left: 2px solid var(--purple); padding: 5px 8px; margin-bottom: 4px; font-size: 11px; line-height: 1.5; }
+.lore-entry .le-kw { font-size: 9px; color: var(--purple); }
+.plot-thread { padding: 6px 8px; background: var(--bg); border-radius: 6px; margin-bottom: 4px; font-size: 11px; border-left: 3px solid var(--yellow); }
+.plot-thread.dormant { border-left-color: var(--text2); opacity: 0.7; }
+.plot-thread .pt-title { font-weight: 600; color: var(--text); }
+.plot-thread .pt-desc { color: var(--text2); font-size: 10px; margin-top: 2px; }
+.opening-scene { background: rgba(188,140,255,0.06); border: 1px solid rgba(188,140,255,0.2); border-radius: 8px; padding: 10px 12px; font-size: 12px; line-height: 1.7; color: var(--text); white-space: pre-wrap; }
 
 /* Tabs */
 .tab-bar { display: flex; border-bottom: 1px solid var(--border); }
@@ -386,15 +409,15 @@ textarea.wb-input { min-height: 80px; resize: vertical; line-height: 1.5; }
 <!-- ── Launcher Overlay ── -->
 <div class="launcher" id="launcher">
   <div class="launcher-logo">JAG</div>
-  <div class="launcher-sub">智能体驱动开放世界 RPG 框架 · 调试控制台</div>
+  <div class="launcher-sub">单人跑团工具 · AI 充当主持人（参考 SillyTavern × 环世界）</div>
   <div class="launcher-actions">
     <button class="launcher-btn" onclick="openWorldBuilder()">
-      <span class="icon">▶</span>
-      <span class="label">创建新世界<small>选择词条构建自定义世界</small></span>
+      <span class="icon">📖</span>
+      <span class="label">创建跑团本<small>选择词条生成世界观，即为开一桌跑团</small></span>
     </button>
     <button class="launcher-btn" onclick="quickStartDemo()">
-      <span class="icon">🎮</span>
-      <span class="label">快速开始<small>加载预设演示世界</small></span>
+      <span class="icon">🎲</span>
+      <span class="label">快速开始<small>加载预设演示跑团本</small></span>
     </button>
     <button class="launcher-btn" onclick="openSettings(true)">
       <span class="icon">⚙</span>
@@ -402,17 +425,17 @@ textarea.wb-input { min-height: 80px; resize: vertical; line-height: 1.5; }
     </button>
     <button class="launcher-btn" onclick="loadGame()">
       <span class="icon">📂</span>
-      <span class="label">加载存档<small>从 savegame.json 恢复游戏状态</small></span>
+      <span class="label">加载存档<small>从 savegame.json 恢复跑团进度</small></span>
     </button>
   </div>
-  <div class="launcher-ver">JAG v0.1.0 · Debug Console</div>
+  <div class="launcher-ver">JAG v0.1.0 · 单人跑团 · AI 主持人</div>
 </div>
 
 <!-- ── World Builder Overlay ── -->
 <div class="world-builder" id="world-builder">
   <div class="wb-container">
-    <div class="wb-title">创建你的世界</div>
-    <div class="wb-subtitle">通过选择词条和描述来构建属于你的游戏世界</div>
+    <div class="wb-title">创建你的跑团本</div>
+    <div class="wb-subtitle">选择词条与描述生成世界观——这即是为你自己开一桌跑团，AI 将担任主持人</div>
 
     <div class="wb-section">
       <div class="wb-section-header"><span class="wb-section-title">世界名称</span></div>
@@ -508,12 +531,13 @@ textarea.wb-input { min-height: 80px; resize: vertical; line-height: 1.5; }
 <div class="app">
   <div class="header">
     <h1>JAG</h1>
-    <span style="color:var(--text2);font-size:11px">调试控制台</span>
+    <span style="color:var(--text2);font-size:11px" id="hdr-campaign">单人跑团 · AI 主持人</span>
     <div class="status">
       <span><span class="dot green" id="conn-dot"></span> <span id="conn-text">已连接</span></span>
       <span>回合: <b id="hdr-turn">0</b></span>
       <span>耗时: <b id="hdr-time">-</b></span>
     </div>
+    <button class="settings-btn" onclick="saveGame()">💾 存档</button>
     <button class="settings-btn" onclick="openSettings()">⚙ 配置</button>
   </div>
 
@@ -547,17 +571,17 @@ textarea.wb-input { min-height: 80px; resize: vertical; line-height: 1.5; }
                     <div class="processing-steps" id="processing-steps"></div>
                 </div>
             </div>
-            <div class="panel-title">游戏叙事 <span class="badge" id="narrative-count">0</span></div>
+            <div class="panel-title">🎲 主持人 (GM) <span class="badge" id="narrative-count">0</span></div>
             <div class="narrative-log" id="narrative-log"></div>
-            
+
             <div class="options-panel" id="options-panel" style="display: none;">
-                <div class="options-title">你可以：</div>
+                <div class="options-title">主持人建议你可以考虑：</div>
                 <div class="options-list" id="options-list"></div>
             </div>
-            
+
             <div class="input-bar">
-                <input type="text" id="player-input" placeholder="输入行动... (如: 探索森林、和商人对话)" autocomplete="off">
-                <button id="send-btn" onclick="sendAction()">发送</button>
+                <input type="text" id="player-input" placeholder="宣告你的行动... (如: 我推门走进酒馆，向老板打听消息)" autocomplete="off">
+                <button id="send-btn" onclick="sendAction()">宣告行动</button>
                 <button style="background:var(--bg3);color:var(--text)" onclick="sendWait(1)">等待</button>
             </div>
         </div>
@@ -565,12 +589,18 @@ textarea.wb-input { min-height: 80px; resize: vertical; line-height: 1.5; }
 
   <div class="sidebar">
     <div class="tab-bar">
-      <div class="tab active" data-tab="debug" onclick="switchTab('debug')">流水线</div>
+      <div class="tab active" data-tab="campaign" onclick="switchTab('campaign')">跑团本</div>
+      <div class="tab" data-tab="debug" onclick="switchTab('debug')">流水线</div>
       <div class="tab" data-tab="world" onclick="switchTab('world')">世界</div>
       <div class="tab" data-tab="npc" onclick="switchTab('npc')">NPC</div>
       <div class="tab" data-tab="lore" onclick="switchTab('lore')">世界观</div>
     </div>
-    <div class="tab-content active" id="tab-debug">
+    <div class="tab-content active" id="tab-campaign">
+      <div class="debug-scroll" id="campaign-content">
+        <div style="padding:12px;color:var(--text2);font-size:11px">尚未创建跑团本。</div>
+      </div>
+    </div>
+    <div class="tab-content" id="tab-debug">
       <div class="panel-title">流水线追踪 <span class="badge" id="trace-count">0</span></div>
       <div class="debug-scroll" id="debug-scroll"></div>
     </div>
@@ -622,18 +652,19 @@ function connect() {
 
 function handleMessage(msg) {
         switch (msg.type) {
-            case 'init': updateStatus(msg.status); if (msg.opening) addNarrative('system', msg.opening); break;
+            case 'init': updateStatus(msg.status); if (msg.opening) addNarrative('gm', msg.opening); break;
             case 'trace': case 'tick': addTraceCard(msg); break;
-            case 'action_result': 
-                addNarrative('player', msg.narrative, msg.status?.turn); 
-                updateStatus(msg.status); 
-                updateOptions(msg.suggested_options); 
+            case 'action_result':
+                // 玩家行动已被本地回显，此处展示主持人演绎结果
+                if (msg.narrative) addNarrative('gm', msg.narrative, msg.status?.turn);
+                updateStatus(msg.status);
+                updateOptions(msg.suggested_options);
                 hideProcessing();
                 break;
-            case 'wait_result': 
-                for (const n of (msg.narratives||[])) addNarrative('system', n); 
-                updateStatus(msg.status); 
-                updateOptions(msg.suggested_options); 
+            case 'wait_result':
+                for (const n of (msg.narratives||[])) addNarrative('gm', n);
+                updateStatus(msg.status);
+                updateOptions(msg.suggested_options);
                 hideProcessing();
                 break;
             case 'status': updateStatus(msg.status); break;
@@ -839,10 +870,10 @@ function onWorldCreated(msg) {
         document.getElementById('launcher').classList.add('hidden');
         setTimeout(() => document.getElementById('launcher').style.display = 'none', 500);
         const method = result.method === 'llm' ? '🤖 AI 生成' : result.method === 'demo' ? '🎮 预设世界' : '📝 词条生成';
-        addNarrative('system', `世界创建成功！[${method}] ${result.world_name || ''} — ${result.locations || 0} 个地点, ${result.npcs || 0} 个 NPC。`);
-        // Show opening narration
+        addNarrative('system', `跑团本创建成功！[${method}] ${result.world_name || ''} — ${result.locations || 0} 个地点, ${result.npcs || 0} 个 NPC。`);
+        // Show opening narration as GM voice
         if (msg.opening) {
-            addNarrative('system', msg.opening);
+            addNarrative('gm', msg.opening);
         }
         // Show warning if any
         if (result.warning) {
@@ -852,6 +883,12 @@ function onWorldCreated(msg) {
         if (msg.suggested_options) updateOptions(msg.suggested_options);
         document.getElementById('wb-create-btn').disabled = false;
         document.getElementById('wb-create-btn').textContent = '创建世界';
+        // 加载跑团本到侧边栏 + 更新头部标题
+        if (result.campaign || msg.campaign) {
+            renderCampaign(result.campaign || msg.campaign);
+        } else {
+            loadCampaign();
+        }
         loadLore();
     }
 
@@ -862,16 +899,42 @@ function quickStartDemo() {
             fetch('/api/world/load_demo', { method: 'POST' }).then(r => r.json()).then(data => {
                 document.getElementById('launcher').classList.add('hidden');
                 setTimeout(() => document.getElementById('launcher').style.display = 'none', 500);
-                addNarrative('system', '演示世界已加载。');
-                if (data.opening) addNarrative('system', data.opening);
+                addNarrative('system', '演示跑团本已加载。');
+                if (data.opening) addNarrative('gm', data.opening);
                 fetch('/api/status').then(r => r.json()).then(s => updateStatus(s));
                 if (data.suggested_options) updateOptions(data.suggested_options);
+                if (data.campaign) renderCampaign(data.campaign); else loadCampaign();
             });
         }
     }
 
 function loadGame() {
-  showToast('存档加载功能暂未实现');
+  // 通过 REST 加载存档
+  fetch('/api/load', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ path: 'savegame.json' }),
+  }).then(r => r.json()).then(data => {
+    if (!data.ok) { showToast(data.message || '加载失败'); return; }
+    document.getElementById('launcher').classList.add('hidden');
+    setTimeout(() => document.getElementById('launcher').style.display = 'none', 500);
+    addNarrative('system', `已从存档恢复：${data.message || ''}`);
+    if (data.opening) addNarrative('gm', data.opening);
+    if (data.status) updateStatus(data.status);
+    if (data.suggested_options) updateOptions(data.suggested_options);
+    if (data.campaign) renderCampaign(data.campaign); else loadCampaign();
+    loadLore();
+  }).catch(() => showToast('加载失败'));
+}
+
+function saveGame() {
+  fetch('/api/save', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ path: 'savegame.json' }),
+  }).then(r => r.json()).then(data => {
+    showToast(data.ok ? `💾 ${data.message}` : `保存失败: ${data.message}`);
+  }).catch(() => showToast('保存失败'));
 }
 
 // ── Settings ──
@@ -1155,7 +1218,9 @@ function addNarrative(type, text, turn) {
   const div = document.createElement('div');
   div.className = `narrative-entry ${type}`;
   const turnTag = turn ? `<div class="turn-tag">Turn ${turn}</div>` : '';
-  div.innerHTML = `${turnTag}<div>${escHtml(text)}</div>`;
+  const speakerMap = { gm: '🎲 主持人', player: '🗡 玩家', system: '⚙ 系统', error: '⚠ 错误' };
+  const speaker = speakerMap[type] ? `<div class="speaker">${speakerMap[type]}</div>` : '';
+  div.innerHTML = `${turnTag}${speaker}<div class="body">${escHtml(text)}</div>`;
   log.appendChild(div); log.scrollTop = log.scrollHeight;
   narrativeCount++;
   document.getElementById('narrative-count').textContent = narrativeCount;
@@ -1190,9 +1255,10 @@ function sendAction() {
   const text = input.value.trim();
   if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
   ws.send(JSON.stringify({ type: 'action', input: text }));
-  addNarrative('player', `> ${text}`);
+  // 本地回显玩家宣告的行动
+  addNarrative('player', text);
   input.value = '';
-  
+
   // Show processing indicator
   showProcessing([
     { id: 'action_plan', name: '解析行动' },
@@ -1226,6 +1292,115 @@ function switchTab(name) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
   document.querySelectorAll('.tab-content').forEach(t => t.classList.toggle('active', t.id === `tab-${name}`));
   if (name === 'lore') loadLore();
+  if (name === 'campaign') loadCampaign();
+}
+
+// ── 跑团本（CampaignBook）展示 ──
+async function loadCampaign() {
+  try {
+    const r = await fetch('/api/campaign');
+    const data = await r.json();
+    if (data.ok && data.campaign) {
+      renderCampaign(data.campaign);
+    } else {
+      document.getElementById('campaign-content').innerHTML =
+        '<div style="padding:12px;color:var(--text2);font-size:11px">尚未创建跑团本。请回到首页创建一桌跑团。</div>';
+    }
+  } catch {
+    document.getElementById('campaign-content').innerHTML =
+      '<div style="padding:12px;color:var(--text2);font-size:11px">加载跑团本失败。</div>';
+  }
+}
+
+function renderCampaign(camp) {
+  if (!camp) {
+    loadCampaign();
+    return;
+  }
+  // 更新头部跑团本标题
+  const hdr = document.getElementById('hdr-campaign');
+  if (hdr && camp.title) hdr.textContent = `📖 ${camp.title} · ${camp.tone || ''}`;
+
+  const player = camp.player_card || {};
+  const npcs = camp.npc_cards || [];
+  const lore = camp.lorebook || [];
+  const threads = camp.plot_threads || [];
+
+  const playerHtml = `
+    <div class="char-card player">
+      <div><span class="cc-name">${escHtml(player.name || '玩家')}</span><span class="cc-role">${escHtml(player.role || '')}</span></div>
+      <div class="cc-desc">${escHtml(player.description || '')}</div>
+      <div class="cc-meta">
+        ${player.personality ? `<span>性格: <b>${escHtml(player.personality)}</b></span>` : ''}
+        ${player.goals ? `<span> · 目标: <b>${escHtml(player.goals)}</b></span>` : ''}
+        ${player.location ? `<span> · 位置: <b>${escHtml(player.location)}</b></span>` : ''}
+      </div>
+    </div>`;
+
+  const npcHtml = npcs.map(c => `
+    <div class="char-card">
+      <div><span class="cc-name">${escHtml(c.name || 'NPC')}</span><span class="cc-role">${escHtml(c.role || '')}</span></div>
+      <div class="cc-desc">${escHtml(c.description || '')}</div>
+      <div class="cc-meta">
+        ${c.personality ? `<span>性格: <b>${escHtml(c.personality)}</b></span>` : ''}
+        ${c.goals ? `<span> · 目标: <b>${escHtml(c.goals)}</b></span>` : ''}
+        ${c.location ? `<span> · 位置: <b>${escHtml(c.location)}</b></span>` : ''}
+      </div>
+    </div>`).join('');
+
+  const loreHtml = lore.length ? lore.map(e => `
+    <div class="lore-entry">
+      <div class="le-kw">🔑 ${(e.keywords || []).map(escHtml).join(' / ') || '（无关键词）'}</div>
+      <div>${escHtml(e.content || '')}</div>
+    </div>`).join('') : '<div style="color:var(--text2);font-size:11px">无</div>';
+
+  const threadsHtml = threads.length ? threads.map(t => `
+    <div class="plot-thread ${t.status === 'dormant' ? 'dormant' : ''}">
+      <div class="pt-title">${escHtml(t.title || '未命名剧情线')} <span style="font-size:9px;color:var(--text2)">[${escHtml(t.status || 'active')}]</span></div>
+      <div class="pt-desc">${escHtml(t.description || '')}</div>
+    </div>`).join('') : '<div style="color:var(--text2);font-size:11px">无</div>';
+
+  const openingHtml = camp.opening_scene
+    ? `<div class="opening-scene">${escHtml(camp.opening_scene)}</div>` : '';
+
+  const tags = camp.tags || {};
+  const tagChips = [
+    tags.genre, tags.era, ...(tags.atmosphere || []),
+  ].filter(Boolean).map(t => `<span class="lore-tag">${escHtml(t)}</span>`).join('');
+
+  document.getElementById('campaign-content').innerHTML = `
+    <div style="padding:10px 12px">
+      <div class="camp-section">
+        <div class="camp-section-title">📖 ${escHtml(camp.title || '跑团本')}</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:6px">${escHtml(camp.logline || '')}</div>
+        ${tagChips ? `<div style="margin-bottom:6px">${tagChips}</div>` : ''}
+        <div class="lore-text">${escHtml(camp.premise || '')}</div>
+        ${camp.tone ? `<div class="cc-meta" style="margin-top:6px">基调: <b>${escHtml(camp.tone)}</b></div>` : ''}
+        ${camp.ruleset ? `<div class="cc-meta">规则: <b>${escHtml(camp.ruleset)}</b></div>` : ''}
+      </div>
+
+      ${openingHtml ? `<div class="camp-section"><div class="camp-section-title">🎬 开场独白</div>${openingHtml}</div>` : ''}
+
+      <div class="camp-section">
+        <div class="camp-section-title">🗡 玩家角色卡</div>
+        ${playerHtml}
+      </div>
+
+      <div class="camp-section">
+        <div class="camp-section-title">👥 NPC 角色卡 <span class="badge">${npcs.length}</span></div>
+        ${npcHtml || '<div style="color:var(--text2);font-size:11px">无</div>'}
+      </div>
+
+      <div class="camp-section">
+        <div class="camp-section-title">📚 知识书 <span class="badge">${lore.length}</span></div>
+        ${loreHtml}
+      </div>
+
+      <div class="camp-section">
+        <div class="camp-section-title">🎭 剧情线 <span class="badge">${threads.length}</span></div>
+        ${threadsHtml}
+      </div>
+    </div>`;
 }
 
 async function loadNPCs() {

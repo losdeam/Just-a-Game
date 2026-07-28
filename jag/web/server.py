@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 
 
 from jag.agents.game_master import GameMaster
+from jag.campaign.builder import CampaignBuilder
 from jag.cli import setup_demo_world
 from jag.config import GameConfig, LLMModuleConfig, load_config
 from jag.debug.tracer import TickTrace
@@ -35,7 +36,24 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
     cfg = config or load_config()
     gm = GameMaster(config=cfg)
     world_builder = WorldBuilder(gm)
+    campaign_builder = CampaignBuilder(gm)
     _world_initialized = False  # Track if world has been set up
+
+    def _llm_ready() -> bool:
+        llm_cfg = gm.config.llm.default
+        return bool(llm_cfg.api_key and llm_cfg.api_key != "your-api-key-here")
+
+    async def _assemble_campaign(
+        world_name: str, tags: dict, description: str, method: str,
+    ) -> None:
+        """世界构建完成后，装配跑团本并挂载到 gm（切换为 AI 主持人声线）。"""
+        try:
+            await campaign_builder.assemble(
+                world_name=world_name, tags=tags, description=description,
+                use_llm=_llm_ready(), method=method,
+            )
+        except Exception as e:  # noqa: BLE001
+            logger.warning("装配跑团本失败，将以普通叙述模式继续: %s", e)
 
     def _ensure_world() -> None:
         """Ensure a world is loaded; does nothing if none was created."""
@@ -209,15 +227,20 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                         "need_key": True,
                     }, status_code=400)
                 result = await world_builder.build_with_llm(world_name, tags, description)
+                method = "llm"
             else:
                 result = world_builder.build_from_tags(world_name, tags, description)
+                method = "template"
                 if description and not has_key:
                     result["warning"] = "未配置 LLM API Key，您的自定义描述无法用于 AI 生成，已使用词条模板生成。配置 API Key 后可获得 AI 驱动的自定义世界。"
             _world_initialized = True
+            # 世界构建完成 → 装配跑团本（创建世界观即创建跑团本）
+            await _assemble_campaign(world_name, tags, description, method)
             opening = await gm.generate_opening()
             options = await gm.get_suggested_options()
             result["opening"] = opening
             result["suggested_options"] = options
+            result["campaign"] = gm.campaign.to_dict() if gm.campaign else None
             return JSONResponse(result)
         except Exception as e:
             return JSONResponse({"ok": False, "message": str(e)}, status_code=500)
@@ -229,9 +252,15 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
         if not _world_initialized:
             setup_demo_world(gm)
             _world_initialized = True
+        # 演示世界也装配一份跑团本
+        await _assemble_campaign(gm.config.world_name or "演示世界", {}, "", "demo")
         opening = await gm.generate_opening()
         options = await gm.get_suggested_options()
-        return JSONResponse({"ok": True, "message": "演示世界已加载", "opening": opening, "suggested_options": options})
+        return JSONResponse({
+            "ok": True, "message": "演示世界已加载",
+            "opening": opening, "suggested_options": options,
+            "campaign": gm.campaign.to_dict() if gm.campaign else None,
+        })
 
     @app.get("/api/inventory")
     async def get_inventory() -> JSONResponse:
@@ -252,6 +281,53 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
     async def get_lore() -> JSONResponse:
         _ensure_world()
         return JSONResponse(gm.world_lore)
+
+    @app.get("/api/campaign")
+    async def get_campaign() -> JSONResponse:
+        """返回当前跑团本（含角色卡 / 知识书 / 剧情线 / 开场场景）。"""
+        if gm.campaign is None:
+            return JSONResponse({"ok": False, "message": "尚未创建跑团本"}, status_code=404)
+        return JSONResponse({"ok": True, "campaign": gm.campaign.to_dict()})
+
+    @app.get("/api/characters")
+    async def get_characters() -> JSONResponse:
+        """返回玩家与 NPC 角色卡（SillyTavern 风格）。"""
+        if gm.campaign is None:
+            return JSONResponse({"ok": False, "message": "尚未创建跑团本"}, status_code=404)
+        book = gm.campaign
+        return JSONResponse({
+            "ok": True,
+            "player": book.player_card.to_dict(),
+            "npcs": [c.to_dict() for c in book.npc_cards],
+        })
+
+    @app.post("/api/save")
+    async def save_game(body: dict | None = None) -> JSONResponse:  # type: ignore[type-arg]
+        """保存当前跑团进度（含跑团本）。"""
+        path = (body or {}).get("path", "savegame.json")
+        try:
+            gm.save_game(path)
+            return JSONResponse({"ok": True, "message": f"已保存至 {path}"})
+        except Exception as e:  # noqa: BLE001
+            return JSONResponse({"ok": False, "message": str(e)}, status_code=500)
+
+    @app.post("/api/load")
+    async def load_game(body: dict | None = None) -> JSONResponse:  # type: ignore[type-arg]
+        """从存档恢复跑团进度（含跑团本）。"""
+        nonlocal _world_initialized
+        path = (body or {}).get("path", "savegame.json")
+        ok = gm.load_game(path)
+        if ok:
+            _world_initialized = True
+            opening = await gm.generate_opening()
+            options = await gm.get_suggested_options()
+            return JSONResponse({
+                "ok": True, "message": f"已从 {path} 恢复",
+                "opening": opening, "suggested_options": options,
+                "status": gm.get_status(),
+                "campaign": gm.campaign.to_dict() if gm.campaign else None,
+            })
+        return JSONResponse({"ok": False, "message": f"存档不存在或损坏: {path}"}, status_code=404)
 
     @app.websocket("/ws")
     async def websocket_endpoint(websocket: WebSocket) -> None:
@@ -409,10 +485,16 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                             if description and not has_key:
                                 result["warning"] = "未配置 LLM API Key，您的描述未用于 AI 生成。配置后可获得 AI 驱动的自定义世界。"
                         _world_initialized = True
+                        # 世界构建完成 → 装配跑团本（创建世界观即创建跑团本）
+                        method = "llm" if use_llm else "template"
+                        await websocket.send_text(json.dumps({
+                            "type": "progress", "message": "正在撰写跑团本（角色卡 / 知识书 / 开场）...",
+                        }, ensure_ascii=False))
+                        await _assemble_campaign(world_name, tags, description, method)
                         status = gm.get_status()
                         await websocket.send_text(json.dumps({
                             "type": "progress",
-                            "message": "正在生成开场白...",
+                            "message": "主持人正在准备开场独白...",
                         }, ensure_ascii=False))
                         opening = await gm.generate_opening()
                         options = await gm.get_suggested_options()
@@ -422,6 +504,7 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                             "status": status,
                             "opening": opening,
                             "suggested_options": options,
+                            "campaign": gm.campaign.to_dict() if gm.campaign else None,
                         }, ensure_ascii=False))
                     except Exception as e:
                         await websocket.send_text(json.dumps({
@@ -437,10 +520,14 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                         }, ensure_ascii=False))
                         setup_demo_world(gm)
                         _world_initialized = True
+                    await websocket.send_text(json.dumps({
+                        "type": "progress", "message": "正在撰写跑团本...",
+                    }, ensure_ascii=False))
+                    await _assemble_campaign(gm.config.world_name or "演示世界", {}, "", "demo")
                     status = gm.get_status()
                     await websocket.send_text(json.dumps({
                         "type": "progress",
-                        "message": "正在生成开场白...",
+                        "message": "主持人正在准备开场独白...",
                     }, ensure_ascii=False))
                     opening = await gm.generate_opening()
                     options = await gm.get_suggested_options()
@@ -450,6 +537,7 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                         "status": status,
                         "opening": opening,
                         "suggested_options": options,
+                        "campaign": gm.campaign.to_dict() if gm.campaign else None,
                     }, ensure_ascii=False))
 
                 elif msg_type == "update_config":

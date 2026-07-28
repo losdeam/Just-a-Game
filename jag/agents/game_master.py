@@ -9,7 +9,7 @@ from typing import Any
 
 from jag.agents.action_planner import ActionPlanner
 from jag.agents.llm import LLMConfig, LLMFactory, LLMProvider
-from jag.agents.narrative import NarrativeGenerator
+from jag.agents.narrative import GM_VOICE_PROMPT, NarrativeGenerator
 from jag.agents.npc_agent import NPCAgent
 from jag.agents.story_director import StoryDirector
 from jag.config import GameConfig, load_config
@@ -95,6 +95,13 @@ class GameMaster:
         self._running = False
         self._turn_count = 0
         self.world_lore: dict[str, Any] = {}
+        # 跑团本：挂载后即由 AI 主持人声线驱动整场跑团
+        self.campaign: Any = None
+
+    def set_campaign(self, campaign: Any) -> None:
+        """挂载跑团本，并同步给叙述器切换为 AI 主持人声线。"""
+        self.campaign = campaign
+        self.narrator.set_campaign(campaign)
 
     def _init_llm(self) -> None:
         """Initialize LLM factory from config."""
@@ -199,14 +206,34 @@ class GameMaster:
         self.quest_gen = QuestGenerator()
         self.event_bus = EventBus()
         self.rule_engine = RuleEngine(self.event_bus, max_chain_depth=self.config.max_chain_depth)
+        # 清理上一份跑团本与主持人声线
+        self.campaign = None
+        self.narrator.set_campaign(None)
 
     # ── Game loop ────────────────────────────────────────────────
 
     async def generate_opening(self) -> str:
-        """Generate an immersive opening narration for the player."""
+        """Generate an immersive opening narration for the player.
+
+        挂载跑团本时，优先使用 AI 主持人开场独白。
+        """
         player = self.world.characters.get(self.player_id, {})
         loc_id = player.get("location_id", "")
         location = self.world.locations.get(loc_id)
+
+        # 跑团本模式：用主持人开场独白（必要时由 LLM 现场生成）
+        if self.campaign is not None:
+            camp = self.campaign
+            if getattr(camp, "opening_scene", "") and self.narrator and self.narrator.llm:
+                # 已有开场独白时直接采用，保证剧本一致性
+                return camp.opening_scene
+            if self.narrator and self.narrator.llm:
+                try:
+                    opening = await self._gm_opening(player, location)
+                    if opening:
+                        return opening
+                except Exception:
+                    pass
 
         if self.narrator and self.narrator.llm:
             try:
@@ -248,6 +275,33 @@ class GameMaster:
             f"{inv_str}\n"
             f"一场伟大的冒险正等待着你……"
         )
+
+    async def _gm_opening(self, player: dict[str, Any], location: Any) -> str:
+        """跑团本模式下，用主持人声线现场生成开场独白。"""
+        assert self.narrator is not None and self.narrator.llm is not None
+        camp = self.campaign
+        loc_name = location.name if location else "未知之地"
+        inv = player.get("inventory", [])
+        prompt = (
+            f"你是这桌单人跑团的主持人。请用第二人称「你」写一段开场独白（150-250字）。\n"
+            f"跑团本：{camp.title}　概要：{camp.logline}\n"
+            f"基调：{camp.tone}\n"
+            f"世界设定：{camp.setting.get('description','')}\n"
+            f"主线：{camp.setting.get('main_quest','')}\n"
+            f"玩家：{camp.player_card.name}，{camp.player_card.description}\n"
+            f"开场地点：{loc_name}（{location.description[:160] if location else ''}）\n"
+            f"背包：{'、'.join(inv) if inv else '空'}\n\n"
+            f"要求：含感官细节与悬念，结尾抛出一个开放式钩子引导玩家行动。"
+        )
+        opening = await self.narrator.llm.complete(
+            prompt=prompt,
+            system=GM_VOICE_PROMPT,
+            max_tokens=500,
+        )
+        text = opening.strip() if opening else ""
+        if text:
+            camp.opening_scene = text
+        return text
 
     async def process_action(self, player_input: str) -> tuple[str, list[dict[str, Any]]]:
         """Process a player action and return narrative text and suggested options.
@@ -332,6 +386,9 @@ class GameMaster:
             "nearby_entities": nearby_entities,
             "active_threads": len(self.story_director.get_active_threads()),
             "active_quests": len(self.quest_gen.active_quests),
+            "campaign_title": getattr(self.campaign, "title", "") if self.campaign else "",
+            "campaign_logline": getattr(self.campaign, "logline", "") if self.campaign else "",
+            "has_campaign": self.campaign is not None,
         }
 
     # ── Save/Load ────────────────────────────────────────────────
@@ -356,6 +413,7 @@ class GameMaster:
             },
             "global_flags": self.world.global_flags,
             "knowledge": self.knowledge.to_dict(),
+            "campaign": self.campaign.to_dict() if self.campaign else None,
         }
 
         Path(path).parent.mkdir(parents=True, exist_ok=True)
@@ -388,6 +446,15 @@ class GameMaster:
             kg_data = state.get("knowledge", {})
             if kg_data:
                 self.knowledge.from_dict(kg_data)
+
+            # Restore campaign book（若存档中有）
+            camp_data = state.get("campaign")
+            if camp_data:
+                try:
+                    from jag.campaign.book import CampaignBook
+                    self.set_campaign(CampaignBook.from_dict(camp_data))
+                except Exception as e:  # noqa: BLE001
+                    logger.warning("恢复跑团本失败: %s", e)
 
             logger.info("Game loaded from %s", path)
             return True
