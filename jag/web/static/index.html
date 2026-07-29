@@ -155,18 +155,6 @@ textarea.wb-input { min-height: 80px; resize: vertical; line-height: 1.5; }
 .npc-loc { color: var(--text2); font-size: 10px; }
 .npc-state { font-size: 10px; color: var(--yellow); }
 
-/* Inventory */
-.inventory-list { padding: 6px 10px; overflow-y: auto; flex: 1; }
-.inventory-section { margin-bottom: 12px; }
-.inventory-section-title { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
-.inventory-item { display: flex; align-items: flex-start; gap: 8px; padding: 6px 8px; background: var(--bg); border-radius: 6px; margin-bottom: 4px; font-size: 11px; }
-.inventory-item:hover { background: var(--bg3); }
-.inventory-icon { font-size: 16px; flex-shrink: 0; width: 24px; text-align: center; }
-.inventory-info { flex: 1; }
-.inventory-name { font-weight: 600; color: var(--text); margin-bottom: 2px; }
-.inventory-desc { color: var(--text2); font-size: 10px; line-height: 1.4; }
-.inventory-empty { text-align: center; padding: 20px; color: var(--text2); font-size: 12px; }
-
 /* Lore */
 .lore-section { margin-bottom: 16px; }
 .lore-section-title { font-size: 12px; font-weight: 700; color: var(--accent); margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
@@ -391,7 +379,6 @@ textarea.wb-input { min-height: 80px; resize: vertical; line-height: 1.5; }
     }
     
     @keyframes spin { to { transform: rotate(360deg); } }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 </head>
 <body>
@@ -455,16 +442,11 @@ textarea.wb-input { min-height: 80px; resize: vertical; line-height: 1.5; }
       <button class="wb-btn wb-btn-primary" id="wb-create-btn" onclick="createWorld()">创建世界</button>
       <button class="wb-btn wb-btn-secondary" onclick="closeWorldBuilder()">返回</button>
     </div>
-    <div id="wb-progress" style="display:none;margin-top:16px;padding:16px 18px;background:var(--bg2);border:1px solid var(--border);border-radius:10px">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <div class="spinner" style="width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite"></div>
-        <span id="wb-progress-text" style="font-size:13px;color:var(--text);font-weight:600">正在生成...</span>
-        <span id="wb-progress-step" style="margin-left:auto;font-size:11px;color:var(--text2)"></span>
+    <div id="wb-progress" style="display:none;margin-top:16px;padding:12px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:8px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="spinner" style="width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite"></div>
+        <span id="wb-progress-text" style="font-size:12px;color:var(--text)">正在生成...</span>
       </div>
-      <div id="wb-progress-bar-wrap" style="display:none;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-bottom:12px">
-        <div id="wb-progress-bar" style="height:100%;background:var(--accent);width:0%;transition:width 0.3s ease"></div>
-      </div>
-      <div id="wb-step-results"></div>
     </div>
   </div>
 </div>
@@ -586,7 +568,6 @@ textarea.wb-input { min-height: 80px; resize: vertical; line-height: 1.5; }
       <div class="tab active" data-tab="debug" onclick="switchTab('debug')">流水线</div>
       <div class="tab" data-tab="world" onclick="switchTab('world')">世界</div>
       <div class="tab" data-tab="npc" onclick="switchTab('npc')">NPC</div>
-      <div class="tab" data-tab="inventory" onclick="switchTab('inventory')">背包</div>
       <div class="tab" data-tab="lore" onclick="switchTab('lore')">世界观</div>
     </div>
     <div class="tab-content active" id="tab-debug">
@@ -604,10 +585,6 @@ textarea.wb-input { min-height: 80px; resize: vertical; line-height: 1.5; }
     <div class="tab-content" id="tab-npc">
       <div class="panel-title">NPC 状态 <span class="badge" id="npc-count">0</span></div>
       <div class="npc-list" id="npc-list"></div>
-    </div>
-    <div class="tab-content" id="tab-inventory">
-      <div class="panel-title">背包物品 <span class="badge" id="inv-count">0</span></div>
-      <div class="inventory-list" id="inventory-list"></div>
     </div>
     <div class="tab-content" id="tab-lore">
       <div class="panel-title">世界观</div>
@@ -646,7 +623,6 @@ function connect() {
 function handleMessage(msg) {
         switch (msg.type) {
             case 'init': updateStatus(msg.status); if (msg.opening) addNarrative('system', msg.opening); break;
-            case 'opening_update': if (msg.opening) addNarrative('system', msg.opening); break;
             case 'trace': case 'tick': addTraceCard(msg); break;
             case 'action_result': 
                 addNarrative('player', msg.narrative, msg.status?.turn); 
@@ -668,10 +644,7 @@ function handleMessage(msg) {
                 updateOptions(msg.suggested_options);
                 break;
             case 'progress':
-                showProgress(msg.message, msg.step, msg.total);
-                break;
-            case 'step_result':
-                appendStepResult(msg.name, msg.result, msg.details);
+                showProgress(msg.message);
                 break;
             case 'config': currentConfig = msg.config; populateSettings(msg.config); break;
             case 'config_updated': showToast(msg.message || '配置已更新'); break;
@@ -703,25 +676,10 @@ function openWorldBuilder() {
     }
   });
   if (tagCategories.length === 0) {
-    let retries = 0;
-    function loadTags() {
-      fetch('/api/world/tags').then(r => {
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.json();
-      }).then(data => {
-        if (!Array.isArray(data) || data.length === 0) throw new Error('Empty data');
-        tagCategories = data;
-        renderTagSections();
-      }).catch(err => {
-        retries++;
-        if (retries < 3) {
-          setTimeout(loadTags, retries * 500);
-        } else {
-          showToast('加载词条失败: ' + err.message);
-        }
-      });
-    }
-    loadTags();
+    fetch('/api/world/tags').then(r => r.json()).then(data => {
+      tagCategories = data;
+      renderTagSections();
+    }).catch(() => showToast('加载词条失败'));
   }
 }
 
@@ -823,105 +781,14 @@ function createWorld() {
   }
 }
 
-function showProgress(msg, step, total) {
+function showProgress(msg) {
   const el = document.getElementById('wb-progress');
   el.style.display = 'block';
-  const textEl = document.getElementById('wb-progress-text');
-  textEl.textContent = msg;
-
-  if (step !== undefined && total !== undefined && total > 0) {
-    const stepEl = document.getElementById('wb-progress-step');
-    stepEl.textContent = `${step} / ${total}`;
-    const barWrap = document.getElementById('wb-progress-bar-wrap');
-    const bar = document.getElementById('wb-progress-bar');
-    barWrap.style.display = 'block';
-    const pct = Math.min(100, Math.round((step / total) * 100));
-    bar.style.width = pct + '%';
-  } else {
-    document.getElementById('wb-progress-step').textContent = '';
-  }
-}
-
-function appendStepResult(stepName, result, details) {
-  const container = document.getElementById('wb-step-results');
-
-  // Add step result
-  const stepDiv = document.createElement('div');
-  stepDiv.className = 'wb-step-item';
-  stepDiv.style.cssText = 'padding:8px 10px;background:var(--bg);border-radius:8px;margin-bottom:6px;border:1px solid var(--border);animation:fadeIn 0.3s ease';
-
-  let icon = '✓';
-  if (stepName.includes('地点')) icon = '📍';
-  else if (stepName.includes('角色') || stepName.includes('NPC')) icon = '👥';
-  else if (stepName.includes('世界观')) icon = '📜';
-  else if (stepName.includes('区域')) icon = '🗺️';
-  else if (stepName.includes('AI')) icon = '🤖';
-  else if (stepName.includes('模板')) icon = '⚡';
-
-  let detailsHtml = '';
-  if (details) {
-    detailsHtml = '<div style="padding-left:26px;margin-top:6px;font-size:11px;color:var(--text2);line-height:1.5">';
-    if (details.locations && details.locations.length > 0) {
-      const locs = details.locations.slice(0, 6);
-      const more = details.locations.length > 6 ? `...等${details.locations.length}个` : '';
-      detailsHtml += `<div style="margin-bottom:3px">📍 ${locs.join('、')}${more}</div>`;
-    }
-    if (details.npc_details && details.npc_details.length > 0) {
-      detailsHtml += '<div style="margin-bottom:3px">';
-      details.npc_details.slice(0, 3).forEach(n => {
-        detailsHtml += `<div>👤 <b style="color:var(--text)">${escHtml(n.name || '')}</b> - ${escHtml(n.location || '')}</div>`;
-      });
-      if (details.npc_details.length > 3) {
-        detailsHtml += `<div style="color:var(--text2)">...还有${details.count - 3}个NPC</div>`;
-      }
-      detailsHtml += '</div>';
-    }
-    if (details.npcs && details.npcs.length > 0 && !details.npc_details) {
-      detailsHtml += `<div style="margin-bottom:3px">👥 ${details.npcs.slice(0, 5).join('、')}${details.npcs.length > 5 ? '...' : ''}</div>`;
-    }
-    if (details.region_name) {
-      detailsHtml += `<div style="margin-bottom:3px">🌍 区域: ${escHtml(details.region_name)}</div>`;
-    }
-    if (details.genre) {
-      detailsHtml += `<div style="margin-bottom:3px">🏷 类型: ${escHtml(details.genre)}</div>`;
-    }
-    if (details.era) {
-      detailsHtml += `<div style="margin-bottom:3px">⏳ 时代: ${escHtml(details.era)}</div>`;
-    }
-    if (details.main_quest) {
-      detailsHtml += `<div style="margin-bottom:3px">📜 主线: ${escHtml(details.main_quest)}</div>`;
-    }
-    if (details.factions && details.factions.length > 0) {
-      detailsHtml += `<div style="margin-bottom:3px">🏰 势力: ${details.factions.join('、')}</div>`;
-    }
-    if (details.reason) {
-      detailsHtml += `<div style="color:var(--yellow)">${escHtml(details.reason)}</div>`;
-    }
-    detailsHtml += '</div>';
-  }
-
-  stepDiv.innerHTML = `
-    <div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:16px">${icon}</span>
-      <div style="flex:1">
-        <div style="color:var(--accent);font-weight:700;font-size:12px">${escHtml(stepName)}</div>
-        <div style="color:var(--text);font-size:11px;margin-top:2px">${escHtml(result)}</div>
-      </div>
-      <span style="color:var(--green);font-size:14px">✓</span>
-    </div>
-    ${detailsHtml}
-  `;
-
-  container.appendChild(stepDiv);
-  container.scrollTop = container.scrollHeight;
+  document.getElementById('wb-progress-text').textContent = msg;
 }
 
 function hideProgress() {
   document.getElementById('wb-progress').style.display = 'none';
-  document.getElementById('wb-progress-bar-wrap').style.display = 'none';
-  document.getElementById('wb-progress-bar').style.width = '0%';
-  const container = document.getElementById('wb-step-results');
-  if (container) container.innerHTML = '';
 }
 
 function doCreateWorld() {
@@ -983,59 +850,9 @@ function onWorldCreated(msg) {
         }
         if (msg.status) updateStatus(msg.status);
         if (msg.suggested_options) updateOptions(msg.suggested_options);
-
-        // Use lore data directly from msg if available
-        if (msg.lore && msg.lore.world_name) {
-            displayLore(msg.lore);
-        } else {
-            loadLore();
-        }
-
         document.getElementById('wb-create-btn').disabled = false;
         document.getElementById('wb-create-btn').textContent = '创建世界';
-    }
-
-    function displayLore(lore) {
-        const tags = [
-            lore.genre && `类型: ${lore.genre}`,
-            lore.era,
-            lore.terrain && `地形: ${lore.terrain}`,
-            lore.magic_level && `魔法: ${lore.magic_level}`,
-            lore.danger_level && `危险: ${lore.danger_level}`,
-        ].filter(Boolean).map(t => `<span class="lore-tag">${escHtml(t)}</span>`).join('');
-
-        const npcsHtml = (lore.npcs||[]).map(n =>
-            `<div class="lore-npc"><span class="name">${escHtml(n.name)}</span> <span class="role">${escHtml(n.role)}</span> <span class="loc">📍 ${escHtml(n.location)}</span></div>`
-        ).join('');
-
-        const locsHtml = (lore.locations||[]).map(l =>
-            `<div class="lore-loc"><span class="name">${escHtml(l.name)}</span> <span class="danger">⚔ ${l.danger}/10</span><br><span class="desc">${escHtml(l.description)}</span></div>`
-        ).join('');
-
-        document.getElementById('lore-content').innerHTML = `
-            <div style="padding:10px 14px">
-                <div class="lore-section">
-                    <div class="lore-section-title">🌍 ${escHtml(lore.world_name)}</div>
-                    <div style="margin-bottom:8px">${tags}</div>
-                    <div class="lore-text">${escHtml(lore.description||'')}</div>
-                </div>
-                <div class="lore-section">
-                    <div class="lore-section-title">📜 历史</div>
-                    <div class="lore-text">${escHtml(lore.history||'')}</div>
-                </div>
-                <div class="lore-section">
-                    <div class="lore-section-title">⚔ 主线任务</div>
-                    <div class="lore-quest">${escHtml(lore.main_quest||'')}</div>
-                </div>
-                <div class="lore-section">
-                    <div class="lore-section-title">👥 关键人物</div>
-                    ${npcsHtml || '<div style="color:var(--text2);font-size:11px">无</div>'}
-                </div>
-                <div class="lore-section">
-                    <div class="lore-section-title">🏛 地点</div>
-                    ${locsHtml || '<div style="color:var(--text2);font-size:11px">无</div>'}
-                </div>
-            </div>`;
+        loadLore();
     }
 
 function quickStartDemo() {
@@ -1409,7 +1226,6 @@ function switchTab(name) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
   document.querySelectorAll('.tab-content').forEach(t => t.classList.toggle('active', t.id === `tab-${name}`));
   if (name === 'lore') loadLore();
-  if (name === 'inventory') loadInventory();
 }
 
 async function loadNPCs() {
@@ -1479,80 +1295,6 @@ async function loadLore() {
         </div>
       </div>`;
   } catch { document.getElementById('lore-content').innerHTML = '<div style="padding:12px;color:var(--text2);font-size:11px">加载失败</div>'; }
-}
-
-async function loadInventory() {
-  try {
-    const r = await fetch('/api/status');
-    const status = await r.json();
-    const inventory = status.inventory || [];
-    const equipment = status.equipment || [];
-
-    document.getElementById('inv-count').textContent = inventory.length + equipment.length;
-
-    if (inventory.length === 0 && equipment.length === 0) {
-      document.getElementById('inventory-list').innerHTML = '<div class="inventory-empty">背包空空如也</div>';
-      return;
-    }
-
-    let html = '';
-
-    // Equipment section
-    if (equipment.length > 0) {
-      html += `<div class="inventory-section"><div class="inventory-section-title">装备</div>`;
-      equipment.forEach(item => {
-        const icon = getItemIcon(item, 'equipment');
-        const desc = getItemDescription(item, 'equipment');
-        html += `<div class="inventory-item"><span class="inventory-icon">${icon}</span><div class="inventory-info"><div class="inventory-name">${escHtml(item)}</div><div class="inventory-desc">${escHtml(desc)}</div></div></div>`;
-      });
-      html += '</div>';
-    }
-
-    // Inventory section
-    if (inventory.length > 0) {
-      html += `<div class="inventory-section"><div class="inventory-section-title">物品</div>`;
-      inventory.forEach(item => {
-        const icon = getItemIcon(item, 'item');
-        const desc = getItemDescription(item, 'item');
-        html += `<div class="inventory-item"><span class="inventory-icon">${icon}</span><div class="inventory-info"><div class="inventory-name">${escHtml(item)}</div><div class="inventory-desc">${escHtml(desc)}</div></div></div>`;
-      });
-      html += '</div>';
-    }
-
-    document.getElementById('inventory-list').innerHTML = html;
-  } catch {
-    document.getElementById('inventory-list').innerHTML = '<div class="inventory-empty">加载失败</div>';
-  }
-}
-
-function getItemIcon(item, type) {
-  const itemLower = item.toLowerCase();
-  if (itemLower.includes('剑') || itemLower.includes('刀') || itemLower.includes('weapon')) return '⚔️';
-  if (itemLower.includes('盾') || itemLower.includes('护甲') || itemLower.includes('armor')) return '🛡️';
-  if (itemLower.includes('药') || itemLower.includes('药水') || itemLower.includes('potion')) return '🧪';
-  if (itemLower.includes('书') || itemLower.includes('卷轴') || itemLower.includes('scroll')) return '📜';
-  if (itemLower.includes('钱') || itemLower.includes('金') || itemLower.includes('coin')) return '💰';
-  if (itemLower.includes('钥') || itemLower.includes('key')) return '🔑';
-  if (itemLower.includes('食') || itemLower.includes('food')) return '🍖';
-  if (itemLower.includes('宝') || itemLower.includes('gem')) return '💎';
-  if (type === 'equipment') return '🎒';
-  return '📦';
-}
-
-function getItemDescription(item, type) {
-  const itemLower = item.toLowerCase();
-  if (itemLower.includes('剑') || itemLower.includes('刀')) return '近战武器，可用于战斗';
-  if (itemLower.includes('弓')) return '远程武器，攻击距离远';
-  if (itemLower.includes('盾')) return '防御装备，可抵挡伤害';
-  if (itemLower.includes('护甲')) return '身体防护装备';
-  if (itemLower.includes('药') || itemLower.includes('药水')) return '可恢复生命值';
-  if (itemLower.includes('书') || itemLower.includes('卷轴')) return '记载着知识的物品';
-  if (itemLower.includes('钱') || itemLower.includes('金')) return '用于交易和购买物品';
-  if (itemLower.includes('钥') || itemLower.includes('key')) return '开启特定门锁的钥匙';
-  if (itemLower.includes('食') || itemLower.includes('food')) return '可恢复饥饿度';
-  if (itemLower.includes('宝') || itemLower.includes('gem')) return '珍贵的宝石，价值不菲';
-  if (type === 'equipment') return '已装备的物品';
-  return '可使用的物品';
 }
 
 function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }

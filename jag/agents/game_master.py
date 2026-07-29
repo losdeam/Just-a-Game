@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 from pathlib import Path
@@ -97,25 +96,10 @@ class GameMaster:
         self._turn_count = 0
         self.world_lore: dict[str, Any] = {}
 
-    def _is_valid_api_key(self, api_key: str) -> bool:
-        """Check if an API key is valid (not empty and not a placeholder)."""
-        if not api_key:
-            return False
-        placeholders = [
-            "your-api-key-here", "your_api_key_here", "sk-xxxx", "sk-xxx",
-            "placeholder", "example", "test", "demo", "changeme",
-        ]
-        normalized = api_key.strip().lower()
-        if normalized in placeholders:
-            return False
-        if normalized.startswith("your-") or normalized.startswith("your_"):
-            return False
-        return True
-
     def _init_llm(self) -> None:
         """Initialize LLM factory from config."""
         default_cfg = self.config.llm.default
-        if default_cfg.provider == "mock" or not self._is_valid_api_key(default_cfg.api_key):
+        if default_cfg.provider == "mock":
             default_llm_config = LLMConfig(provider="mock")
         else:
             default_llm_config = LLMConfig(
@@ -130,7 +114,7 @@ class GameMaster:
             )
         module_configs = {}
         for name, mod_cfg in self.config.llm.modules.items():
-            if mod_cfg.provider == "mock" or not self._is_valid_api_key(mod_cfg.api_key):
+            if mod_cfg.provider == "mock":
                 module_configs[name] = LLMConfig(provider="mock")
             else:
                 module_configs[name] = LLMConfig(
@@ -151,27 +135,6 @@ class GameMaster:
     def _get_llm(self, module: str) -> LLMProvider:
         """Get LLM provider for a module."""
         return self._llm_factory.get(module)
-
-    def refresh_llm(self) -> None:
-        """Reinitialize LLM factory and all LLM-based components.
-        
-        Call this after updating config.llm to apply changes.
-        """
-        self._init_llm()
-        # Re-create LLM-dependent agents with new providers
-        self.action_planner = ActionPlanner(llm=self._get_llm("action_planner"))
-        self.npc_agent = NPCAgent(llm=self._get_llm("npc_agent"))
-        self.story_director = StoryDirector(
-            llm=self._get_llm("story_director"),
-            event_bus=self.event_bus,
-        )
-        self.narrator = NarrativeGenerator(llm=self._get_llm("narrator"))
-        # Update TickEngine's references so it uses the new agents
-        self.tick_engine.action_planner = self.action_planner
-        self.tick_engine.npc_agent = self.npc_agent
-        self.tick_engine.narrator = self.narrator
-        self.tick_engine.story_director = self.story_director
-        logger.info("LLM components refreshed")
 
     # ── World setup ──────────────────────────────────────────────
 
@@ -266,17 +229,12 @@ class GameMaster:
                     "请以第二人称「你」写一段沉浸式的开场白，描述玩家初次来到这个世界时的所见所感。"
                     "包括环境氛围、感官细节，暗示前方的冒险。不要提及具体NPC。3-5句。"
                 )
-                opening = await asyncio.wait_for(
-                    self.narrator.llm.complete(
-                        prompt=prompt,
-                        system="你是一个沉浸式开放世界RPG的叙事者。所有输出使用简体中文。",
-                        max_tokens=300,
-                    ),
-                    timeout=60.0,
+                opening = await self.narrator.llm.complete(
+                    prompt=prompt,
+                    system="你是一个沉浸式开放世界RPG的叙事者。所有输出使用简体中文。",
+                    max_tokens=300,
                 )
                 return opening.strip()
-            except asyncio.TimeoutError:
-                logger.warning("generate_opening timed out after 60 seconds")
             except Exception:
                 pass
 
@@ -339,12 +297,8 @@ class GameMaster:
         return (narratives, options)
 
     async def get_suggested_options(self) -> list[dict[str, Any]]:
-        """Get suggested actions for the player.
-        
-        Uses dynamic fallback for speed - it generates context-aware suggestions
-        based on current location, nearby NPCs, inventory, and time of day.
-        """
-        return self.action_planner._fallback_suggestions(self.player_id, self.world, 3)
+        """Get suggested actions for the player."""
+        return await self.action_planner.suggest_options(self.player_id, self.world)
 
     def get_status(self) -> dict[str, Any]:
         """Get current game status."""
@@ -384,80 +338,28 @@ class GameMaster:
 
     def save_game(self, path: str = "savegame.json") -> None:
         """Save current game state to JSON."""
-        regions_data = {
-            rid: {
-                "id": r.id,
-                "name": r.name,
-                "description": r.description,
-                "region_type": r.region_type,
-                "danger_level": r.danger_level,
-                "locations": r.locations,
-            }
-            for rid, r in self.world.regions.items()
-        }
-
-        locations_data = {
-            lid: {
-                "id": l.id,
-                "name": l.name,
-                "description": l.description,
-                "region_id": l.region_id,
-                "location_type": l.location_type,
-                "light_level": l.light_level,
-                "danger_level": l.danger_level,
-                "connected": l.connected,
-                "entities": l.entities,
-                "items": l.items,
-                "tags": l.tags,
-            }
-            for lid, l in self.world.locations.items()
-        }
-
-        npc_states = {}
-        for npc_id, npc in self.tick_engine._npcs.items():
-            npc_states[npc_id] = {
-                "id": npc.id,
-                "name": npc.name,
-                "description": npc.description,
-                "personality": npc.personality,
-                "goal": npc.goal,
-                "schedule": [
-                    {"hour_start": s.hour_start, "hour_end": s.hour_end,
-                     "activity": s.activity, "location_id": s.location_id}
-                    for s in npc.schedule
-                ],
-                "state": {
-                    "current_location_id": npc.state.current_location_id,
-                    "mood": npc.state.mood,
-                    "energy": npc.state.energy,
-                    "hunger": npc.state.hunger,
-                    "current_action": npc.state.current_action,
-                },
-            }
-
         state = {
-            "version": 1,
+            "world": self.world.snapshot(),
             "time": {
                 "turn": self.world.time.turn,
                 "hour": self.world.time.hour,
                 "day": self.world.time.day,
                 "season": self.world.time.season,
             },
-            "regions": regions_data,
-            "locations": locations_data,
-            "characters": self.world.characters,
-            "items": self.world.items,
+            "characters": {
+                cid: {
+                    "location_id": c.get("location_id", ""),
+                    "inventory": c.get("inventory", []),
+                    "name": c.get("name", ""),
+                }
+                for cid, c in self.world.characters.items()
+            },
             "global_flags": self.world.global_flags,
-            "npcs": npc_states,
-            "lore": self.world_lore,
-            "turn_count": self._turn_count,
             "knowledge": self.knowledge.to_dict(),
-            "active_quests": [q.to_dict() if hasattr(q, "to_dict") else str(q) for q in self.quest_gen.active_quests]
-            if hasattr(self.quest_gen, "active_quests") else [],
         }
 
         Path(path).parent.mkdir(parents=True, exist_ok=True)
-        with open(path, "w", encoding="utf-8") as f:
+        with open(path, "w") as f:
             json.dump(state, f, indent=2, ensure_ascii=False)
         logger.info("Game saved to %s", path)
 
@@ -469,48 +371,8 @@ class GameMaster:
             return False
 
         try:
-            with open(p, encoding="utf-8") as f:
+            with open(p) as f:
                 state = json.load(f)
-
-            self.clear_world()
-
-            # Restore regions
-            for rid, rdata in state.get("regions", {}).items():
-                region = WorldRegion(
-                    id=rdata["id"],
-                    name=rdata["name"],
-                    description=rdata.get("description", ""),
-                    region_type=rdata.get("region_type", "settlement"),
-                    danger_level=rdata.get("danger_level", 0),
-                    locations=rdata.get("locations", []),
-                )
-                self.world.add_region(region)
-                self.weather.add_region(region.id)
-
-            # Restore locations
-            for lid, ldata in state.get("locations", {}).items():
-                location = WorldLocation(
-                    id=ldata["id"],
-                    name=ldata["name"],
-                    description=ldata.get("description", ""),
-                    region_id=ldata.get("region_id", ""),
-                    location_type=ldata.get("location_type", "room"),
-                    light_level=ldata.get("light_level", 5),
-                    danger_level=ldata.get("danger_level", 0),
-                    connected=ldata.get("connected", []),
-                    entities=ldata.get("entities", []),
-                    items=ldata.get("items", []),
-                    tags=ldata.get("tags", []),
-                )
-                self.world.add_location(location)
-
-            # Restore characters
-            for cid, cdata in state.get("characters", {}).items():
-                self.world.characters[cid] = cdata
-
-            # Restore items
-            for iid, idata in state.get("items", {}).items():
-                self.world.items[iid] = idata
 
             # Restore time
             time_data = state.get("time", {})
@@ -518,43 +380,9 @@ class GameMaster:
             self.world.time.hour = time_data.get("hour", 8)
             self.world.time.day = time_data.get("day", 1)
             self.world.time.season = time_data.get("season", "spring")
-            self._turn_count = state.get("turn_count", 0)
 
             # Restore global flags
             self.world.global_flags = state.get("global_flags", {})
-
-            # Restore NPCs
-            from jag.world.npc import NPC, ScheduleEntry
-            for npc_id, ndata in state.get("npcs", {}).items():
-                schedule = [
-                    ScheduleEntry(
-                        hour_start=s["hour_start"],
-                        hour_end=s["hour_end"],
-                        activity=s["activity"],
-                        location_id=s["location_id"],
-                    )
-                    for s in ndata.get("schedule", [])
-                ]
-                npc = NPC(
-                    id=ndata["id"],
-                    name=ndata["name"],
-                    description=ndata.get("description", ""),
-                    location_id=ndata.get("state", {}).get("current_location_id", ""),
-                    personality=ndata.get("personality", "neutral"),
-                    goal=ndata.get("goal", ""),
-                    schedule=schedule,
-                )
-                if "state" in ndata:
-                    st = ndata["state"]
-                    npc.state.current_location_id = st.get("current_location_id", npc.state.current_location_id)
-                    npc.state.mood = st.get("mood", npc.state.mood)
-                    npc.state.energy = st.get("energy", npc.state.energy)
-                    npc.state.hunger = st.get("hunger", npc.state.hunger)
-                    npc.state.current_action = st.get("current_action", npc.state.current_action)
-                self.tick_engine.register_npc(npc)
-
-            # Restore lore
-            self.world_lore = state.get("lore", {})
 
             # Restore knowledge graph
             kg_data = state.get("knowledge", {})

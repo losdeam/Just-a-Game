@@ -36,28 +36,10 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
     gm = GameMaster(config=cfg)
     world_builder = WorldBuilder(gm)
     _world_initialized = False  # Track if world has been set up
-    SAVE_FILE = "savegame.json"
-
-    def _auto_save() -> None:
-        """Auto-save game state if world is initialized."""
-        if _world_initialized:
-            try:
-                gm.save_game(SAVE_FILE)
-            except Exception as e:
-                logger.warning("Auto-save failed: %s", e)
 
     def _ensure_world() -> None:
         """Ensure a world is loaded; does nothing if none was created."""
         pass  # World must be explicitly created via create_world or load_demo
-
-    # Try to load saved game on startup
-    if Path(SAVE_FILE).exists():
-        try:
-            if gm.load_game(SAVE_FILE):
-                _world_initialized = True
-                logger.info("Loaded saved game from %s", SAVE_FILE)
-        except Exception as e:
-            logger.warning("Failed to load saved game: %s", e)
 
     # WebSocket connections
     connections: list[WebSocket] = []
@@ -148,11 +130,13 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
 
     @app.post("/api/config")
     async def update_config(body: dict) -> JSONResponse:  # type: ignore[type-arg]
-        """Update runtime configuration."""
+        """Update runtime configuration.
+
+        Note: LLM provider changes require restarting the game to take full effect.
+        """
         try:
             _apply_config_updates(gm.config, body)
-            gm.refresh_llm()
-            return JSONResponse({"ok": True, "message": "配置已更新，LLM 组件已刷新"})
+            return JSONResponse({"ok": True, "message": "配置已更新"})
         except Exception as e:
             return JSONResponse({"ok": False, "message": str(e)}, status_code=400)
 
@@ -217,7 +201,6 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
             use_llm = has_key  # auto-use LLM if key available and description provided
 
         try:
-            logger.info("create_world: starting, use_llm=%s", use_llm)
             if use_llm:
                 if not has_key:
                     return JSONResponse({
@@ -230,16 +213,11 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                 result = world_builder.build_from_tags(world_name, tags, description)
                 if description and not has_key:
                     result["warning"] = "未配置 LLM API Key，您的自定义描述无法用于 AI 生成，已使用词条模板生成。配置 API Key 后可获得 AI 驱动的自定义世界。"
-            logger.info("create_world: world built, building opening and options")
             _world_initialized = True
             opening = await gm.generate_opening()
-            logger.info("create_world: opening generated")
             options = await gm.get_suggested_options()
-            logger.info("create_world: options generated")
             result["opening"] = opening
             result["suggested_options"] = options
-            result["lore"] = gm.world_lore or {}
-            _auto_save()
             return JSONResponse(result)
         except Exception as e:
             return JSONResponse({"ok": False, "message": str(e)}, status_code=500)
@@ -253,7 +231,6 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
             _world_initialized = True
         opening = await gm.generate_opening()
         options = await gm.get_suggested_options()
-        _auto_save()
         return JSONResponse({"ok": True, "message": "演示世界已加载", "opening": opening, "suggested_options": options})
 
     @app.get("/api/inventory")
@@ -278,7 +255,6 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
 
     @app.websocket("/ws")
     async def websocket_endpoint(websocket: WebSocket) -> None:
-        nonlocal _world_initialized
         await websocket.accept()
         connections.append(websocket)
         logger.info("WebSocket client connected")
@@ -286,20 +262,12 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
         # Send initial state
         try:
             status = gm.get_status()
+            opening = await gm.generate_opening() if _world_initialized else ""
             await websocket.send_text(json.dumps({
                 "type": "init",
                 "status": status,
-                "opening": "",
+                "opening": opening,
             }, ensure_ascii=False))
-            if _world_initialized:
-                try:
-                    opening = await gm.generate_opening()
-                    await websocket.send_text(json.dumps({
-                        "type": "opening_update",
-                        "opening": opening,
-                    }, ensure_ascii=False))
-                except Exception:
-                    pass
         except Exception:
             pass
 
@@ -323,7 +291,6 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                                 "status": status,
                                 "suggested_options": options,
                             }, ensure_ascii=False))
-                            _auto_save()
                         except Exception as e:
                             await websocket.send_text(json.dumps({
                                 "type": "error",
@@ -342,7 +309,6 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                             "status": status,
                             "suggested_options": options,
                         }, ensure_ascii=False))
-                        _auto_save()
                     except Exception as e:
                         await websocket.send_text(json.dumps({
                             "type": "error",
@@ -396,155 +362,48 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                                     "message": "使用 AI 生成需要配置 LLM API Key。请在配置设置中填写并测试。",
                                 }, ensure_ascii=False))
                                 continue
-
-                            async def llm_progress_cb(step: str, data: dict[str, Any]) -> None:
-                                """Callback for LLM world building progress."""
-                                msg_type = data.get("message", "")
-                                step_num = data.get("step", 0)
-                                total = data.get("total", 4)
-
-                                await websocket.send_text(json.dumps({
-                                    "type": "progress",
-                                    "message": msg_type,
-                                    "step": step_num,
-                                    "total": total,
-                                }, ensure_ascii=False))
-
-                                if step == "locations_done":
-                                    locs = data.get("locations", [])
-                                    await websocket.send_text(json.dumps({
-                                        "type": "step_result",
-                                        "step": "locations",
-                                        "name": "🤖 AI生成地点",
-                                        "result": f"已生成 {len(locs)} 个地点",
-                                        "details": {
-                                            "count": len(locs),
-                                            "locations": locs[:6],
-                                            "region_name": data.get("region_name", ""),
-                                        },
-                                    }, ensure_ascii=False))
-                                elif step == "npcs_done":
-                                    npcs = data.get("npcs", [])
-                                    npc_names = [n.get("name", "") for n in npcs]
-                                    await websocket.send_text(json.dumps({
-                                        "type": "step_result",
-                                        "step": "npcs",
-                                        "name": "🤖 AI生成角色",
-                                        "result": f"已生成 {len(npcs)} 个NPC",
-                                        "details": {
-                                            "count": len(npcs),
-                                            "npcs": npc_names[:6],
-                                            "npc_details": npcs[:4],
-                                        },
-                                    }, ensure_ascii=False))
-                                elif step == "lore_done":
-                                    lore = data.get("lore", {})
-                                    await websocket.send_text(json.dumps({
-                                        "type": "step_result",
-                                        "step": "lore",
-                                        "name": "🤖 AI生成世界观",
-                                        "result": "世界观设定已完成",
-                                        "details": {
-                                            "main_quest": lore.get("main_quest", "")[:120] + "..." if len(lore.get("main_quest", "")) > 120 else lore.get("main_quest", ""),
-                                            "factions": lore.get("factions", []),
-                                        },
-                                    }, ensure_ascii=False))
-                                elif step == "fallback":
-                                    await websocket.send_text(json.dumps({
-                                        "type": "step_result",
-                                        "step": "fallback",
-                                        "name": "⚡ 模板模式",
-                                        "result": "AI不可用，使用模板生成",
-                                        "details": {"reason": data.get("message", "")},
-                                    }, ensure_ascii=False))
-
                             await websocket.send_text(json.dumps({
                                 "type": "progress",
-                                "message": "🤖 AI正在构建你的世界...",
-                                "step": 0,
-                                "total": 4,
+                                "message": "正在调用 AI 生成世界观...（可能需要 30-60 秒）",
                             }, ensure_ascii=False))
-
-                            result = await world_builder.build_with_llm_step_by_step(
-                                world_name, tags, description,
-                                progress_callback=llm_progress_cb,
-                            )
+                            result = await world_builder.build_with_llm(world_name, tags, description)
                         else:
                             world_builder._parse_tags(world_name, tags, description)
-
-                            # Step 1: Create region
                             await websocket.send_text(json.dumps({
-                                "type": "progress",
-                                "message": "正在创建世界区域...",
+                                "type": "progress", "message": "正在创建世界区域...",
                             }, ensure_ascii=False))
                             step_region = world_builder.build_step_region()
                             await websocket.send_text(json.dumps({
-                                "type": "step_result",
-                                "step": "region",
-                                "name": "创建区域",
-                                "result": f"区域「{step_region['name']}」已创建",
-                                "details": step_region,
+                                "type": "progress", "message": f"区域「{step_region['name']}」已创建",
                             }, ensure_ascii=False))
-                            await asyncio.sleep(0.2)
+                            await asyncio.sleep(0.3)
 
-                            # Step 2: Create locations
                             await websocket.send_text(json.dumps({
-                                "type": "progress",
-                                "message": "正在生成地点...",
+                                "type": "progress", "message": "正在生成地点...",
                             }, ensure_ascii=False))
                             step_locs = world_builder.build_step_locations()
-                            loc_names = step_locs.get("names", [])
                             await websocket.send_text(json.dumps({
-                                "type": "step_result",
-                                "step": "locations",
-                                "name": "生成地点",
-                                "result": f"已创建 {step_locs['count']} 个地点",
-                                "details": {"count": step_locs["count"], "locations": loc_names[:5]},
+                                "type": "progress", "message": f"已创建 {step_locs['count']} 个地点",
                             }, ensure_ascii=False))
-                            await asyncio.sleep(0.2)
+                            await asyncio.sleep(0.3)
 
-                            # Step 3: Create NPCs (hybrid: core + background)
                             await websocket.send_text(json.dumps({
-                                "type": "progress",
-                                "message": "正在生成 NPC...",
+                                "type": "progress", "message": "正在生成 NPC...",
                             }, ensure_ascii=False))
-                            # Generate 2 background NPCs per location (fast, no LLM)
-                            bg_count = step_locs["count"] * 2
-                            step_npcs = world_builder.build_step_npcs(
-                                background_npc_count=bg_count,
-                                background_npc_seed=None,
-                            )
-                            npc_names = [n["name"] for n in step_npcs.get("npcs", [])]
-                            core_count = step_npcs.get("core_count", 0)
-                            bg_count_result = step_npcs.get("background_count", 0)
+                            step_npcs = world_builder.build_step_npcs()
                             await websocket.send_text(json.dumps({
-                                "type": "step_result",
-                                "step": "npcs",
-                                "name": "生成NPC",
-                                "result": f"已创建 {step_npcs['count']} 个 NPC（核心{core_count} + 背景{bg_count_result}）",
-                                "details": {"core": core_count, "background": bg_count_result, "npcs": npc_names[:8]},
+                                "type": "progress", "message": f"已创建 {step_npcs['count']} 个 NPC",
                             }, ensure_ascii=False))
-                            await asyncio.sleep(0.2)
+                            await asyncio.sleep(0.3)
 
-                            # Step 4: Generate lore
                             await websocket.send_text(json.dumps({
-                                "type": "progress",
-                                "message": "正在生成世界观设定...",
+                                "type": "progress", "message": "正在生成世界观设定...",
                             }, ensure_ascii=False))
                             step_lore = world_builder.build_step_lore()
-                            lore_data = step_lore.get("lore", {})
                             await websocket.send_text(json.dumps({
-                                "type": "step_result",
-                                "step": "lore",
-                                "name": "世界观设定",
-                                "result": "世界观设定已生成",
-                                "details": {
-                                    "genre": lore_data.get("genre", ""),
-                                    "era": lore_data.get("era", ""),
-                                    "main_quest": lore_data.get("main_quest", "")[:100] + "..." if len(lore_data.get("main_quest", "")) > 100 else lore_data.get("main_quest", ""),
-                                },
+                                "type": "progress", "message": "世界观设定已生成",
                             }, ensure_ascii=False))
-                            await asyncio.sleep(0.2)
+                            await asyncio.sleep(0.3)
 
                             result = world_builder.build_step_finalize(step_lore.get("lore"))
                             if description and not has_key:
@@ -555,10 +414,6 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                             "type": "progress",
                             "message": "正在生成开场白...",
                         }, ensure_ascii=False))
-
-                        # Send complete lore data for the lore panel
-                        lore_for_frontend = gm.world_lore or {}
-
                         opening = await gm.generate_opening()
                         options = await gm.get_suggested_options()
                         await websocket.send_text(json.dumps({
@@ -567,9 +422,7 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                             "status": status,
                             "opening": opening,
                             "suggested_options": options,
-                            "lore": lore_for_frontend,
                         }, ensure_ascii=False))
-                        _auto_save()
                     except Exception as e:
                         await websocket.send_text(json.dumps({
                             "type": "error",
@@ -597,18 +450,14 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                         "status": status,
                         "opening": opening,
                         "suggested_options": options,
-                        "lore": gm.world_lore or {},
                     }, ensure_ascii=False))
-                    _auto_save()
 
                 elif msg_type == "update_config":
                     try:
                         _apply_config_updates(gm.config, msg.get("config", {}))
-                        # Reinitialize LLM components with new config
-                        gm.refresh_llm()
                         await websocket.send_text(json.dumps({
                             "type": "config_updated",
-                            "message": "配置已更新，LLM 组件已刷新",
+                            "message": "配置已更新",
                         }, ensure_ascii=False))
                     except Exception as e:
                         await websocket.send_text(json.dumps({

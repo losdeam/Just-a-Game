@@ -41,9 +41,6 @@ class LiteLLMProvider:
         """Generate completion via litellm."""
         import litellm
 
-        if not self.api_key:
-            raise RuntimeError("No API key configured for LLM provider")
-
         messages = []
         if system:
             messages.append({"role": "system", "content": system})
@@ -52,7 +49,6 @@ class LiteLLMProvider:
         params: dict[str, Any] = {
             "model": self.model,
             "messages": messages,
-            "timeout": 60,  # 60 second timeout for slow APIs
             **self._extra,
             **kwargs,
         }
@@ -63,11 +59,8 @@ class LiteLLMProvider:
         if self.disable_thinking:
             params.setdefault("extra_body", {})["thinking"] = {"type": "disabled"}
 
-        try:
-            response = await litellm.acompletion(**params)
-            return response.choices[0].message.content or ""
-        except litellm.exceptions.Timeout:
-            raise TimeoutError("LLM request timed out after 10 seconds") from None
+        response = await litellm.acompletion(**params)
+        return response.choices[0].message.content or ""
 
     async def structured(
         self, prompt: str, response_model: type[T], system: str = "", **kwargs: Any
@@ -75,9 +68,6 @@ class LiteLLMProvider:
         """Generate structured output via instructor."""
         import instructor
         import litellm
-
-        if not self.api_key:
-            raise RuntimeError("No API key configured for LLM provider")
 
         client = instructor.from_litellm(litellm.acompletion)
 
@@ -90,7 +80,6 @@ class LiteLLMProvider:
             "model": self.model,
             "messages": messages,
             "response_model": response_model,
-            "timeout": 60,
             **self._extra,
             **kwargs,
         }
@@ -101,12 +90,7 @@ class LiteLLMProvider:
         if self.disable_thinking:
             params.setdefault("extra_body", {})["thinking"] = {"type": "disabled"}
 
-        try:
-            return await client.create(**params)
-        except Exception as e:
-            if "timeout" in str(e).lower():
-                raise TimeoutError("LLM structured request timed out after 10 seconds") from None
-            raise
+        return await client.create(**params)
 
 
 class MockLLMProvider:

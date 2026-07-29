@@ -249,17 +249,8 @@ class TickEngine:
             # 9. Quest Generation (CODE-ONLY)
             await self._step_quest_gen(sim_events, result, trace)
 
-            # 10-14. Story + Narrative (LLM, run in parallel when possible)
-            player_action_type = ""
-            if planned_action:
-                player_action_type = planned_action.get("type", "")
-            simple_actions = {"examine", "rest", "take", "drop"}
-            needs_story = player_action_type not in simple_actions
-
-            if needs_story and self.story_director and result.world_events:
-                # Run story processing and memory/knowledge in parallel with it
-                # Then run narrative after story completes (narrative uses story_beats)
-                await self._step_story(result, trace)
+            # 10. Story Processing (LLM, optional)
+            await self._step_story(result, trace)
 
             # 11. Memory Compression (CODE-ONLY)
             await self._step_memory(result, trace)
@@ -454,13 +445,10 @@ class TickEngine:
 
         if self.action_planner:
             try:
-                planned = await asyncio.wait_for(
-                    self.action_planner.plan(
-                        action_text=player_action.get("text", ""),
-                        player_id=player_action.get("player_id", "player"),
-                        world=self.world,
-                    ),
-                    timeout=60.0,
+                planned = await self.action_planner.plan(
+                    action_text=player_action.get("text", ""),
+                    player_id=player_action.get("player_id", "player"),
+                    world=self.world,
                 )
                 result.player_action = planned
                 if step and self.tracer:
@@ -473,14 +461,6 @@ class TickEngine:
                     })
                     trace.steps.append(step)  # type: ignore[union-attr]
                 return planned
-            except asyncio.TimeoutError:
-                logger.warning("Action planner timed out, using fallback")
-                result.errors.append("action_plan: timeout")
-                result.player_action = player_action
-                if step and self.tracer:
-                    self.tracer.end_step(step, details={"fallback": "timeout", "action_type": player_action.get("type", "")})
-                    trace.steps.append(step)  # type: ignore[union-attr]
-                return player_action
             except Exception as e:
                 logger.warning("Action planner failed: %s", e)
                 result.errors.append(f"action_plan: {e}")
@@ -604,19 +584,11 @@ class TickEngine:
             current_loc = player_data.get("location_id", "")
             if current_loc and target_loc:
                 self.world.move_character(player_id, current_loc, target_loc)
-                from_loc_name = current_loc
-                to_loc_name = target_loc
-                from_loc = self.world.locations.get(current_loc)
-                if from_loc:
-                    from_loc_name = from_loc.name
-                to_loc = self.world.locations.get(target_loc)
-                if to_loc:
-                    to_loc_name = to_loc.name
                 result.world_events.append(
                     GameEvent(
                         event_type=EventType.INTERACTION,
                         source_id=player_id,
-                        description=f"你从{from_loc_name}来到了{to_loc_name}。",
+                        description=f"Moved from {current_loc} to {target_loc}",
                         data={"from": current_loc, "to": target_loc},
                         turn=self.world.time.turn,
                     )
@@ -647,13 +619,7 @@ class TickEngine:
             trace.steps.append(step)  # type: ignore[union-attr]
 
     async def _step_npc_tick(self, result: TickResult, trace: TickTrace | None = None) -> None:
-        """Step 5: Process NPC ticks.
-
-        Optimization: only update NPCs affected by the player action:
-        - If player acts (interact/speak): only target NPC + same-location NPCs
-        - If player moves: NPCs at origin + destination
-        - If no player action (wait): all NPCs
-        """
+        """Step 5: Process all NPC ticks concurrently."""
         step = self.tracer.start_step("npc_tick") if self.tracer else None
         if not self._npcs:
             if step and self.tracer:
@@ -661,54 +627,14 @@ class TickEngine:
                 trace.steps.append(step)  # type: ignore[union-attr]
             return
 
-        player_action = result.player_action
-        affected_loc_ids: set[str] = set()
-        target_npc_id: str | None = None
-
-        if player_action:
-            action_type = player_action.get("type", "")
-            player_data = self.world.characters.get("player", {})
-            current_loc = player_data.get("location_id", "")
-
-            if action_type == "move":
-                dest = player_action.get("target", "")
-                if current_loc:
-                    affected_loc_ids.add(current_loc)
-                if dest:
-                    affected_loc_ids.add(dest)
-            elif action_type in ("speak", "interact", "attack"):
-                target = player_action.get("target", "")
-                if target and target in self._npcs:
-                    target_npc_id = target
-                if current_loc:
-                    affected_loc_ids.add(current_loc)
-            else:
-                if current_loc:
-                    affected_loc_ids.add(current_loc)
-
         tasks = []
-        processed_count = 0
         for npc_id, npc in self._npcs.items():
-            should_process = False
-            if not player_action:
-                should_process = True
-            elif target_npc_id and npc_id == target_npc_id:
-                should_process = True
-            elif npc.state.current_location_id in affected_loc_ids:
-                should_process = True
-
-            if should_process:
-                tasks.append(self._process_single_npc(npc_id, npc, result))
-                processed_count += 1
+            tasks.append(self._process_single_npc(npc_id, npc, result))
 
         await asyncio.gather(*tasks, return_exceptions=True)
 
         if step and self.tracer:
-            self.tracer.end_step(step, details={
-                "total_npcs": len(self._npcs),
-                "processed": processed_count,
-                "actions": len(result.npc_actions),
-            })
+            self.tracer.end_step(step, details={"npc_count": len(self._npcs), "actions": len(result.npc_actions)})
             trace.steps.append(step)  # type: ignore[union-attr]
 
     async def _process_single_npc(
@@ -741,16 +667,9 @@ class TickEngine:
 
                 # Get NPC decision
                 if self.npc_agent:
-                    try:
-                        action = await asyncio.wait_for(
-                            self.npc_agent.decide(npc, self.world, observation),
-                            timeout=30.0,
-                        )
-                    except asyncio.TimeoutError:
-                        action = self._default_npc_action(npc, observation, schedule)
-                    except Exception:
-                        action = self._default_npc_action(npc, observation, schedule)
+                    action = await self.npc_agent.decide(npc, self.world, observation)
                 else:
+                    # Default: follow schedule or idle
                     action = self._default_npc_action(npc, observation, schedule)
 
                 # Apply NPC action
@@ -914,19 +833,12 @@ class TickEngine:
                 trace.steps.append(step)  # type: ignore[union-attr]
             return
         try:
-            story_beats = await asyncio.wait_for(
-                self.story_director.process(result.world_events, self.world),
-                timeout=60.0,
+            story_beats = await self.story_director.process(
+                result.world_events, self.world
             )
             result.story_beats = story_beats
             if step and self.tracer:
                 self.tracer.end_step(step, details={"story_beats": len(story_beats)})
-                trace.steps.append(step)  # type: ignore[union-attr]
-        except asyncio.TimeoutError:
-            logger.warning("Story processing timed out")
-            result.errors.append("story: timeout")
-            if step and self.tracer:
-                self.tracer.end_step(step, success=False, error="timeout")
                 trace.steps.append(step)  # type: ignore[union-attr]
         except Exception as e:
             logger.warning("Story processing failed: %s", e)
@@ -993,32 +905,15 @@ class TickEngine:
     async def _step_narrative(self, result: TickResult, trace: TickTrace | None = None) -> None:
         """Step 14: Generate narrative text (with improved code-based fallback)."""
         step = self.tracer.start_step("narrative") if self.tracer else None
-
-        # Skip LLM for simple actions - use fast fallback
-        action_type = result.player_action.get("type", "") if result.player_action else ""
-        simple_actions = {"examine", "rest", "take", "drop"}
-        if action_type in simple_actions:
-            result.narrative = self._generate_fallback_narrative(result)
-            if step and self.tracer:
-                self.tracer.end_step(step, details={"narrative_length": len(result.narrative), "llm_used": False, "reason": "simple_action"})
-                trace.steps.append(step)
-            return
-
         if self.narrator:
             try:
-                result.narrative = await asyncio.wait_for(
-                    self.narrator.narrate(result, self.world),
-                    timeout=60.0,
-                )
-            except asyncio.TimeoutError:
-                logger.warning("Narrative generation timed out, using fallback")
-                result.errors.append("narrative: timeout")
-                result.narrative = self._generate_fallback_narrative(result)
+                result.narrative = await self.narrator.narrate(result, self.world)
             except Exception as e:
                 logger.warning("Narrative generation failed: %s, using fallback", e)
                 result.errors.append(f"narrative: {e}")
                 result.narrative = self._generate_fallback_narrative(result)
         else:
+            # Code-based narrative generation (no LLM)
             result.narrative = self._generate_fallback_narrative(result)
 
         if step and self.tracer:
@@ -1028,61 +923,32 @@ class TickEngine:
     def _generate_fallback_narrative(self, result: TickResult) -> str:
         """Generate rich narrative text using code-only logic."""
         parts = []
-        player_loc_id = ""
-        player_data = self.world.characters.get("player", {})
-        if player_data:
-            player_loc_id = player_data.get("location_id", "")
-
-        action_type = ""
-        target = ""
+        
+        # Player action
         if result.player_action:
             action_type = result.player_action.get("type", "act")
             action_text = result.player_action.get("text", "")
-            target = result.player_action.get("target", "")
-
-            if action_type == "move" and target:
-                loc = self.world.locations.get(target)
-                loc_name = loc.name if loc else target
-                parts.append(f"你动身前往{loc_name}。")
-            elif action_type == "speak" and target:
-                npc_data = self.world.characters.get(target, {})
-                npc_name = npc_data.get("name", target)
-                parts.append(f"你走向{npc_name}，开始与对方交谈。")
-                import random
-                dialogues = [
-                    f"{npc_name}抬起头，微笑着说：'你好，旅行者。有什么我可以帮你的吗？'",
-                    f"{npc_name}看了你一眼：'哦，是外地人啊。这镇子最近可不太平。'",
-                    f"'欢迎来到这里。'{npc_name}说道，'你是来做生意的，还是来冒险的？'",
-                    f"{npc_name}放下手中的活计：'今天天气真不错，对吧？'",
-                    f"'小心点，朋友。'{npc_name}压低声音，'最近夜里有奇怪的声音。'",
-                ]
-                parts.append(random.choice(dialogues))
-            elif action_type == "interact" and target:
-                npc_data = self.world.characters.get(target, {})
-                if npc_data:
-                    parts.append(f"你与{npc_data.get('name', target)}进行了互动。")
-                else:
-                    parts.append(f"你试着与{target}互动。")
-            elif action_type == "attack" and target:
-                parts.append(f"你向{target}发起攻击！")
-            elif action_type == "rest":
-                parts.append("你稍作休息，恢复体力。")
-            elif action_type == "examine":
-                if target:
-                    parts.append(f"你仔细检查{target}。")
-                else:
-                    parts.append("你仔细观察周围的环境。")
-            elif target:
+            if action_text:
+                parts.append(f"你尝试{action_text}。")
+            else:
                 action_desc = {
+                    "move": "移动",
+                    "attack": "攻击",
+                    "interact": "互动",
                     "take": "拾取",
                     "drop": "丢弃",
                     "use": "使用",
-                    "craft": "制作",
-                }.get(action_type, action_type or "行动")
-                parts.append(f"你尝试{action_desc}{target}。")
-            elif action_text:
-                parts.append(f"你尝试{action_text}。")
-
+                    "examine": "检查",
+                    "rest": "休息",
+                    "speak": "交谈",
+                }.get(action_type, "行动")
+                target = result.player_action.get("target", "")
+                if target:
+                    parts.append(f"你尝试{action_desc}{target}。")
+                else:
+                    parts.append(f"你尝试{action_desc}。")
+        
+        # Dice result
         if result.dice_result:
             roll = result.dice_result
             if roll.result.value == "critical_success":
@@ -1093,28 +959,26 @@ class TickEngine:
                 parts.append("你失败了……事情没有按计划进行。")
             elif roll.result.value == "critical_failure":
                 parts.append("糟糕！这是一次灾难性的失败！")
-
+        
+        # Danger events
         for evt in result.world_events:
             if evt.event_type.value == "danger":
                 parts.append(evt.description)
-
-        nearby_npc_actions = [
-            a for a in result.npc_actions
-            if a.get("location_id") == player_loc_id or a.get("action") == "spawn"
-        ]
-        for npc_act in nearby_npc_actions[:5]:
-            if action_type == "speak" and target and npc_act.get("npc_id") == target:
-                continue
+        
+        # NPC actions
+        for npc_act in result.npc_actions:
             if npc_act.get("action") == "spawn":
                 parts.append(npc_act.get("description", ""))
             elif npc_act.get("description"):
                 parts.append(npc_act["description"])
-
-        other_events = [e for e in result.world_events if e.event_type.value != "danger"]
-        for evt in other_events[:2]:
-            parts.append(evt.description)
-
+        
+        # Other events
+        for evt in result.world_events[:3]:
+            if evt.event_type.value != "danger":
+                parts.append(evt.description)
+        
+        # If nothing else, provide a default
         if not parts:
             parts.append("时间流逝，周围一切如常。")
-
-        return " ".join(p for p in parts if p)
+        
+        return " ".join(p for p in parts if p)  # type: ignore[union-attr]

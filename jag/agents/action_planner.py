@@ -96,21 +96,12 @@ OPTIONS_SYSTEM_PROMPT = """你是一个开放世界RPG游戏的引导助手。
 根据当前世界上下文，生成3个适合玩家的自然语言行动建议。
 所有输出内容请使用简体中文。
 
-建议生成规则：
-1. 根据当前地点的实际情况生成建议（观察附近的NPC、物品、连接地点）
-2. 如果附近有NPC，优先建议与NPC交谈（可以说出NPC的名字）
-3. 如果有可拾取的物品，建议探索或拾取
-4. 根据连接地点建议探索新区域
-5. 考虑玩家的背包物品，可以建议使用物品
-6. 每个选项要简短（不超过15字），符合RPG游戏的行动描述
-7. 不要提及机制性词汇（如DC、属性、掷骰），只描述玩家可以做什么
-8. 选项之间要有差异性，不能全是"交谈"或全是"探索"
-
-输出格式：
-options数组中包含3个选项，每个选项有：
-- text: 简短的动作描述（如"与铁匠交谈"、"探索铁匠铺"、"购买武器"）
-- description: 1-2句话的动作说明
-- risk: low/medium/high 表示风险等级
+建议原则：
+1. 提供不同类型的选择（例如：探索、社交、互动）
+2. 根据当前地点和附近实体生成有意义的选项
+3. 包含1个低风险、1个中等风险、1个高风险选项
+4. 每个选项要简短，符合RPG游戏的行动描述
+5. 不要提及机制性词汇（如DC、属性），只描述玩家可以做什么
 """
 
 
@@ -120,42 +111,21 @@ def build_world_context(player_id: str, world: WorldState) -> str:
     loc_id = player.get("location_id", "")
     location = world.locations.get(loc_id)
 
-    parts = [
-        f"【时间】{world.time.time_of_day()}（{world.time.hour}时），第{world.time.day}天，{world.time.season}",
-        f"【玩家状态】生命: {player.get('health', 100)}/{player.get('max_health', 100)}",
-    ]
+    parts = [f"时间: {world.time.time_of_day()}（{world.time.hour}时），第{world.time.day}天，{world.time.season}"]
 
-    # Location info
     if location:
-        parts.append(f"\n【当前位置】{location.name}（{location.location_type}）")
+        parts.append(f"地点: {location.name}（{location.location_type}）")
         parts.append(f"  描述: {location.description}")
-        parts.append(f"  连接地点: {', '.join(location.connected) if location.connected else '无'}")
+        nearby = [e for e in location.entities if e != player_id]
+        if nearby:
+            parts.append(f"  附近: {', '.join(nearby[:5])}{'...' if len(nearby) > 5 else ''}")
+        items = location.items
+        if items:
+            parts.append(f"  物品: {', '.join(items[:5])}{'...' if len(items) > 5 else ''}")
 
-        # Nearby NPCs
-        nearby_chars = [e for e in location.entities if e != player_id]
-        if nearby_chars:
-            npc_names = []
-            for char_id in nearby_chars[:5]:
-                if char_id.startswith('npc_'):
-                    npc = world.characters.get(char_id)
-                    if npc:
-                        npc_names.append(f"{npc.get('name', char_id)}")
-            if npc_names:
-                parts.append(f"  附近人物: {', '.join(npc_names)}")
-
-        # Location items
-        if location.items:
-            parts.append(f"  可见物品: {', '.join(location.items[:5])}")
-
-    # Inventory
     inventory = player.get("inventory", [])
     if inventory:
-        parts.append(f"\n【背包物品】{', '.join(inventory[:8])}{'...' if len(inventory) > 8 else ''}")
-
-    # Equipment
-    equipment = player.get("equipment", [])
-    if equipment:
-        parts.append(f"【已装备】{', '.join(equipment)}")
+        parts.append(f"背包: {', '.join(inventory[:8])}{'...' if len(inventory) > 8 else ''}")
 
     return "\n".join(parts)
 
@@ -199,140 +169,23 @@ class ActionPlanner:
             
             # Fill with fallback options if needed
             while len(options) < 3:
-                fallback_suggestions = self._fallback_suggestions(player_id, world)
-                if len(options) < len(fallback_suggestions):
-                    options.append(fallback_suggestions[len(options)])
-                else:
-                    options.append(fallback_suggestions[0])
+                fallback_opt = self._fallback_suggestions(len(options))[len(options)-1]
+                options.append(fallback_opt)
             
             return options
         except Exception as e:
             logger.warning("LLM option suggestion failed: %s, using fallback", e)
-            return self._fallback_suggestions(player_id, world, 3)
+            return self._fallback_suggestions(3)
 
-    def _fallback_suggestions(self, player_id: str, world: WorldState, count: int = 3) -> list[dict[str, Any]]:
-        """Generate dynamic fallback suggestions based on current world state."""
-        import random
-        
-        suggestions = []
-        player = world.characters.get(player_id, {})
-        loc_id = player.get("location_id", "")
-        location = world.locations.get(loc_id)
-        
-        if not location:
-            base_suggestions = [
-                {"text": "仔细观察周围环境", "description": "观察当前地点的细节", "risk": "low"},
-                {"text": "探索周边区域", "description": "移动到相邻的区域", "risk": "medium"},
-                {"text": "检查背包里的物品", "description": "查看并管理你的装备", "risk": "low"},
-            ]
-            return base_suggestions[:count]
-
-        nearby_npcs = [e for e in location.entities if e != player_id and e.startswith('npc_')]
-        npc_names = []
-        for npc_id in nearby_npcs[:3]:
-            npc = world.characters.get(npc_id)
-            if npc:
-                npc_names.append(npc.get('name', npc_id))
-
-        # NPC interaction suggestions
-        if npc_names:
-            npc_name = npc_names[0]
-            suggestions.append({
-                "text": f"与{npc_name}交谈",
-                "description": f"走上前去与{npc_name}打招呼，了解当地情况",
-                "risk": "low"
-            })
-            if len(npc_names) > 1:
-                suggestions.append({
-                    "text": f"向{npc_names[1]}打听消息",
-                    "description": f"向{npc_names[1]}询问有价值的情报",
-                    "risk": "low"
-                })
-
-        # Location exploration suggestions
-        loc_type = location.location_type
-        if loc_type == "shop" or loc_type == "market":
-            suggestions.append({
-                "text": "浏览商店货物",
-                "description": "看看店里有什么可以购买的物品",
-                "risk": "low"
-            })
-        elif loc_type == "tavern" or loc_type == "inn":
-            suggestions.append({
-                "text": "点一杯酒坐下休息",
-                "description": "在酒馆里歇歇脚，听听来往旅人的故事",
-                "risk": "low"
-            })
-        elif loc_type == "blacksmith" or loc_type == "forge":
-            suggestions.append({
-                "text": "查看锻造的武器",
-                "description": "看看铁匠铺里有什么趁手的兵器",
-                "risk": "low"
-            })
-        else:
-            suggestions.append({
-                "text": f"仔细观察{location.name}",
-                "description": f"仔细观察{location.name}的每一个角落",
-                "risk": "low"
-            })
-
-        # Movement suggestions
-        if location.connected:
-            next_loc_id = location.connected[0]
-            next_loc = world.locations.get(next_loc_id)
-            if next_loc:
-                suggestions.append({
-                    "text": f"前往{next_loc.name}",
-                    "description": f"离开此处，前往{next_loc.name}",
-                    "risk": "medium"
-                })
-
-        # Inventory/equipment suggestions
-        inventory = player.get("inventory", [])
-        if inventory:
-            suggestions.append({
-                "text": "检查背包物品",
-                "description": "整理背包，查看携带的物品",
-                "risk": "low"
-            })
-
-        # Time-based suggestions
-        time_of_day = world.time.time_of_day()
-        if time_of_day == "night":
-            suggestions.append({
-                "text": "找地方休息过夜",
-                "description": "天色已晚，找个安全的地方休息",
-                "risk": "medium"
-            })
-        elif time_of_day == "morning":
-            suggestions.append({
-                "text": "开始新的一天",
-                "description": "迎着晨光，开始今天的冒险",
-                "risk": "low"
-            })
-
-        # Always have these as backup
-        backup = [
-            {"text": "原地休息", "description": "休息片刻，恢复体力", "risk": "low"},
-            {"text": "四处走走", "description": "在附近随意逛逛", "risk": "low"},
-            {"text": "查看地图", "description": "打开地图确认方位", "risk": "low"},
+    def _fallback_suggestions(self, count: int = 3) -> list[dict[str, Any]]:
+        """Generate fallback suggestions when LLM fails."""
+        suggestions = [
+            {"text": "仔细观察周围环境", "description": "观察当前地点的细节", "risk": "low"},
+            {"text": "与附近的NPC交谈", "description": "与附近的角色互动", "risk": "low"},
+            {"text": "检查背包里的物品", "description": "查看并管理你的装备", "risk": "low"},
+            {"text": "前往下一个地点", "description": "移动到相邻的区域", "risk": "medium"},
+            {"text": "休息恢复体力", "description": "原地休息恢复状态", "risk": "low"},
         ]
-
-        # Deduplicate and ensure we have enough
-        seen_texts = {s["text"] for s in suggestions}
-        for b in backup:
-            if b["text"] not in seen_texts:
-                suggestions.append(b)
-                seen_texts.add(b["text"])
-
-        # Shuffle a bit for variety, but keep first 3 meaningful
-        if len(suggestions) > count:
-            result = suggestions[:2]
-            remaining = suggestions[2:]
-            random.shuffle(remaining)
-            result.extend(remaining[:count - 2])
-            return result[:count]
-        
         return suggestions[:count]
 
     async def plan(
@@ -342,19 +195,6 @@ class ActionPlanner:
 
         Returns a dict compatible with TickEngine.tick() player_action parameter.
         """
-        # Fast path: use keyword matching for simple actions to avoid LLM latency
-        simple_keywords = {
-            "examine": ["检查", "看", "观察", "搜索", "调查", "examine", "look", "inspect", "search", "investigate", "查看"],
-            "rest": ["休息", "睡觉", "睡", "扎营", "小憩", "rest", "sleep", "nap"],
-            "take": ["拿", "捡", "拾取", "拿取", "take", "grab", "pick", "loot"],
-            "drop": ["丢弃", "扔", "放下", "drop", "discard"],
-        }
-        text_lower = action_text.lower()
-        for action_type, keywords in simple_keywords.items():
-            if any(k in text_lower for k in keywords):
-                logger.debug("Fast path: action '%s' matched as %s", action_text, action_type)
-                return self._fallback_plan(action_text, player_id, world)
-
         world_context = build_world_context(player_id, world)
 
         prompt = (
@@ -373,7 +213,7 @@ class ActionPlanner:
             return self._to_action_dict(plan, player_id, action_text)
         except Exception as e:
             logger.warning("LLM action planning failed: %s, using fallback", e)
-            return self._fallback_plan(action_text, player_id, world)
+            return self._fallback_plan(action_text, player_id)
 
     def _to_action_dict(
         self, plan: ActionPlanModel, player_id: str, original_text: str
@@ -399,23 +239,25 @@ class ActionPlanner:
             "params": plan.params,
         }
 
-    def _fallback_plan(self, action_text: str, player_id: str, world: Any | None = None) -> dict[str, Any]:
+    def _fallback_plan(self, action_text: str, player_id: str) -> dict[str, Any]:
         """Generate a fallback action plan when LLM fails.
 
-        Uses keyword matching to determine action type and target.
+        Uses keyword matching to determine action type.
         """
         text = action_text.lower()
 
+        # Keyword-based action detection
         keywords = {
-            "move": ["go ", "walk", "travel", "run", "head", "move", "去", "前往", "走到", "去", "前往", "走到"],
-            "attack": ["attack", "fight", "hit", "strike", "kill", "slash", "攻击", "打", "杀", "砍", "揍"],
-            "take": ["take", "grab", "pick", "loot", "steal", "拿", "捡", "拾取", "拿取", "偷"],
-            "drop": ["drop", "discard", "throw", "丢弃", "扔", "放下"],
-            "use": ["use", "drink", "eat", "equip", "apply", "使用", "喝", "吃", "装备", "用"],
-            "examine": ["examine", "look", "inspect", "search", "investigate", "检查", "看", "观察", "搜索", "调查"],
-            "speak": ["talk", "speak", "ask", "tell", "greet", "交谈", "说话", "聊", "问", "打招呼", "与", "跟"],
-            "rest": ["rest", "sleep", "camp", "nap", "休息", "睡觉", "睡", "扎营", "小憩"],
-            "craft": ["craft", "make", "build", "forge", "制作", "打造", "建造", "锻造"],
+            "move": ["go", "walk", "travel", "run", "head", "move"],
+            "attack": ["attack", "fight", "hit", "strike", "kill", "slash"],
+            "take": ["take", "grab", "pick", "loot", "steal"],
+            "drop": ["drop", "discard", "throw"],
+            "use": ["use", "drink", "eat", "equip", "apply"],
+            "examine": ["examine", "look", "inspect", "search", "investigate"],
+            "speak": ["talk", "speak", "ask", "tell", "greet"],
+            "rest": ["rest", "sleep", "camp", "nap"],
+            "craft": ["craft", "make", "build", "forge"],
+            "interact": ["interact", "open", "close", "pull", "push", "touch"],
         }
 
         detected_type = "interact"
@@ -424,15 +266,9 @@ class ActionPlanner:
                 detected_type = action_type
                 break
 
-        target = ""
-        if world and detected_type in ("speak", "interact", "attack"):
-            target = self._find_nearest_npc(action_text, world)
-        elif world and detected_type == "move":
-            target = self._find_target_location(action_text, world)
-
         return {
             "type": detected_type,
-            "target": target,
+            "target": "",
             "player_id": player_id,
             "text": action_text,
             "intent": action_text,
@@ -443,48 +279,3 @@ class ActionPlanner:
             "estimated_effects": [],
             "params": {},
         }
-
-    def _find_nearest_npc(self, action_text: str, world: Any) -> str:
-        """Find the nearest NPC matching action text, or first nearby NPC."""
-        player_data = world.characters.get("player", {})
-        loc_id = player_data.get("location_id", "")
-        if not loc_id:
-            return ""
-
-        nearby_npcs = [
-            (cid, c.get("name", ""))
-            for cid, c in world.characters.items()
-            if c.get("location_id") == loc_id and c.get("type") == "npc"
-        ]
-        if not nearby_npcs:
-            return ""
-
-        text = action_text.lower()
-        for cid, name in nearby_npcs:
-            if name and name in action_text:
-                return cid
-
-        return nearby_npcs[0][0]
-
-    def _find_target_location(self, action_text: str, world: Any) -> str:
-        """Find the target location matching action text, or first connected location."""
-        player_data = world.characters.get("player", {})
-        loc_id = player_data.get("location_id", "")
-        if not loc_id:
-            return ""
-
-        current_loc = world.locations.get(loc_id)
-        if not current_loc:
-            return ""
-
-        text = action_text.lower()
-
-        for conn_loc_id in current_loc.connected:
-            conn_loc = world.locations.get(conn_loc_id)
-            if conn_loc and conn_loc.name in action_text:
-                return conn_loc_id
-
-        if current_loc.connected:
-            return current_loc.connected[0]
-
-        return ""
