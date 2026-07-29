@@ -1,136 +1,225 @@
 {
-  "version": 1,
+  "world": {
+    "turn": 0,
+    "time": "08:00 (morning)",
+    "day": 1,
+    "season": "spring",
+    "regions": 1,
+    "locations": 6,
+    "characters": 5
+  },
   "time": {
     "turn": 0,
     "hour": 8,
     "day": 1,
     "season": "spring"
   },
-  "regions": {
-    "main_region": {
+  "world_lore": {
+    "step": "lore",
+    "lore": {
+      "world_name": "测试世界",
+      "genre": "fantasy",
+      "era": "封建中世纪",
+      "atmosphere": "",
+      "terrain": "密林",
+      "magic_level": "中魔",
+      "danger_level": "适中",
+      "description": "这是一个艾尔文大陆风格的世界。",
+      "history": "这片土地在封建中世纪时期便有人类活动的痕迹。历经无数变迁，如今形成了以测试世界为中心的格局。",
+      "factions": [],
+      "main_quest": "传说中的黑暗领主正在集结大军，你必须找到传说中的神器，联合各势力，在末日降临前阻止他。",
+      "npcs": [
+        {
+          "name": "格里芬",
+          "role": "让每位旅客都感到宾至如归",
+          "location": "旅者酒馆"
+        },
+        {
+          "name": "贝拉",
+          "role": "维护秩序与正义",
+          "location": "村庄广场"
+        },
+        {
+          "name": "老麦克",
+          "role": "锻造出传说中的神兵利器",
+          "location": "村庄广场"
+        },
+        {
+          "name": "艾琳",
+          "role": "谱写流传千古的英雄史诗",
+          "location": "旅者酒馆"
+        }
+      ],
+      "locations": [
+        {
+          "name": "村庄广场",
+          "description": "石板路交织的聚落，炊烟从茅草屋顶升起，旅人们在此交换消息。",
+          "danger": 0
+        },
+        {
+          "name": "旅者酒馆",
+          "description": "温暖的壁炉映照着木质吧台，墙上挂着冒险者留下的旧盾。",
+          "danger": 0
+        },
+        {
+          "name": "密林深处",
+          "description": "参天古树遮天蔽日，粗壮的藤蔓缠绕其间，远处传来不明生物的低吼声。",
+          "danger": 4
+        },
+        {
+          "name": "林中空地",
+          "description": "阳光透过树冠洒落，地面上散落着营火遗迹和不知名的足迹。",
+          "danger": 2
+        },
+        {
+          "name": "巨树",
+          "description": "一棵无法估量年龄的巨树拔地而起，树根延伸数十米，树洞深处似有微光闪烁。",
+          "danger": 3
+        },
+        {
+          "name": "神殿",
+          "description": "祭祀场所，石台上残留着微弱的光芒，祈祷者在此寻求启示。",
+          "danger": 3
+        }
+      ]
+    },
+    "prompts": {
+      "world_name": "测试世界",
+      "description": "测试",
+      "tags": {
+        "genre": [
+          "fantasy"
+        ],
+        "era": [
+          "medieval"
+        ],
+        "terrain": [
+          "forest"
+        ],
+        "magic": [
+          "medium"
+        ],
+        "danger": [
+          "moderate"
+        ]
+      },
+      "genre": "fantasy",
+      "era": "",
+      "atmosphere": [],
+      "main_quest": "",
+      "regions": [
+        {
+          "id": "main_region",
+          "name": "测试世界",
+          "description": "测试 封建中世纪",
+          "type": "kingdom"
+        }
+      ],
+      "locations": [
+        {
+          "id": "hub",
+          "name": "村庄广场",
+          "description": "石板路交织的聚落，炊烟从茅草屋顶升起，旅人们在此交换消息。",
+          "type": "outdoor",
+          "danger": 0
+        },
+        {
+          "id": "tavern",
+          "name": "旅者酒馆",
+          "description": "温暖的壁炉映照着木质吧台，墙上挂着冒险者留下的旧盾。",
+          "type": "indoor",
+          "danger": 0
+        },
+        {
+          "id": "deep_forest",
+          "name": "密林深处",
+          "description": "参天古树遮天蔽日，粗壮的藤蔓缠绕其间，远处传来不明生物的低吼声。",
+          "type": "outdoor",
+          "danger": 4
+        },
+        {
+          "id": "forest_clearing",
+          "name": "林中空地",
+          "description": "阳光透过树冠洒落，地面上散落着营火遗迹和不知名的足迹。",
+          "type": "outdoor",
+          "danger": 2
+        },
+        {
+          "id": "ancient_tree",
+          "name": "巨树",
+          "description": "一棵无法估量年龄的巨树拔地而起，树根延伸数十米，树洞深处似有微光闪烁。",
+          "type": "outdoor",
+          "danger": 3
+        },
+        {
+          "id": "shrine",
+          "name": "神殿",
+          "description": "祭祀场所，石台上残留着微弱的光芒，祈祷者在此寻求启示。",
+          "type": "indoor",
+          "danger": 3
+        }
+      ]
+    }
+  },
+  "regions": [
+    {
       "id": "main_region",
-      "name": "迷雾都市",
-      "description": "封建中世纪",
-      "region_type": "city",
+      "name": "测试世界",
+      "description": "测试 封建中世纪",
+      "region_type": "kingdom",
       "danger_level": 0,
       "locations": [
         "hub",
         "tavern",
-        "market_district",
-        "back_alley",
-        "tower_building",
         "deep_forest",
         "forest_clearing",
         "ancient_tree",
         "shrine"
       ]
     }
-  },
-  "locations": {
-    "hub": {
+  ],
+  "locations": [
+    {
       "id": "hub",
-      "name": "中央广场",
-      "description": "高楼间车水马龙的繁华地带，监控摄像头无声记录着一切。",
+      "name": "村庄广场",
+      "description": "石板路交织的聚落，炊烟从茅草屋顶升起，旅人们在此交换消息。",
       "region_id": "main_region",
       "location_type": "outdoor",
       "light_level": 8,
       "danger_level": 0,
       "connected": [
         "tavern",
-        "market_district",
-        "back_alley"
+        "deep_forest",
+        "forest_clearing"
       ],
       "entities": [
-        "ex_cop",
-        "detective",
-        "npc_dyn_0",
-        "npc_dyn_9",
+        "knight",
+        "blacksmith",
         "player"
       ],
       "items": [],
       "tags": []
     },
-    "tavern": {
+    {
       "id": "tavern",
-      "name": "深夜咖啡馆",
-      "description": "凌晨两点仍有灯光的温暖角落，失眠者和线人各怀心事。",
+      "name": "旅者酒馆",
+      "description": "温暖的壁炉映照着木质吧台，墙上挂着冒险者留下的旧盾。",
       "region_id": "main_region",
       "location_type": "indoor",
       "light_level": 6,
       "danger_level": 0,
       "connected": [
         "hub",
-        "market_district"
-      ],
-      "entities": [
-        "bar_owner",
-        "journalist",
-        "npc_dyn_1",
-        "npc_dyn_10"
-      ],
-      "items": [],
-      "tags": []
-    },
-    "market_district": {
-      "id": "market_district",
-      "name": "商业区",
-      "description": "拥挤繁华的街区，各色摊位和商铺鳞次栉比，叫卖声不绝于耳。",
-      "region_id": "main_region",
-      "location_type": "outdoor",
-      "light_level": 7,
-      "danger_level": 1,
-      "connected": [
-        "hub",
-        "back_alley",
-        "tavern"
-      ],
-      "entities": [
-        "hacker",
-        "npc_dyn_2",
-        "npc_dyn_11"
-      ],
-      "items": [],
-      "tags": []
-    },
-    "back_alley": {
-      "id": "back_alley",
-      "name": "暗巷",
-      "description": "贫民区的窄巷，阳光难以到达，可疑的身影在阴影中出没。",
-      "region_id": "main_region",
-      "location_type": "outdoor",
-      "light_level": 3,
-      "danger_level": 4,
-      "connected": [
-        "market_district",
-        "tower_building"
-      ],
-      "entities": [
-        "npc_dyn_3",
-        "npc_dyn_12"
-      ],
-      "items": [],
-      "tags": []
-    },
-    "tower_building": {
-      "id": "tower_building",
-      "name": "高塔",
-      "description": "矗立在城市中心的标志性建筑，从顶端可以俯瞰整个城区。",
-      "region_id": "main_region",
-      "location_type": "indoor",
-      "light_level": 6,
-      "danger_level": 2,
-      "connected": [
-        "back_alley",
         "deep_forest"
       ],
       "entities": [
-        "npc_dyn_4",
-        "npc_dyn_13"
+        "tavern_owner",
+        "bard"
       ],
       "items": [],
       "tags": []
     },
-    "deep_forest": {
+    {
       "id": "deep_forest",
       "name": "密林深处",
       "description": "参天古树遮天蔽日，粗壮的藤蔓缠绕其间，远处传来不明生物的低吼声。",
@@ -139,17 +228,15 @@
       "light_level": 3,
       "danger_level": 4,
       "connected": [
-        "tower_building",
-        "forest_clearing"
+        "hub",
+        "forest_clearing",
+        "tavern"
       ],
-      "entities": [
-        "npc_dyn_5",
-        "npc_dyn_14"
-      ],
+      "entities": [],
       "items": [],
       "tags": []
     },
-    "forest_clearing": {
+    {
       "id": "forest_clearing",
       "name": "林中空地",
       "description": "阳光透过树冠洒落，地面上散落着营火遗迹和不知名的足迹。",
@@ -161,14 +248,11 @@
         "deep_forest",
         "ancient_tree"
       ],
-      "entities": [
-        "npc_dyn_6",
-        "npc_dyn_15"
-      ],
+      "entities": [],
       "items": [],
       "tags": []
     },
-    "ancient_tree": {
+    {
       "id": "ancient_tree",
       "name": "巨树",
       "description": "一棵无法估量年龄的巨树拔地而起，树根延伸数十米，树洞深处似有微光闪烁。",
@@ -180,14 +264,11 @@
         "forest_clearing",
         "shrine"
       ],
-      "entities": [
-        "npc_dyn_7",
-        "npc_dyn_16"
-      ],
+      "entities": [],
       "items": [],
       "tags": []
     },
-    "shrine": {
+    {
       "id": "shrine",
       "name": "神殿",
       "description": "祭祀场所，石台上残留着微弱的光芒，祈祷者在此寻求启示。",
@@ -198,156 +279,85 @@
       "connected": [
         "ancient_tree"
       ],
-      "entities": [
-        "npc_dyn_8",
-        "npc_dyn_17"
-      ],
+      "entities": [],
       "items": [],
       "tags": []
     }
-  },
+  ],
   "characters": {
-    "bar_owner": {
+    "tavern_owner": {
       "location_id": "tavern",
-      "name": "K先生",
-      "type": "npc"
+      "inventory": [],
+      "name": "格里芬",
+      "type": "npc",
+      "health": 100,
+      "max_health": 100
     },
-    "ex_cop": {
+    "knight": {
       "location_id": "hub",
-      "name": "午夜",
-      "type": "npc"
+      "inventory": [],
+      "name": "贝拉",
+      "type": "npc",
+      "health": 100,
+      "max_health": 100
     },
-    "detective": {
+    "blacksmith": {
       "location_id": "hub",
-      "name": "李薇",
-      "type": "npc"
+      "inventory": [],
+      "name": "老麦克",
+      "type": "npc",
+      "health": 100,
+      "max_health": 100
     },
-    "journalist": {
+    "bard": {
       "location_id": "tavern",
-      "name": "老赵",
-      "type": "npc"
-    },
-    "hacker": {
-      "location_id": "market_district",
-      "name": "阿雪",
-      "type": "npc"
-    },
-    "npc_dyn_0": {
-      "location_id": "hub",
-      "name": "徐明辉",
-      "type": "npc"
-    },
-    "npc_dyn_1": {
-      "location_id": "tavern",
-      "name": "郑海涛",
-      "type": "npc"
-    },
-    "npc_dyn_2": {
-      "location_id": "market_district",
-      "name": "孙志远",
-      "type": "npc"
-    },
-    "npc_dyn_3": {
-      "location_id": "back_alley",
-      "name": "冯佳怡",
-      "type": "npc"
-    },
-    "npc_dyn_4": {
-      "location_id": "tower_building",
-      "name": "朱梦琪",
-      "type": "npc"
-    },
-    "npc_dyn_5": {
-      "location_id": "deep_forest",
-      "name": "钱文博",
-      "type": "npc"
-    },
-    "npc_dyn_6": {
-      "location_id": "forest_clearing",
-      "name": "刘浩然",
-      "type": "npc"
-    },
-    "npc_dyn_7": {
-      "location_id": "ancient_tree",
-      "name": "周雪",
-      "type": "npc"
-    },
-    "npc_dyn_8": {
-      "location_id": "shrine",
-      "name": "张伟",
-      "type": "npc"
-    },
-    "npc_dyn_9": {
-      "location_id": "hub",
-      "name": "陈默",
-      "type": "npc"
-    },
-    "npc_dyn_10": {
-      "location_id": "tavern",
-      "name": "赵雅琴",
-      "type": "npc"
-    },
-    "npc_dyn_11": {
-      "location_id": "market_district",
-      "name": "何静怡",
-      "type": "npc"
-    },
-    "npc_dyn_12": {
-      "location_id": "back_alley",
-      "name": "吴晓燕",
-      "type": "npc"
-    },
-    "npc_dyn_13": {
-      "location_id": "tower_building",
-      "name": "林婉清",
-      "type": "npc"
-    },
-    "npc_dyn_14": {
-      "location_id": "deep_forest",
-      "name": "李美玲",
-      "type": "npc"
-    },
-    "npc_dyn_15": {
-      "location_id": "forest_clearing",
-      "name": "王建国",
-      "type": "npc"
-    },
-    "npc_dyn_16": {
-      "location_id": "ancient_tree",
-      "name": "钱文博2",
-      "type": "npc"
-    },
-    "npc_dyn_17": {
-      "location_id": "shrine",
-      "name": "何静怡2",
-      "type": "npc"
+      "inventory": [],
+      "name": "艾琳",
+      "type": "npc",
+      "health": 100,
+      "max_health": 100
     },
     "player": {
       "location_id": "hub",
       "inventory": [
-        "笔记本",
-        "手电筒",
-        "手机",
-        "证件"
+        "铁剑",
+        "皮甲",
+        "面包",
+        "10枚金币"
       ],
       "name": "冒险者",
-      "type": "player"
+      "type": "player",
+      "health": 100,
+      "max_health": 100
     }
   },
-  "items": {},
-  "global_flags": {},
-  "npcs": {
-    "bar_owner": {
-      "id": "bar_owner",
-      "name": "K先生",
-      "description": "酒吧老板。守住自己不可告人的秘密。",
+  "npcs": [
+    {
+      "id": "tavern_owner",
+      "name": "格里芬",
+      "description": "酒馆老板。让每位旅客都感到宾至如归。",
+      "location_id": "tavern",
+      "goal": "让每位旅客都感到宾至如归",
+      "desires": [],
+      "fears": [],
       "personality": "friendly",
-      "goal": "守住自己不可告人的秘密",
+      "state": {
+        "mood": "neutral",
+        "energy": 1.0,
+        "hunger": 0.0,
+        "current_action": "",
+        "current_location_id": "tavern"
+      },
+      "relationships": {},
+      "resources": {
+        "gold": 10
+      },
+      "inventory": [],
       "schedule": [
         {
           "hour_start": 6,
           "hour_end": 22,
-          "activity": "擦杯子",
+          "activity": "照看吧台",
           "location_id": "tavern"
         },
         {
@@ -357,25 +367,42 @@
           "location_id": "tavern"
         }
       ],
-      "state": {
-        "current_location_id": "tavern",
-        "mood": "neutral",
-        "energy": 1.0,
-        "hunger": 0.0,
-        "current_action": ""
-      }
+      "attributes": {
+        "STR": 10,
+        "DEX": 10,
+        "CON": 10,
+        "INT": 10,
+        "WIS": 10,
+        "CHA": 10
+      },
+      "memory": []
     },
-    "ex_cop": {
-      "id": "ex_cop",
-      "name": "午夜",
-      "description": "退休警察。在体制之外继续追查旧案。",
+    {
+      "id": "knight",
+      "name": "贝拉",
+      "description": "骑士队长。维护秩序与正义。",
+      "location_id": "hub",
+      "goal": "维护秩序与正义",
+      "desires": [],
+      "fears": [],
       "personality": "stern",
-      "goal": "在体制之外继续追查旧案",
+      "state": {
+        "mood": "neutral",
+        "energy": 1.0,
+        "hunger": 0.0,
+        "current_action": "",
+        "current_location_id": "hub"
+      },
+      "relationships": {},
+      "resources": {
+        "gold": 10
+      },
+      "inventory": [],
       "schedule": [
         {
           "hour_start": 6,
           "hour_end": 22,
-          "activity": "翻阅卷宗",
+          "activity": "操练士兵",
           "location_id": "hub"
         },
         {
@@ -385,25 +412,42 @@
           "location_id": "hub"
         }
       ],
+      "attributes": {
+        "STR": 10,
+        "DEX": 10,
+        "CON": 10,
+        "INT": 10,
+        "WIS": 10,
+        "CHA": 10
+      },
+      "memory": []
+    },
+    {
+      "id": "blacksmith",
+      "name": "老麦克",
+      "description": "铁匠。锻造出传说中的神兵利器。",
+      "location_id": "hub",
+      "goal": "锻造出传说中的神兵利器",
+      "desires": [],
+      "fears": [],
+      "personality": "friendly",
       "state": {
-        "current_location_id": "hub",
         "mood": "neutral",
         "energy": 1.0,
         "hunger": 0.0,
-        "current_action": ""
-      }
-    },
-    "detective": {
-      "id": "detective",
-      "name": "李薇",
-      "description": "私家侦探。破解那桩悬而未决的连环案。",
-      "personality": "curious",
-      "goal": "破解那桩悬而未决的连环案",
+        "current_action": "",
+        "current_location_id": "hub"
+      },
+      "relationships": {},
+      "resources": {
+        "gold": 10
+      },
+      "inventory": [],
       "schedule": [
         {
           "hour_start": 6,
           "hour_end": 22,
-          "activity": "调查线索",
+          "activity": "打铁铸剑",
           "location_id": "hub"
         },
         {
@@ -413,25 +457,42 @@
           "location_id": "hub"
         }
       ],
+      "attributes": {
+        "STR": 10,
+        "DEX": 10,
+        "CON": 10,
+        "INT": 10,
+        "WIS": 10,
+        "CHA": 10
+      },
+      "memory": []
+    },
+    {
+      "id": "bard",
+      "name": "艾琳",
+      "description": "吟游诗人。谱写流传千古的英雄史诗。",
+      "location_id": "tavern",
+      "goal": "谱写流传千古的英雄史诗",
+      "desires": [],
+      "fears": [],
+      "personality": "charming",
       "state": {
-        "current_location_id": "hub",
         "mood": "neutral",
         "energy": 1.0,
         "hunger": 0.0,
-        "current_action": ""
-      }
-    },
-    "journalist": {
-      "id": "journalist",
-      "name": "老赵",
-      "description": "记者。发表轰动全国的独家报道。",
-      "personality": "curious",
-      "goal": "发表轰动全国的独家报道",
+        "current_action": "",
+        "current_location_id": "tavern"
+      },
+      "relationships": {},
+      "resources": {
+        "gold": 10
+      },
+      "inventory": [],
       "schedule": [
         {
           "hour_start": 6,
           "hour_end": 22,
-          "activity": "采访调查",
+          "activity": "弹琴吟唱",
           "location_id": "tavern"
         },
         {
@@ -441,848 +502,22 @@
           "location_id": "tavern"
         }
       ],
-      "state": {
-        "current_location_id": "tavern",
-        "mood": "neutral",
-        "energy": 1.0,
-        "hunger": 0.0,
-        "current_action": ""
-      }
-    },
-    "hacker": {
-      "id": "hacker",
-      "name": "阿雪",
-      "description": "黑客。揭露隐藏在权力背后的阴谋。",
-      "personality": "neutral",
-      "goal": "揭露隐藏在权力背后的阴谋",
-      "schedule": [
-        {
-          "hour_start": 6,
-          "hour_end": 22,
-          "activity": "编程破解",
-          "location_id": "market_district"
-        },
-        {
-          "hour_start": 22,
-          "hour_end": 6,
-          "activity": "休息",
-          "location_id": "market_district"
-        }
-      ],
-      "state": {
-        "current_location_id": "market_district",
-        "mood": "neutral",
-        "energy": 1.0,
-        "hunger": 0.0,
-        "current_action": ""
-      }
-    },
-    "npc_dyn_0": {
-      "id": "npc_dyn_0",
-      "name": "徐明辉",
-      "description": "侦探。性格嫉妒、暴躁。",
-      "personality": "jealous",
-      "goal": "做好侦探的本职工作",
-      "schedule": [
-        {
-          "hour_start": 6,
-          "hour_end": 14,
-          "activity": "调查案件",
-          "location_id": "hub"
-        },
-        {
-          "hour_start": 14,
-          "hour_end": 15,
-          "activity": "午休",
-          "location_id": "hub"
-        },
-        {
-          "hour_start": 15,
-          "hour_end": 22,
-          "activity": "调查案件",
-          "location_id": "hub"
-        },
-        {
-          "hour_start": 22,
-          "hour_end": 6,
-          "activity": "休息",
-          "location_id": "hub"
-        }
-      ],
-      "state": {
-        "current_location_id": "hub",
-        "mood": "neutral",
-        "energy": 1.0,
-        "hunger": 0.0,
-        "current_action": ""
-      }
-    },
-    "npc_dyn_1": {
-      "id": "npc_dyn_1",
-      "name": "郑海涛",
-      "description": "记者。性格嫉妒、慷慨、野心。",
-      "personality": "jealous",
-      "goal": "出人头地，做好记者的本职工作",
-      "schedule": [
-        {
-          "hour_start": 6,
-          "hour_end": 14,
-          "activity": "采访",
-          "location_id": "tavern"
-        },
-        {
-          "hour_start": 14,
-          "hour_end": 15,
-          "activity": "午休",
-          "location_id": "tavern"
-        },
-        {
-          "hour_start": 15,
-          "hour_end": 23,
-          "activity": "采访",
-          "location_id": "tavern"
-        },
-        {
-          "hour_start": 23,
-          "hour_end": 6,
-          "activity": "休息",
-          "location_id": "tavern"
-        }
-      ],
-      "state": {
-        "current_location_id": "tavern",
-        "mood": "neutral",
-        "energy": 1.0,
-        "hunger": 0.0,
-        "current_action": ""
-      }
-    },
-    "npc_dyn_2": {
-      "id": "npc_dyn_2",
-      "name": "孙志远",
-      "description": "酒保。性格创意、懦弱、诚实。",
-      "personality": "creative",
-      "goal": "做好酒保的本职工作",
-      "schedule": [
-        {
-          "hour_start": 9,
-          "hour_end": 20,
-          "activity": "调酒",
-          "location_id": "market_district"
-        },
-        {
-          "hour_start": 20,
-          "hour_end": 9,
-          "activity": "休息",
-          "location_id": "market_district"
-        }
-      ],
-      "state": {
-        "current_location_id": "market_district",
-        "mood": "neutral",
-        "energy": 1.0,
-        "hunger": 0.0,
-        "current_action": ""
-      }
-    },
-    "npc_dyn_3": {
-      "id": "npc_dyn_3",
-      "name": "冯佳怡",
-      "description": "律师。性格开朗、暴躁、节俭、诚实。",
-      "personality": "cheerful",
-      "goal": "做好律师的本职工作",
-      "schedule": [
-        {
-          "hour_start": 8,
-          "hour_end": 14,
-          "activity": "研究卷宗",
-          "location_id": "back_alley"
-        },
-        {
-          "hour_start": 14,
-          "hour_end": 15,
-          "activity": "午休",
-          "location_id": "back_alley"
-        },
-        {
-          "hour_start": 15,
-          "hour_end": 20,
-          "activity": "研究卷宗",
-          "location_id": "back_alley"
-        },
-        {
-          "hour_start": 20,
-          "hour_end": 8,
-          "activity": "休息",
-          "location_id": "back_alley"
-        }
-      ],
-      "state": {
-        "current_location_id": "back_alley",
-        "mood": "neutral",
-        "energy": 1.0,
-        "hunger": 0.0,
-        "current_action": ""
-      }
-    },
-    "npc_dyn_4": {
-      "id": "npc_dyn_4",
-      "name": "朱梦琪",
-      "description": "医生。性格懦弱、沉默、野心。",
-      "personality": "cowardly",
-      "goal": "出人头地，做好医生的本职工作",
-      "schedule": [
-        {
-          "hour_start": 7,
-          "hour_end": 21,
-          "activity": "看病",
-          "location_id": "tower_building"
-        },
-        {
-          "hour_start": 21,
-          "hour_end": 7,
-          "activity": "休息",
-          "location_id": "tower_building"
-        }
-      ],
-      "state": {
-        "current_location_id": "tower_building",
-        "mood": "neutral",
-        "energy": 1.0,
-        "hunger": 0.0,
-        "current_action": ""
-      }
-    },
-    "npc_dyn_5": {
-      "id": "npc_dyn_5",
-      "name": "钱文博",
-      "description": "警察。性格冷静、勤勉、嫉妒、懦弱。",
-      "personality": "calm",
-      "goal": "做好警察的本职工作",
-      "schedule": [
-        {
-          "hour_start": 6,
-          "hour_end": 13,
-          "activity": "巡逻",
-          "location_id": "deep_forest"
-        },
-        {
-          "hour_start": 13,
-          "hour_end": 14,
-          "activity": "午休",
-          "location_id": "deep_forest"
-        },
-        {
-          "hour_start": 14,
-          "hour_end": 20,
-          "activity": "巡逻",
-          "location_id": "deep_forest"
-        },
-        {
-          "hour_start": 20,
-          "hour_end": 6,
-          "activity": "休息",
-          "location_id": "deep_forest"
-        }
-      ],
-      "state": {
-        "current_location_id": "deep_forest",
-        "mood": "neutral",
-        "energy": 1.0,
-        "hunger": 0.0,
-        "current_action": ""
-      }
-    },
-    "npc_dyn_6": {
-      "id": "npc_dyn_6",
-      "name": "刘浩然",
-      "description": "侦探。性格冷静、骄傲。",
-      "personality": "calm",
-      "goal": "做好侦探的本职工作",
-      "schedule": [
-        {
-          "hour_start": 8,
-          "hour_end": 21,
-          "activity": "调查案件",
-          "location_id": "forest_clearing"
-        },
-        {
-          "hour_start": 21,
-          "hour_end": 8,
-          "activity": "休息",
-          "location_id": "forest_clearing"
-        }
-      ],
-      "state": {
-        "current_location_id": "forest_clearing",
-        "mood": "neutral",
-        "energy": 1.0,
-        "hunger": 0.0,
-        "current_action": ""
-      }
-    },
-    "npc_dyn_7": {
-      "id": "npc_dyn_7",
-      "name": "周雪",
-      "description": "记者。性格勇敢、勤勉、谨慎、野心。",
-      "personality": "brave",
-      "goal": "出人头地，做好记者的本职工作",
-      "schedule": [
-        {
-          "hour_start": 7,
-          "hour_end": 14,
-          "activity": "采访",
-          "location_id": "ancient_tree"
-        },
-        {
-          "hour_start": 14,
-          "hour_end": 15,
-          "activity": "午休",
-          "location_id": "ancient_tree"
-        },
-        {
-          "hour_start": 15,
-          "hour_end": 22,
-          "activity": "采访",
-          "location_id": "ancient_tree"
-        },
-        {
-          "hour_start": 22,
-          "hour_end": 7,
-          "activity": "休息",
-          "location_id": "ancient_tree"
-        }
-      ],
-      "state": {
-        "current_location_id": "ancient_tree",
-        "mood": "neutral",
-        "energy": 1.0,
-        "hunger": 0.0,
-        "current_action": ""
-      }
-    },
-    "npc_dyn_8": {
-      "id": "npc_dyn_8",
-      "name": "张伟",
-      "description": "酒保。性格勇敢、勤勉。",
-      "personality": "brave",
-      "goal": "做好酒保的本职工作",
-      "schedule": [
-        {
-          "hour_start": 6,
-          "hour_end": 22,
-          "activity": "调酒",
-          "location_id": "shrine"
-        },
-        {
-          "hour_start": 22,
-          "hour_end": 6,
-          "activity": "休息",
-          "location_id": "shrine"
-        }
-      ],
-      "state": {
-        "current_location_id": "shrine",
-        "mood": "neutral",
-        "energy": 1.0,
-        "hunger": 0.0,
-        "current_action": ""
-      }
-    },
-    "npc_dyn_9": {
-      "id": "npc_dyn_9",
-      "name": "陈默",
-      "description": "律师。性格冷静、勤勉、开朗、贪婪。",
-      "personality": "calm",
-      "goal": "赚更多的钱，做好律师的本职工作",
-      "schedule": [
-        {
-          "hour_start": 7,
-          "hour_end": 13,
-          "activity": "研究卷宗",
-          "location_id": "hub"
-        },
-        {
-          "hour_start": 13,
-          "hour_end": 14,
-          "activity": "午休",
-          "location_id": "hub"
-        },
-        {
-          "hour_start": 14,
-          "hour_end": 20,
-          "activity": "研究卷宗",
-          "location_id": "hub"
-        },
-        {
-          "hour_start": 20,
-          "hour_end": 7,
-          "activity": "休息",
-          "location_id": "hub"
-        }
-      ],
-      "state": {
-        "current_location_id": "hub",
-        "mood": "neutral",
-        "energy": 1.0,
-        "hunger": 0.0,
-        "current_action": ""
-      }
-    },
-    "npc_dyn_10": {
-      "id": "npc_dyn_10",
-      "name": "赵雅琴",
-      "description": "医生。性格勤勉、慷慨、暴躁、骄傲。",
-      "personality": "diligent",
-      "goal": "做好医生的本职工作",
-      "schedule": [
-        {
-          "hour_start": 8,
-          "hour_end": 15,
-          "activity": "看病",
-          "location_id": "tavern"
-        },
-        {
-          "hour_start": 15,
-          "hour_end": 16,
-          "activity": "午休",
-          "location_id": "tavern"
-        },
-        {
-          "hour_start": 16,
-          "hour_end": 23,
-          "activity": "看病",
-          "location_id": "tavern"
-        },
-        {
-          "hour_start": 23,
-          "hour_end": 8,
-          "activity": "休息",
-          "location_id": "tavern"
-        }
-      ],
-      "state": {
-        "current_location_id": "tavern",
-        "mood": "neutral",
-        "energy": 1.0,
-        "hunger": 0.0,
-        "current_action": ""
-      }
-    },
-    "npc_dyn_11": {
-      "id": "npc_dyn_11",
-      "name": "何静怡",
-      "description": "警察。性格勇敢、懦弱、暴躁。",
-      "personality": "brave",
-      "goal": "做好警察的本职工作",
-      "schedule": [
-        {
-          "hour_start": 7,
-          "hour_end": 14,
-          "activity": "巡逻",
-          "location_id": "market_district"
-        },
-        {
-          "hour_start": 14,
-          "hour_end": 15,
-          "activity": "午休",
-          "location_id": "market_district"
-        },
-        {
-          "hour_start": 15,
-          "hour_end": 21,
-          "activity": "巡逻",
-          "location_id": "market_district"
-        },
-        {
-          "hour_start": 21,
-          "hour_end": 7,
-          "activity": "休息",
-          "location_id": "market_district"
-        }
-      ],
-      "state": {
-        "current_location_id": "market_district",
-        "mood": "neutral",
-        "energy": 1.0,
-        "hunger": 0.0,
-        "current_action": ""
-      }
-    },
-    "npc_dyn_12": {
-      "id": "npc_dyn_12",
-      "name": "吴晓燕",
-      "description": "侦探。性格善良、开朗、懦弱、骄傲。",
-      "personality": "kind",
-      "goal": "做好侦探的本职工作",
-      "schedule": [
-        {
-          "hour_start": 8,
-          "hour_end": 22,
-          "activity": "调查案件",
-          "location_id": "back_alley"
-        },
-        {
-          "hour_start": 22,
-          "hour_end": 8,
-          "activity": "休息",
-          "location_id": "back_alley"
-        }
-      ],
-      "state": {
-        "current_location_id": "back_alley",
-        "mood": "neutral",
-        "energy": 1.0,
-        "hunger": 0.0,
-        "current_action": ""
-      }
-    },
-    "npc_dyn_13": {
-      "id": "npc_dyn_13",
-      "name": "林婉清",
-      "description": "记者。性格懒惰、懦弱、沉默、诚实。",
-      "personality": "lazy",
-      "goal": "做好记者的本职工作",
-      "schedule": [
-        {
-          "hour_start": 9,
-          "hour_end": 21,
-          "activity": "采访",
-          "location_id": "tower_building"
-        },
-        {
-          "hour_start": 21,
-          "hour_end": 9,
-          "activity": "休息",
-          "location_id": "tower_building"
-        }
-      ],
-      "state": {
-        "current_location_id": "tower_building",
-        "mood": "neutral",
-        "energy": 1.0,
-        "hunger": 0.0,
-        "current_action": ""
-      }
-    },
-    "npc_dyn_14": {
-      "id": "npc_dyn_14",
-      "name": "李美玲",
-      "description": "酒保。性格勇敢、慷慨、暴躁、骄傲。",
-      "personality": "brave",
-      "goal": "做好酒保的本职工作",
-      "schedule": [
-        {
-          "hour_start": 7,
-          "hour_end": 14,
-          "activity": "调酒",
-          "location_id": "deep_forest"
-        },
-        {
-          "hour_start": 14,
-          "hour_end": 15,
-          "activity": "午休",
-          "location_id": "deep_forest"
-        },
-        {
-          "hour_start": 15,
-          "hour_end": 22,
-          "activity": "调酒",
-          "location_id": "deep_forest"
-        },
-        {
-          "hour_start": 22,
-          "hour_end": 7,
-          "activity": "休息",
-          "location_id": "deep_forest"
-        }
-      ],
-      "state": {
-        "current_location_id": "deep_forest",
-        "mood": "neutral",
-        "energy": 1.0,
-        "hunger": 0.0,
-        "current_action": ""
-      }
-    },
-    "npc_dyn_15": {
-      "id": "npc_dyn_15",
-      "name": "王建国",
-      "description": "律师。性格创意、好奇、懦弱、诚实。",
-      "personality": "creative",
-      "goal": "做好律师的本职工作",
-      "schedule": [
-        {
-          "hour_start": 9,
-          "hour_end": 20,
-          "activity": "研究卷宗",
-          "location_id": "forest_clearing"
-        },
-        {
-          "hour_start": 20,
-          "hour_end": 9,
-          "activity": "休息",
-          "location_id": "forest_clearing"
-        }
-      ],
-      "state": {
-        "current_location_id": "forest_clearing",
-        "mood": "neutral",
-        "energy": 1.0,
-        "hunger": 0.0,
-        "current_action": ""
-      }
-    },
-    "npc_dyn_16": {
-      "id": "npc_dyn_16",
-      "name": "钱文博2",
-      "description": "医生。性格创意、善良、节俭、贪婪。",
-      "personality": "creative",
-      "goal": "赚更多的钱，做好医生的本职工作",
-      "schedule": [
-        {
-          "hour_start": 7,
-          "hour_end": 22,
-          "activity": "看病",
-          "location_id": "ancient_tree"
-        },
-        {
-          "hour_start": 22,
-          "hour_end": 7,
-          "activity": "休息",
-          "location_id": "ancient_tree"
-        }
-      ],
-      "state": {
-        "current_location_id": "ancient_tree",
-        "mood": "neutral",
-        "energy": 1.0,
-        "hunger": 0.0,
-        "current_action": ""
-      }
-    },
-    "npc_dyn_17": {
-      "id": "npc_dyn_17",
-      "name": "何静怡2",
-      "description": "警察。性格创意、勇敢、懒惰、沉默。",
-      "personality": "creative",
-      "goal": "做好警察的本职工作",
-      "schedule": [
-        {
-          "hour_start": 6,
-          "hour_end": 13,
-          "activity": "巡逻",
-          "location_id": "shrine"
-        },
-        {
-          "hour_start": 13,
-          "hour_end": 14,
-          "activity": "午休",
-          "location_id": "shrine"
-        },
-        {
-          "hour_start": 14,
-          "hour_end": 21,
-          "activity": "巡逻",
-          "location_id": "shrine"
-        },
-        {
-          "hour_start": 21,
-          "hour_end": 6,
-          "activity": "休息",
-          "location_id": "shrine"
-        }
-      ],
-      "state": {
-        "current_location_id": "shrine",
-        "mood": "neutral",
-        "energy": 1.0,
-        "hunger": 0.0,
-        "current_action": ""
-      }
+      "attributes": {
+        "STR": 10,
+        "DEX": 10,
+        "CON": 10,
+        "INT": 10,
+        "WIS": 10,
+        "CHA": 10
+      },
+      "memory": []
     }
-  },
-  "lore": {
-    "world_name": "迷雾都市",
-    "genre": "mystery",
-    "era": "封建中世纪",
-    "atmosphere": "",
-    "terrain": "多样",
-    "magic_level": "中魔",
-    "danger_level": "适中",
-    "description": "这是一个迷雾都市风格的世界。",
-    "history": "这片土地在封建中世纪时期便有人类活动的痕迹。历经无数变迁，如今形成了以迷雾都市为中心的格局。",
-    "factions": [],
-    "main_quest": "一连串离奇的失踪案指向城市最深处的秘密组织。真相就藏在阴影中，但你每接近一步，危险就增加一分。",
-    "npcs": [
-      {
-        "name": "K先生",
-        "role": "守住自己不可告人的秘密",
-        "location": "深夜咖啡馆"
-      },
-      {
-        "name": "午夜",
-        "role": "在体制之外继续追查旧案",
-        "location": "中央广场"
-      },
-      {
-        "name": "李薇",
-        "role": "破解那桩悬而未决的连环案",
-        "location": "中央广场"
-      },
-      {
-        "name": "老赵",
-        "role": "发表轰动全国的独家报道",
-        "location": "深夜咖啡馆"
-      },
-      {
-        "name": "阿雪",
-        "role": "揭露隐藏在权力背后的阴谋",
-        "location": "商业区"
-      },
-      {
-        "name": "徐明辉",
-        "role": "做好侦探的本职工作",
-        "location": "中央广场"
-      },
-      {
-        "name": "郑海涛",
-        "role": "出人头地，做好记者的本职工作",
-        "location": "深夜咖啡馆"
-      },
-      {
-        "name": "孙志远",
-        "role": "做好酒保的本职工作",
-        "location": "商业区"
-      },
-      {
-        "name": "冯佳怡",
-        "role": "做好律师的本职工作",
-        "location": "暗巷"
-      },
-      {
-        "name": "朱梦琪",
-        "role": "出人头地，做好医生的本职工作",
-        "location": "高塔"
-      },
-      {
-        "name": "钱文博",
-        "role": "做好警察的本职工作",
-        "location": "密林深处"
-      },
-      {
-        "name": "刘浩然",
-        "role": "做好侦探的本职工作",
-        "location": "林中空地"
-      },
-      {
-        "name": "周雪",
-        "role": "出人头地，做好记者的本职工作",
-        "location": "巨树"
-      },
-      {
-        "name": "张伟",
-        "role": "做好酒保的本职工作",
-        "location": "神殿"
-      },
-      {
-        "name": "陈默",
-        "role": "赚更多的钱，做好律师的本职工作",
-        "location": "中央广场"
-      },
-      {
-        "name": "赵雅琴",
-        "role": "做好医生的本职工作",
-        "location": "深夜咖啡馆"
-      },
-      {
-        "name": "何静怡",
-        "role": "做好警察的本职工作",
-        "location": "商业区"
-      },
-      {
-        "name": "吴晓燕",
-        "role": "做好侦探的本职工作",
-        "location": "暗巷"
-      },
-      {
-        "name": "林婉清",
-        "role": "做好记者的本职工作",
-        "location": "高塔"
-      },
-      {
-        "name": "李美玲",
-        "role": "做好酒保的本职工作",
-        "location": "密林深处"
-      },
-      {
-        "name": "王建国",
-        "role": "做好律师的本职工作",
-        "location": "林中空地"
-      },
-      {
-        "name": "钱文博2",
-        "role": "赚更多的钱，做好医生的本职工作",
-        "location": "巨树"
-      },
-      {
-        "name": "何静怡2",
-        "role": "做好警察的本职工作",
-        "location": "神殿"
-      }
-    ],
-    "locations": [
-      {
-        "name": "中央广场",
-        "description": "高楼间车水马龙的繁华地带，监控摄像头无声记录着一切。",
-        "danger": 0
-      },
-      {
-        "name": "深夜咖啡馆",
-        "description": "凌晨两点仍有灯光的温暖角落，失眠者和线人各怀心事。",
-        "danger": 0
-      },
-      {
-        "name": "商业区",
-        "description": "拥挤繁华的街区，各色摊位和商铺鳞次栉比，叫卖声不绝于耳。",
-        "danger": 1
-      },
-      {
-        "name": "暗巷",
-        "description": "贫民区的窄巷，阳光难以到达，可疑的身影在阴影中出没。",
-        "danger": 4
-      },
-      {
-        "name": "高塔",
-        "description": "矗立在城市中心的标志性建筑，从顶端可以俯瞰整个城区。",
-        "danger": 2
-      },
-      {
-        "name": "密林深处",
-        "description": "参天古树遮天蔽日，粗壮的藤蔓缠绕其间，远处传来不明生物的低吼声。",
-        "danger": 4
-      },
-      {
-        "name": "林中空地",
-        "description": "阳光透过树冠洒落，地面上散落着营火遗迹和不知名的足迹。",
-        "danger": 2
-      },
-      {
-        "name": "巨树",
-        "description": "一棵无法估量年龄的巨树拔地而起，树根延伸数十米，树洞深处似有微光闪烁。",
-        "danger": 3
-      },
-      {
-        "name": "神殿",
-        "description": "祭祀场所，石台上残留着微弱的光芒，祈祷者在此寻求启示。",
-        "danger": 3
-      }
-    ]
-  },
-  "turn_count": 1,
+  ],
+  "quests": [],
+  "story_threads": [],
+  "global_flags": {},
   "knowledge": {
     "nodes": [],
     "edges": []
-  },
-  "active_quests": []
+  }
 }
