@@ -17,7 +17,7 @@
   "world_lore": {
     "step": "lore",
     "lore": {
-      "world_name": "测试",
+      "world_name": "真实世界测试",
       "genre": "fantasy",
       "era": "封建中世纪",
       "atmosphere": "",
@@ -25,7 +25,7 @@
       "magic_level": "中魔",
       "danger_level": "适中",
       "description": "这是一个艾尔文大陆风格的世界。",
-      "history": "这片土地在封建中世纪时期便有人类活动的痕迹。历经无数变迁，如今形成了以测试为中心的格局。",
+      "history": "这片土地在封建中世纪时期便有人类活动的痕迹。历经无数变迁，如今形成了以真实世界测试为中心的格局。",
       "factions": [],
       "main_quest": "传说中的黑暗领主正在集结大军，你必须找到传说中的神器，联合各势力，在末日降临前阻止他。",
       "npcs": [
@@ -83,7 +83,7 @@
         }
       ]
     },
-    "world_name": "测试",
+    "world_name": "真实世界测试",
     "description": "",
     "genre": "fantasy",
     "era": "",
@@ -106,7 +106,7 @@
       ]
     },
     "prompts": {
-      "world_name": "测试",
+      "world_name": "真实世界测试",
       "description": "",
       "tags": {
         "genre": [
@@ -132,7 +132,7 @@
       "regions": [
         {
           "id": "main_region",
-          "name": "测试",
+          "name": "真实世界测试",
           "description": "封建中世纪",
           "type": "kingdom"
         }
@@ -186,7 +186,7 @@
   "regions": [
     {
       "id": "main_region",
-      "name": "测试",
+      "name": "真实世界测试",
       "description": "封建中世纪",
       "region_type": "kingdom",
       "danger_level": 0,
