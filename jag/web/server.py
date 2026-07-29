@@ -135,13 +135,11 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
 
     @app.post("/api/config")
     async def update_config(body: dict) -> JSONResponse:  # type: ignore[type-arg]
-        """Update runtime configuration.
-
-        Note: LLM provider changes require restarting the game to take full effect.
-        """
+        """Update runtime configuration and re-initialize LLM providers if needed."""
         try:
             _apply_config_updates(gm.config, body)
-            return JSONResponse({"ok": True, "message": "配置已更新"})
+            gm.reinit_llm()
+            return JSONResponse({"ok": True, "message": "配置已更新，LLM 已重新初始化"})
         except Exception as e:
             return JSONResponse({"ok": False, "message": str(e)}, status_code=400)
 
@@ -185,7 +183,15 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                 model=model, provider=provider, api_key=api_key, api_base=api_base,
             )
             result = await test_llm_provider.complete("Say OK", system="Reply with exactly: OK")
-            return JSONResponse({"ok": True, "message": f"连接成功！模型响应: {result.strip()[:100]}"})
+            
+            # Auto-apply the tested config so runtime switches from Mock to real LLM
+            gm.config.llm.default.provider = provider
+            gm.config.llm.default.model = model
+            gm.config.llm.default.api_key = api_key
+            gm.config.llm.default.api_base = api_base
+            gm.reinit_llm()
+            
+            return JSONResponse({"ok": True, "message": f"连接成功！模型响应: {result.strip()[:100]}。配置已自动应用"})
         except Exception as e:
             return JSONResponse({"ok": False, "message": f"连接失败: {e}"}, status_code=400)
 
@@ -495,9 +501,10 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                 elif msg_type == "update_config":
                     try:
                         _apply_config_updates(gm.config, msg.get("config", {}))
+                        gm.reinit_llm()
                         await websocket.send_text(json.dumps({
                             "type": "config_updated",
-                            "message": "配置已更新",
+                            "message": "配置已更新，LLM 已重新初始化",
                         }, ensure_ascii=False))
                     except Exception as e:
                         await websocket.send_text(json.dumps({

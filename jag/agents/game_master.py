@@ -132,6 +132,15 @@ class GameMaster:
             module_configs=module_configs,
         )
 
+    def reinit_llm(self) -> None:
+        """Re-initialize LLM factory and all agent LLM providers after config update."""
+        self._init_llm()
+        self.action_planner.llm = self._get_llm("action_planner")
+        self.npc_agent.llm = self._get_llm("npc_agent")
+        self.story_director.llm = self._get_llm("story_director")
+        self.narrator.llm = self._get_llm("narrator")
+        logger.info("LLM providers re-initialized from updated config")
+
     def _get_llm(self, module: str) -> LLMProvider:
         """Get LLM provider for a module."""
         return self._llm_factory.get(module)
