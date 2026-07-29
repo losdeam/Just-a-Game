@@ -41,16 +41,25 @@ class WorldGenerationSkill(Skill):
         # 将世界观设定固化为「剧本提示词」，供导演 / 叙事后续读取
         prompts = self._build_world_prompts(gm, world_name, tags, description)
 
+        # 构建与原 WorldBuilder.build_from_tags 兼容的返回结构
+        # 原结构包含 ok, world_name, locations, npcs, genre, description, tags_applied
+        result_data = {
+            "ok": True,
+            "world_name": world.get("world_name", world_name),
+            "locations": world.get("locations", len(gm.world.locations)),
+            "npcs": world.get("npcs", len(gm.tick_engine._npcs)),
+            "genre": world.get("genre", ""),
+            "description": world.get("description", description),
+            "tags_applied": world.get("tags_applied", tags),
+            # 额外扩展：Skill 特有字段
+            "world_lore": gm.world_lore,
+            "prompts": prompts,
+            "regions": len(gm.world.regions),
+        }
+
         result = SkillResult(
             success=True,
-            data={
-                "world": world,
-                "world_lore": gm.world_lore,
-                "prompts": prompts,
-                "regions": len(gm.world.regions),
-                "locations": len(gm.world.locations),
-                "npcs": len(gm.world.characters),
-            },
+            data=result_data,
             messages=[f"已生成世界观「{world_name or gm.world_lore.get('name', '未命名')}」"],
         )
         return result

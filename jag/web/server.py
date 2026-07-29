@@ -17,6 +17,7 @@ from jag.agents.game_master import GameMaster
 from jag.cli import setup_demo_world
 from jag.config import GameConfig, LLMModuleConfig, load_config
 from jag.debug.tracer import TickTrace
+from jag.skills import SkillContext, SkillRegistry
 from jag.world.world_builder import WorldBuilder, get_all_tags
 
 logger = logging.getLogger(__name__)
@@ -36,6 +37,10 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
     gm = GameMaster(config=cfg)
     world_builder = WorldBuilder(gm)
     _world_initialized = False  # Track if world has been set up
+
+    # Initialize Skill Registry
+    skill_registry = SkillRegistry.instance()
+    skill_registry.register_defaults()
 
     def _ensure_world() -> None:
         """Ensure a world is loaded; does nothing if none was created."""
@@ -186,7 +191,7 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
 
     @app.post("/api/world/create")
     async def create_world(body: dict) -> JSONResponse:  # type: ignore[type-arg]
-        """Create a custom world from tags and description."""
+        """Create a custom world from tags and description via SkillRegistry."""
         nonlocal _world_initialized
         world_name = body.get("world_name", "")
         tags = body.get("tags", {})
@@ -200,24 +205,40 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
         if not use_llm and description:
             use_llm = has_key  # auto-use LLM if key available and description provided
 
+        if use_llm and not has_key:
+            return JSONResponse({
+                "ok": False,
+                "message": "使用 AI 生成需要配置 LLM API Key。请在配置设置中填写 API Key 并测试连接。",
+                "need_key": True,
+            }, status_code=400)
+
         try:
-            if use_llm:
-                if not has_key:
-                    return JSONResponse({
-                        "ok": False,
-                        "message": "使用 AI 生成需要配置 LLM API Key。请在配置设置中填写 API Key 并测试连接。",
-                        "need_key": True,
-                    }, status_code=400)
-                result = await world_builder.build_with_llm(world_name, tags, description)
-            else:
-                result = world_builder.build_from_tags(world_name, tags, description)
-                if description and not has_key:
-                    result["warning"] = "未配置 LLM API Key，您的自定义描述无法用于 AI 生成，已使用词条模板生成。配置 API Key 后可获得 AI 驱动的自定义世界。"
+            # Use SkillRegistry to execute world generation
+            skill_result = await skill_registry.execute(
+                "world_generation",
+                SkillContext(gm=gm, params={
+                    "world_name": world_name,
+                    "tags": tags,
+                    "description": description,
+                    "use_llm": use_llm,
+                })
+            )
+            
+            if not skill_result.success:
+                return JSONResponse({"ok": False, "message": skill_result.error}, status_code=500)
+
+            result = skill_result.data
+            # Add warning if LLM not used
+            if description and not has_key:
+                result["warning"] = "未配置 LLM API Key，您的自定义描述无法用于 AI 生成，已使用词条模板生成。配置 API Key 后可获得 AI 驱动的自定义世界。"
+
             _world_initialized = True
             opening = await gm.generate_opening()
             options = await gm.get_suggested_options()
             result["opening"] = opening
             result["suggested_options"] = options
+            # Include success flag for frontend
+            result["ok"] = True
             return JSONResponse(result)
         except Exception as e:
             return JSONResponse({"ok": False, "message": str(e)}, status_code=500)
@@ -354,60 +375,41 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
                     if not use_llm and description:
                         use_llm = has_key
 
+                    if use_llm and not has_key:
+                        await websocket.send_text(json.dumps({
+                            "type": "error",
+                            "message": "使用 AI 生成需要配置 LLM API Key。请在配置设置中填写并测试。",
+                        }, ensure_ascii=False))
+                        continue
+
                     try:
-                        if use_llm:
-                            if not has_key:
-                                await websocket.send_text(json.dumps({
-                                    "type": "error",
-                                    "message": "使用 AI 生成需要配置 LLM API Key。请在配置设置中填写并测试。",
-                                }, ensure_ascii=False))
-                                continue
-                            await websocket.send_text(json.dumps({
-                                "type": "progress",
-                                "message": "正在调用 AI 生成世界观...（可能需要 30-60 秒）",
-                            }, ensure_ascii=False))
-                            result = await world_builder.build_with_llm(world_name, tags, description)
-                        else:
-                            world_builder._parse_tags(world_name, tags, description)
-                            await websocket.send_text(json.dumps({
-                                "type": "progress", "message": "正在创建世界区域...",
-                            }, ensure_ascii=False))
-                            step_region = world_builder.build_step_region()
-                            await websocket.send_text(json.dumps({
-                                "type": "progress", "message": f"区域「{step_region['name']}」已创建",
-                            }, ensure_ascii=False))
-                            await asyncio.sleep(0.3)
+                        await websocket.send_text(json.dumps({
+                            "type": "progress",
+                            "message": "正在通过 Skill 生成世界观...",
+                        }, ensure_ascii=False))
 
-                            await websocket.send_text(json.dumps({
-                                "type": "progress", "message": "正在生成地点...",
-                            }, ensure_ascii=False))
-                            step_locs = world_builder.build_step_locations()
-                            await websocket.send_text(json.dumps({
-                                "type": "progress", "message": f"已创建 {step_locs['count']} 个地点",
-                            }, ensure_ascii=False))
-                            await asyncio.sleep(0.3)
+                        # Use SkillRegistry to execute world generation
+                        skill_result = await skill_registry.execute(
+                            "world_generation",
+                            SkillContext(gm=gm, params={
+                                "world_name": world_name,
+                                "tags": tags,
+                                "description": description,
+                                "use_llm": use_llm,
+                            })
+                        )
 
+                        if not skill_result.success:
                             await websocket.send_text(json.dumps({
-                                "type": "progress", "message": "正在生成 NPC...",
+                                "type": "error",
+                                "message": f"世界观生成失败: {skill_result.error}",
                             }, ensure_ascii=False))
-                            step_npcs = world_builder.build_step_npcs()
-                            await websocket.send_text(json.dumps({
-                                "type": "progress", "message": f"已创建 {step_npcs['count']} 个 NPC",
-                            }, ensure_ascii=False))
-                            await asyncio.sleep(0.3)
+                            continue
 
-                            await websocket.send_text(json.dumps({
-                                "type": "progress", "message": "正在生成世界观设定...",
-                            }, ensure_ascii=False))
-                            step_lore = world_builder.build_step_lore()
-                            await websocket.send_text(json.dumps({
-                                "type": "progress", "message": "世界观设定已生成",
-                            }, ensure_ascii=False))
-                            await asyncio.sleep(0.3)
-
-                            result = world_builder.build_step_finalize(step_lore.get("lore"))
-                            if description and not has_key:
-                                result["warning"] = "未配置 LLM API Key，您的描述未用于 AI 生成。配置后可获得 AI 驱动的自定义世界。"
+                        result = skill_result.data
+                        if description and not has_key:
+                            result["warning"] = "未配置 LLM API Key，您的描述未用于 AI 生成。配置后可获得 AI 驱动的自定义世界。"
+                            
                         _world_initialized = True
                         status = gm.get_status()
                         await websocket.send_text(json.dumps({
