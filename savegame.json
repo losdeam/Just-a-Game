@@ -17,36 +17,36 @@
   "world_lore": {
     "step": "lore",
     "lore": {
-      "world_name": "测试世界",
+      "world_name": "艾尔多兰",
       "genre": "fantasy",
       "era": "封建中世纪",
       "atmosphere": "",
-      "terrain": "密林",
+      "terrain": "密林、mountains",
       "magic_level": "中魔",
       "danger_level": "适中",
       "description": "这是一个艾尔文大陆风格的世界。",
-      "history": "这片土地在封建中世纪时期便有人类活动的痕迹。历经无数变迁，如今形成了以测试世界为中心的格局。",
+      "history": "这片土地在封建中世纪时期便有人类活动的痕迹。历经无数变迁，如今形成了以艾尔多兰为中心的格局。",
       "factions": [],
       "main_quest": "传说中的黑暗领主正在集结大军，你必须找到传说中的神器，联合各势力，在末日降临前阻止他。",
       "npcs": [
         {
-          "name": "格里芬",
+          "name": "奥丁",
           "role": "让每位旅客都感到宾至如归",
           "location": "旅者酒馆"
         },
         {
-          "name": "贝拉",
+          "name": "艾琳",
           "role": "维护秩序与正义",
           "location": "村庄广场"
         },
         {
-          "name": "老麦克",
+          "name": "索林",
           "role": "锻造出传说中的神兵利器",
           "location": "村庄广场"
         },
         {
-          "name": "艾琳",
-          "role": "谱写流传千古的英雄史诗",
+          "name": "梅丽莎",
+          "role": "偷到世间最珍贵的宝物",
           "location": "旅者酒馆"
         }
       ],
@@ -83,9 +83,32 @@
         }
       ]
     },
+    "world_name": "艾尔多兰",
+    "description": "一个被遗忘魔法笼罩的古老王国",
+    "genre": "fantasy",
+    "era": "",
+    "main_quest": "",
+    "tags": {
+      "genre": [
+        "fantasy"
+      ],
+      "era": [
+        "medieval"
+      ],
+      "terrain": [
+        "forest",
+        "mountains"
+      ],
+      "magic": [
+        "medium"
+      ],
+      "danger": [
+        "moderate"
+      ]
+    },
     "prompts": {
-      "world_name": "测试世界",
-      "description": "测试",
+      "world_name": "艾尔多兰",
+      "description": "一个被遗忘魔法笼罩的古老王国",
       "tags": {
         "genre": [
           "fantasy"
@@ -94,7 +117,8 @@
           "medieval"
         ],
         "terrain": [
-          "forest"
+          "forest",
+          "mountains"
         ],
         "magic": [
           "medium"
@@ -110,8 +134,8 @@
       "regions": [
         {
           "id": "main_region",
-          "name": "测试世界",
-          "description": "测试 封建中世纪",
+          "name": "艾尔多兰",
+          "description": "一个被遗忘魔法笼罩的古老王国 封建中世纪",
           "type": "kingdom"
         }
       ],
@@ -164,8 +188,8 @@
   "regions": [
     {
       "id": "main_region",
-      "name": "测试世界",
-      "description": "测试 封建中世纪",
+      "name": "艾尔多兰",
+      "description": "一个被遗忘魔法笼罩的古老王国 封建中世纪",
       "region_type": "kingdom",
       "danger_level": 0,
       "locations": [
@@ -214,7 +238,7 @@
       ],
       "entities": [
         "tavern_owner",
-        "bard"
+        "thief"
       ],
       "items": [],
       "tags": []
@@ -288,7 +312,7 @@
     "tavern_owner": {
       "location_id": "tavern",
       "inventory": [],
-      "name": "格里芬",
+      "name": "奥丁",
       "type": "npc",
       "health": 100,
       "max_health": 100
@@ -296,7 +320,7 @@
     "knight": {
       "location_id": "hub",
       "inventory": [],
-      "name": "贝拉",
+      "name": "艾琳",
       "type": "npc",
       "health": 100,
       "max_health": 100
@@ -304,15 +328,15 @@
     "blacksmith": {
       "location_id": "hub",
       "inventory": [],
-      "name": "老麦克",
+      "name": "索林",
       "type": "npc",
       "health": 100,
       "max_health": 100
     },
-    "bard": {
+    "thief": {
       "location_id": "tavern",
       "inventory": [],
-      "name": "艾琳",
+      "name": "梅丽莎",
       "type": "npc",
       "health": 100,
       "max_health": 100
@@ -334,7 +358,7 @@
   "npcs": [
     {
       "id": "tavern_owner",
-      "name": "格里芬",
+      "name": "奥丁",
       "description": "酒馆老板。让每位旅客都感到宾至如归。",
       "location_id": "tavern",
       "goal": "让每位旅客都感到宾至如归",
@@ -379,7 +403,7 @@
     },
     {
       "id": "knight",
-      "name": "贝拉",
+      "name": "艾琳",
       "description": "骑士队长。维护秩序与正义。",
       "location_id": "hub",
       "goal": "维护秩序与正义",
@@ -424,7 +448,7 @@
     },
     {
       "id": "blacksmith",
-      "name": "老麦克",
+      "name": "索林",
       "description": "铁匠。锻造出传说中的神兵利器。",
       "location_id": "hub",
       "goal": "锻造出传说中的神兵利器",
@@ -468,11 +492,11 @@
       "memory": []
     },
     {
-      "id": "bard",
-      "name": "艾琳",
-      "description": "吟游诗人。谱写流传千古的英雄史诗。",
+      "id": "thief",
+      "name": "梅丽莎",
+      "description": "盗贼。偷到世间最珍贵的宝物。",
       "location_id": "tavern",
-      "goal": "谱写流传千古的英雄史诗",
+      "goal": "偷到世间最珍贵的宝物",
       "desires": [],
       "fears": [],
       "personality": "charming",
@@ -492,7 +516,7 @@
         {
           "hour_start": 6,
           "hour_end": 22,
-          "activity": "弹琴吟唱",
+          "activity": "潜行探查",
           "location_id": "tavern"
         },
         {

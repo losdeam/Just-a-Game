@@ -272,7 +272,45 @@ def create_app(config: GameConfig | None = None) -> FastAPI:
     @app.get("/api/lore")
     async def get_lore() -> JSONResponse:
         _ensure_world()
-        return JSONResponse(gm.world_lore)
+        lore = gm.world_lore or {}
+        
+        # Format lore to match frontend expectations
+        formatted = {
+            "world_name": lore.get("world_name", gm.world_lore.get("name", "")),
+            "description": lore.get("description", ""),
+            "genre": lore.get("genre", ""),
+            "era": lore.get("era", ""),
+            "history": lore.get("history", ""),
+            "main_quest": lore.get("main_quest", ""),
+            "tags_applied": lore.get("tags", {}),
+        }
+        
+        # Format NPCs
+        formatted["npcs"] = []
+        for npc in gm.tick_engine._npcs.values():
+            formatted["npcs"].append({
+                "name": npc.name,
+                "role": getattr(npc, 'personality', 'NPC'),
+                "location": npc.state.current_location_id,
+            })
+            
+        # Format Locations
+        formatted["locations"] = []
+        for loc in gm.world.locations.values():
+            formatted["locations"].append({
+                "name": loc.name,
+                "danger": loc.danger_level,
+                "description": loc.description,
+            })
+            
+        # Extract terrain/magic/danger from tags if available
+        tags = lore.get("tags", {})
+        if tags:
+            formatted["terrain"] = ", ".join(tags.get("terrain", []))
+            formatted["magic_level"] = ", ".join(tags.get("magic", []))
+            formatted["danger_level"] = ", ".join(tags.get("danger", []))
+            
+        return JSONResponse(formatted)
 
     @app.websocket("/ws")
     async def websocket_endpoint(websocket: WebSocket) -> None:

@@ -107,6 +107,16 @@ class WorldGenerationSkill(Skill):
                 for loc in gm.world.locations.values()
             ],
         }
-        # 写回 world_lore，使叙事/导演在后续 tick 中能读取作为提示上下文
-        gm.world_lore.setdefault("prompts", prompts)
+        
+        # 将关键字段直接平铺到 gm.world_lore 顶层，方便前端和其他模块直接读取
+        gm.world_lore["world_name"] = prompts["world_name"]
+        gm.world_lore["description"] = prompts["description"]
+        gm.world_lore["genre"] = prompts["genre"]
+        gm.world_lore["era"] = prompts["era"]
+        gm.world_lore["main_quest"] = prompts["main_quest"]
+        gm.world_lore["tags"] = prompts["tags"]
+        
+        # 保留完整的 prompts 结构供需要深度数据的模块使用
+        gm.world_lore["prompts"] = prompts
+        
         return prompts
