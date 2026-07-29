@@ -5,8 +5,8 @@
     "day": 1,
     "season": "spring",
     "regions": 1,
-    "locations": 6,
-    "characters": 5
+    "locations": 9,
+    "characters": 6
   },
   "time": {
     "turn": 0,
@@ -17,37 +17,42 @@
   "world_lore": {
     "step": "lore",
     "lore": {
-      "world_name": "真实世界测试",
+      "world_name": "艾尔文大陆",
       "genre": "fantasy",
       "era": "封建中世纪",
       "atmosphere": "",
-      "terrain": "密林",
+      "terrain": "多样",
       "magic_level": "中魔",
-      "danger_level": "适中",
+      "danger_level": "致命",
       "description": "这是一个艾尔文大陆风格的世界。",
-      "history": "这片土地在封建中世纪时期便有人类活动的痕迹。历经无数变迁，如今形成了以真实世界测试为中心的格局。",
+      "history": "这片土地在封建中世纪时期便有人类活动的痕迹。历经无数变迁，如今形成了以艾尔文大陆为中心的格局。",
       "factions": [],
       "main_quest": "传说中的黑暗领主正在集结大军，你必须找到传说中的神器，联合各势力，在末日降临前阻止他。",
       "npcs": [
         {
-          "name": "格里芬",
+          "name": "贝拉",
           "role": "让每位旅客都感到宾至如归",
           "location": "旅者酒馆"
         },
         {
-          "name": "贝拉",
+          "name": "索林",
           "role": "维护秩序与正义",
           "location": "村庄广场"
         },
         {
-          "name": "老麦克",
+          "name": "铁锤汤姆",
           "role": "锻造出传说中的神兵利器",
           "location": "村庄广场"
         },
         {
-          "name": "艾琳",
-          "role": "谱写流传千古的英雄史诗",
+          "name": "格里芬",
+          "role": "守护这片土地免受侵害",
           "location": "旅者酒馆"
+        },
+        {
+          "name": "老麦克",
+          "role": "谱写流传千古的英雄史诗",
+          "location": "商业区"
         }
       ],
       "locations": [
@@ -62,67 +67,58 @@
           "danger": 0
         },
         {
+          "name": "商业区",
+          "description": "拥挤繁华的街区，各色摊位和商铺鳞次栉比，叫卖声不绝于耳。",
+          "danger": 6
+        },
+        {
+          "name": "暗巷",
+          "description": "贫民区的窄巷，阳光难以到达，可疑的身影在阴影中出没。",
+          "danger": 9
+        },
+        {
+          "name": "高塔",
+          "description": "矗立在城市中心的标志性建筑，从顶端可以俯瞰整个城区。",
+          "danger": 7
+        },
+        {
           "name": "密林深处",
           "description": "参天古树遮天蔽日，粗壮的藤蔓缠绕其间，远处传来不明生物的低吼声。",
-          "danger": 4
+          "danger": 9
         },
         {
           "name": "林中空地",
           "description": "阳光透过树冠洒落，地面上散落着营火遗迹和不知名的足迹。",
-          "danger": 2
+          "danger": 7
         },
         {
           "name": "巨树",
           "description": "一棵无法估量年龄的巨树拔地而起，树根延伸数十米，树洞深处似有微光闪烁。",
-          "danger": 3
+          "danger": 8
         },
         {
           "name": "神殿",
           "description": "祭祀场所，石台上残留着微弱的光芒，祈祷者在此寻求启示。",
-          "danger": 3
+          "danger": 8
         }
       ]
     },
-    "world_name": "真实世界测试",
+    "world_name": "未命名世界",
     "description": "",
     "genre": "fantasy",
     "era": "",
     "main_quest": "",
     "tags": {
-      "genre": [
-        "fantasy"
-      ],
-      "era": [
-        "medieval"
-      ],
-      "terrain": [
-        "forest"
-      ],
-      "magic": [
-        "medium"
-      ],
       "danger": [
-        "moderate"
+        "deadly"
       ]
     },
     "prompts": {
-      "world_name": "真实世界测试",
+      "world_name": "未命名世界",
       "description": "",
       "tags": {
-        "genre": [
-          "fantasy"
-        ],
-        "era": [
-          "medieval"
-        ],
-        "terrain": [
-          "forest"
-        ],
-        "magic": [
-          "medium"
-        ],
         "danger": [
-          "moderate"
+          "deadly"
         ]
       },
       "genre": "fantasy",
@@ -132,7 +128,7 @@
       "regions": [
         {
           "id": "main_region",
-          "name": "真实世界测试",
+          "name": "艾尔文大陆",
           "description": "封建中世纪",
           "type": "kingdom"
         }
@@ -153,32 +149,53 @@
           "danger": 0
         },
         {
+          "id": "market_district",
+          "name": "商业区",
+          "description": "拥挤繁华的街区，各色摊位和商铺鳞次栉比，叫卖声不绝于耳。",
+          "type": "outdoor",
+          "danger": 6
+        },
+        {
+          "id": "back_alley",
+          "name": "暗巷",
+          "description": "贫民区的窄巷，阳光难以到达，可疑的身影在阴影中出没。",
+          "type": "outdoor",
+          "danger": 9
+        },
+        {
+          "id": "tower_building",
+          "name": "高塔",
+          "description": "矗立在城市中心的标志性建筑，从顶端可以俯瞰整个城区。",
+          "type": "indoor",
+          "danger": 7
+        },
+        {
           "id": "deep_forest",
           "name": "密林深处",
           "description": "参天古树遮天蔽日，粗壮的藤蔓缠绕其间，远处传来不明生物的低吼声。",
           "type": "outdoor",
-          "danger": 4
+          "danger": 9
         },
         {
           "id": "forest_clearing",
           "name": "林中空地",
           "description": "阳光透过树冠洒落，地面上散落着营火遗迹和不知名的足迹。",
           "type": "outdoor",
-          "danger": 2
+          "danger": 7
         },
         {
           "id": "ancient_tree",
           "name": "巨树",
           "description": "一棵无法估量年龄的巨树拔地而起，树根延伸数十米，树洞深处似有微光闪烁。",
           "type": "outdoor",
-          "danger": 3
+          "danger": 8
         },
         {
           "id": "shrine",
           "name": "神殿",
           "description": "祭祀场所，石台上残留着微弱的光芒，祈祷者在此寻求启示。",
           "type": "indoor",
-          "danger": 3
+          "danger": 8
         }
       ]
     }
@@ -186,13 +203,16 @@
   "regions": [
     {
       "id": "main_region",
-      "name": "真实世界测试",
+      "name": "艾尔文大陆",
       "description": "封建中世纪",
       "region_type": "kingdom",
       "danger_level": 0,
       "locations": [
         "hub",
         "tavern",
+        "market_district",
+        "back_alley",
+        "tower_building",
         "deep_forest",
         "forest_clearing",
         "ancient_tree",
@@ -211,8 +231,8 @@
       "danger_level": 0,
       "connected": [
         "tavern",
-        "deep_forest",
-        "forest_clearing"
+        "market_district",
+        "back_alley"
       ],
       "entities": [
         "knight",
@@ -232,12 +252,63 @@
       "danger_level": 0,
       "connected": [
         "hub",
-        "deep_forest"
+        "market_district"
       ],
       "entities": [
         "tavern_owner",
+        "ranger"
+      ],
+      "items": [],
+      "tags": []
+    },
+    {
+      "id": "market_district",
+      "name": "商业区",
+      "description": "拥挤繁华的街区，各色摊位和商铺鳞次栉比，叫卖声不绝于耳。",
+      "region_id": "main_region",
+      "location_type": "outdoor",
+      "light_level": 7,
+      "danger_level": 6,
+      "connected": [
+        "hub",
+        "back_alley",
+        "tavern"
+      ],
+      "entities": [
         "bard"
       ],
+      "items": [],
+      "tags": []
+    },
+    {
+      "id": "back_alley",
+      "name": "暗巷",
+      "description": "贫民区的窄巷，阳光难以到达，可疑的身影在阴影中出没。",
+      "region_id": "main_region",
+      "location_type": "outdoor",
+      "light_level": 3,
+      "danger_level": 9,
+      "connected": [
+        "market_district",
+        "tower_building"
+      ],
+      "entities": [],
+      "items": [],
+      "tags": []
+    },
+    {
+      "id": "tower_building",
+      "name": "高塔",
+      "description": "矗立在城市中心的标志性建筑，从顶端可以俯瞰整个城区。",
+      "region_id": "main_region",
+      "location_type": "indoor",
+      "light_level": 6,
+      "danger_level": 7,
+      "connected": [
+        "back_alley",
+        "deep_forest"
+      ],
+      "entities": [],
       "items": [],
       "tags": []
     },
@@ -248,11 +319,10 @@
       "region_id": "main_region",
       "location_type": "outdoor",
       "light_level": 3,
-      "danger_level": 4,
+      "danger_level": 9,
       "connected": [
-        "hub",
-        "forest_clearing",
-        "tavern"
+        "tower_building",
+        "forest_clearing"
       ],
       "entities": [],
       "items": [],
@@ -265,7 +335,7 @@
       "region_id": "main_region",
       "location_type": "outdoor",
       "light_level": 6,
-      "danger_level": 2,
+      "danger_level": 7,
       "connected": [
         "deep_forest",
         "ancient_tree"
@@ -281,7 +351,7 @@
       "region_id": "main_region",
       "location_type": "outdoor",
       "light_level": 4,
-      "danger_level": 3,
+      "danger_level": 8,
       "connected": [
         "forest_clearing",
         "shrine"
@@ -297,7 +367,7 @@
       "region_id": "main_region",
       "location_type": "indoor",
       "light_level": 4,
-      "danger_level": 3,
+      "danger_level": 8,
       "connected": [
         "ancient_tree"
       ],
@@ -310,7 +380,7 @@
     "tavern_owner": {
       "location_id": "tavern",
       "inventory": [],
-      "name": "格里芬",
+      "name": "贝拉",
       "type": "npc",
       "health": 100,
       "max_health": 100
@@ -318,7 +388,7 @@
     "knight": {
       "location_id": "hub",
       "inventory": [],
-      "name": "贝拉",
+      "name": "索林",
       "type": "npc",
       "health": 100,
       "max_health": 100
@@ -326,15 +396,23 @@
     "blacksmith": {
       "location_id": "hub",
       "inventory": [],
-      "name": "老麦克",
+      "name": "铁锤汤姆",
+      "type": "npc",
+      "health": 100,
+      "max_health": 100
+    },
+    "ranger": {
+      "location_id": "tavern",
+      "inventory": [],
+      "name": "格里芬",
       "type": "npc",
       "health": 100,
       "max_health": 100
     },
     "bard": {
-      "location_id": "tavern",
+      "location_id": "market_district",
       "inventory": [],
-      "name": "艾琳",
+      "name": "老麦克",
       "type": "npc",
       "health": 100,
       "max_health": 100
@@ -356,7 +434,7 @@
   "npcs": [
     {
       "id": "tavern_owner",
-      "name": "格里芬",
+      "name": "贝拉",
       "description": "酒馆老板。让每位旅客都感到宾至如归。",
       "location_id": "tavern",
       "goal": "让每位旅客都感到宾至如归",
@@ -401,7 +479,7 @@
     },
     {
       "id": "knight",
-      "name": "贝拉",
+      "name": "索林",
       "description": "骑士队长。维护秩序与正义。",
       "location_id": "hub",
       "goal": "维护秩序与正义",
@@ -446,7 +524,7 @@
     },
     {
       "id": "blacksmith",
-      "name": "老麦克",
+      "name": "铁锤汤姆",
       "description": "铁匠。锻造出传说中的神兵利器。",
       "location_id": "hub",
       "goal": "锻造出传说中的神兵利器",
@@ -490,14 +568,14 @@
       "memory": []
     },
     {
-      "id": "bard",
-      "name": "艾琳",
-      "description": "吟游诗人。谱写流传千古的英雄史诗。",
+      "id": "ranger",
+      "name": "格里芬",
+      "description": "游侠。守护这片土地免受侵害。",
       "location_id": "tavern",
-      "goal": "谱写流传千古的英雄史诗",
+      "goal": "守护这片土地免受侵害",
       "desires": [],
       "fears": [],
-      "personality": "charming",
+      "personality": "stern",
       "state": {
         "mood": "neutral",
         "energy": 1.0,
@@ -514,7 +592,7 @@
         {
           "hour_start": 6,
           "hour_end": 22,
-          "activity": "弹琴吟唱",
+          "activity": "巡逻边境",
           "location_id": "tavern"
         },
         {
@@ -522,6 +600,51 @@
           "hour_end": 6,
           "activity": "休息",
           "location_id": "tavern"
+        }
+      ],
+      "attributes": {
+        "STR": 10,
+        "DEX": 10,
+        "CON": 10,
+        "INT": 10,
+        "WIS": 10,
+        "CHA": 10
+      },
+      "memory": []
+    },
+    {
+      "id": "bard",
+      "name": "老麦克",
+      "description": "吟游诗人。谱写流传千古的英雄史诗。",
+      "location_id": "market_district",
+      "goal": "谱写流传千古的英雄史诗",
+      "desires": [],
+      "fears": [],
+      "personality": "charming",
+      "state": {
+        "mood": "neutral",
+        "energy": 1.0,
+        "hunger": 0.0,
+        "current_action": "",
+        "current_location_id": "market_district"
+      },
+      "relationships": {},
+      "resources": {
+        "gold": 10
+      },
+      "inventory": [],
+      "schedule": [
+        {
+          "hour_start": 6,
+          "hour_end": 22,
+          "activity": "弹琴吟唱",
+          "location_id": "market_district"
+        },
+        {
+          "hour_start": 22,
+          "hour_end": 6,
+          "activity": "休息",
+          "location_id": "market_district"
         }
       ],
       "attributes": {
