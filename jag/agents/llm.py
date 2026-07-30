@@ -152,6 +152,10 @@ class LLMFactory:
         self._cache[module_name] = provider
         return provider
 
+    def clear_cache(self) -> None:
+        """Clear the provider cache so the next get() creates fresh providers."""
+        self._cache.clear()
+
     def _create_provider(self, config: LLMConfig) -> LLMProvider:
         """Create a provider from config."""
         if config.provider == "mock":
