@@ -5,7 +5,7 @@
     "day": 1,
     "season": "spring",
     "regions": 1,
-    "locations": 9,
+    "locations": 7,
     "characters": 6
   },
   "time": {
@@ -15,187 +15,155 @@
     "season": "spring"
   },
   "world_lore": {
-    "step": "lore",
-    "lore": {
-      "world_name": "艾尔文大陆",
-      "genre": "fantasy",
-      "era": "封建中世纪",
-      "atmosphere": "",
-      "terrain": "多样",
-      "magic_level": "中魔",
-      "danger_level": "致命",
-      "description": "这是一个艾尔文大陆风格的世界。",
-      "history": "这片土地在封建中世纪时期便有人类活动的痕迹。历经无数变迁，如今形成了以艾尔文大陆为中心的格局。",
-      "factions": [],
-      "main_quest": "传说中的黑暗领主正在集结大军，你必须找到传说中的神器，联合各势力，在末日降临前阻止他。",
-      "npcs": [
-        {
-          "name": "贝拉",
-          "role": "让每位旅客都感到宾至如归",
-          "location": "旅者酒馆"
-        },
-        {
-          "name": "索林",
-          "role": "维护秩序与正义",
-          "location": "村庄广场"
-        },
-        {
-          "name": "铁锤汤姆",
-          "role": "锻造出传说中的神兵利器",
-          "location": "村庄广场"
-        },
-        {
-          "name": "格里芬",
-          "role": "守护这片土地免受侵害",
-          "location": "旅者酒馆"
-        },
-        {
-          "name": "老麦克",
-          "role": "谱写流传千古的英雄史诗",
-          "location": "商业区"
-        }
-      ],
-      "locations": [
-        {
-          "name": "村庄广场",
-          "description": "石板路交织的聚落，炊烟从茅草屋顶升起，旅人们在此交换消息。",
-          "danger": 0
-        },
-        {
-          "name": "旅者酒馆",
-          "description": "温暖的壁炉映照着木质吧台，墙上挂着冒险者留下的旧盾。",
-          "danger": 0
-        },
-        {
-          "name": "商业区",
-          "description": "拥挤繁华的街区，各色摊位和商铺鳞次栉比，叫卖声不绝于耳。",
-          "danger": 6
-        },
-        {
-          "name": "暗巷",
-          "description": "贫民区的窄巷，阳光难以到达，可疑的身影在阴影中出没。",
-          "danger": 9
-        },
-        {
-          "name": "高塔",
-          "description": "矗立在城市中心的标志性建筑，从顶端可以俯瞰整个城区。",
-          "danger": 7
-        },
-        {
-          "name": "密林深处",
-          "description": "参天古树遮天蔽日，粗壮的藤蔓缠绕其间，远处传来不明生物的低吼声。",
-          "danger": 9
-        },
-        {
-          "name": "林中空地",
-          "description": "阳光透过树冠洒落，地面上散落着营火遗迹和不知名的足迹。",
-          "danger": 7
-        },
-        {
-          "name": "巨树",
-          "description": "一棵无法估量年龄的巨树拔地而起，树根延伸数十米，树洞深处似有微光闪烁。",
-          "danger": 8
-        },
-        {
-          "name": "神殿",
-          "description": "祭祀场所，石台上残留着微弱的光芒，祈祷者在此寻求启示。",
-          "danger": 8
-        }
-      ]
-    },
     "world_name": "未命名世界",
-    "description": "",
-    "genre": "fantasy",
-    "era": "",
-    "main_quest": "",
+    "genre": "wuxia",
+    "era": "封建中世纪",
+    "atmosphere": "",
+    "terrain": "多样",
+    "magic_level": "中魔",
+    "danger_level": "适中",
+    "description": "这是一个云梦江湖风格的世界。",
+    "history": "这片土地在封建中世纪时期便有人类活动的痕迹。历经无数变迁，如今形成了以苍云麓为中心的格局。",
+    "factions": [],
+    "main_quest": "武林秘籍《天机卷》重现江湖，各门派蠢蠢欲动。你必须抢在阴谋得逞前揭开背后的真相。",
+    "npcs": [
+      {
+        "name": "陈茶婆",
+        "role": "攒够银钱与灵石，给在南边州府学武的孙子凑够拜入仙门的束脩。",
+        "location": "青坪镇集散广场"
+      },
+      {
+        "name": "郭震天",
+        "role": "护好镖局往来的镖货与客人，暗中追查当年暗算自己的仇家踪迹，待内伤痊愈后重出江湖清理门户。",
+        "location": "清风镖局分舵"
+      },
+      {
+        "name": "玄玑道人",
+        "role": "追查数百年前被镇压在断龙庙下的黑蛟残魂动向，防止残魂聚集力量破封为祸周边百姓。",
+        "location": "山中断龙庙"
+      },
+      {
+        "name": "王渡公",
+        "role": "安稳摆渡攒钱，换一艘更大更结实的新乌篷船，等自己划不动船了就把渡口传给养子。",
+        "location": "落雁渡渡口"
+      },
+      {
+        "name": "林晚晴",
+        "role": "勤练剑法突破到炼气三层，通过三个月后的宗门内门考核，成为正式的内门弟子。",
+        "location": "望云崖石亭"
+      }
+    ],
+    "locations": [
+      {
+        "name": "青坪镇集散广场",
+        "description": "青坪镇核心的开阔石板广场，是周边凡俗百姓、江湖武人、低阶修士的共同落脚休整点，广场边摆着茶摊、杂货铺，镇口有乡勇与武师联合值守，邪祟匪类不敢擅入，是绝对安全的区域，告示牌上常年张贴着周边的历练委托、寻人启事。",
+        "danger": 0
+      },
+      {
+        "name": "翠雾古竹林",
+        "description": "青坪镇往西绵延数十里的千年毛竹林，林间常年浮着淡青色的灵雾，雾中生长着清心竹、凝露草等低阶灵草，也有毒性不强的青竹蛇、偶尔出没的拦路小毛贼，竹枝上还留着前代剑修刻下的基础剑招痕迹。",
+        "danger": 3
+      },
+      {
+        "name": "山中断龙庙",
+        "description": "古竹林深处后山坡上的废弃山神庙，传闻数百年前有道门高人在此镇压了一条作乱的黑蛟，如今庙墙倾颓，山神像残破不堪，偶有孤魂野鬼、走邪道的低阶修士逗留，也常有赶路的历练者、猎户在此临时歇脚避雨。",
+        "danger": 4
+      },
+      {
+        "name": "寒玉灵脉洞",
+        "description": "断龙庙后山石缝里的天然溶洞，洞道曲折幽深，地下连通着一条浅层次灵脉，洞壁嵌着发淡蓝色微光的寒玉，出产低阶灵石、寒铁等修炼锻造材料，有一阶妖兽石甲蜥盘踞守护，是低阶修士采集资源的常去之处。",
+        "danger": 5
+      },
+      {
+        "name": "落雁渡渡口",
+        "description": "青坪镇南边沧澜江上的老渡口，江面开阔，时有雁群落于江滩，渡公常年在此摆渡乌篷船，江边搭着卖鱼鲜、烧刀子的简易酒棚，江里偶尔有兴风的小水妖，但被渡公的避水佩压制，很少敢出来伤人，是通往南边州府的必经通路。",
+        "danger": 2
+      },
+      {
+        "name": "清风镖局分舵",
+        "description": "青坪镇东头的两进镖局院子，院里摆着练功石、兵器架，墙角插着绣着“清风”二字的镖旗，镖局里的镖师都是会些拳脚功夫的江湖人，承接周边百里的保镖、送信、护送商队的业务，也会给初入江湖的年轻人指点基础武功。",
+        "danger": 1
+      },
+      {
+        "name": "望云崖石亭",
+        "description": "青坪镇北边望云崖顶的全石结构古亭，亭边常年云气缭绕，站在亭中可俯瞰整个苍云麓的山林、江川、集镇，常有云游道人、宗门弟子在此打坐练气，山路上偶尔有劫道的小贼，山巅时有山鹰盘旋。",
+        "danger": 3
+      }
+    ],
     "tags": {
-      "danger": [
-        "deadly"
+      "genre": [
+        "wuxia"
       ]
     },
     "prompts": {
       "world_name": "未命名世界",
-      "description": "",
+      "description": "这是一个云梦江湖风格的世界。",
       "tags": {
-        "danger": [
-          "deadly"
+        "genre": [
+          "wuxia"
         ]
       },
-      "genre": "fantasy",
-      "era": "",
+      "genre": "wuxia",
+      "era": "封建中世纪",
       "atmosphere": [],
-      "main_quest": "",
+      "main_quest": "武林秘籍《天机卷》重现江湖，各门派蠢蠢欲动。你必须抢在阴谋得逞前揭开背后的真相。",
       "regions": [
         {
           "id": "main_region",
-          "name": "艾尔文大陆",
-          "description": "封建中世纪",
+          "name": "苍云麓",
+          "description": "苍云麓是位于中原西南的江湖与修仙界交汇区域，时值中原王朝中世纪诸侯割据、门派并立的时期，凡俗集镇、武林帮派、道门宗门禁地交错分布，灵气浓度适中，既有修习外功内功的江湖武人，也有练气画符、御使低阶法器的修仙者，地形涵盖平坝集镇、茂林山地、江河渡口、地下溶洞、高崖石亭，虽有妖兽、邪祟、匪类出没，但整体威胁不强，危险程度适中，是初入江湖与修仙道的年轻人历练成长的适宜区域。",
           "type": "kingdom"
         }
       ],
       "locations": [
         {
           "id": "hub",
-          "name": "村庄广场",
-          "description": "石板路交织的聚落，炊烟从茅草屋顶升起，旅人们在此交换消息。",
+          "name": "青坪镇集散广场",
+          "description": "青坪镇核心的开阔石板广场，是周边凡俗百姓、江湖武人、低阶修士的共同落脚休整点，广场边摆着茶摊、杂货铺，镇口有乡勇与武师联合值守，邪祟匪类不敢擅入，是绝对安全的区域，告示牌上常年张贴着周边的历练委托、寻人启事。",
           "type": "outdoor",
           "danger": 0
         },
         {
-          "id": "tavern",
-          "name": "旅者酒馆",
-          "description": "温暖的壁炉映照着木质吧台，墙上挂着冒险者留下的旧盾。",
+          "id": "ancient_bamboo_forest",
+          "name": "翠雾古竹林",
+          "description": "青坪镇往西绵延数十里的千年毛竹林，林间常年浮着淡青色的灵雾，雾中生长着清心竹、凝露草等低阶灵草，也有毒性不强的青竹蛇、偶尔出没的拦路小毛贼，竹枝上还留着前代剑修刻下的基础剑招痕迹。",
+          "type": "outdoor",
+          "danger": 3
+        },
+        {
+          "id": "broken_temple",
+          "name": "山中断龙庙",
+          "description": "古竹林深处后山坡上的废弃山神庙，传闻数百年前有道门高人在此镇压了一条作乱的黑蛟，如今庙墙倾颓，山神像残破不堪，偶有孤魂野鬼、走邪道的低阶修士逗留，也常有赶路的历练者、猎户在此临时歇脚避雨。",
           "type": "indoor",
-          "danger": 0
+          "danger": 4
         },
         {
-          "id": "market_district",
-          "name": "商业区",
-          "description": "拥挤繁华的街区，各色摊位和商铺鳞次栉比，叫卖声不绝于耳。",
-          "type": "outdoor",
-          "danger": 6
-        },
-        {
-          "id": "back_alley",
-          "name": "暗巷",
-          "description": "贫民区的窄巷，阳光难以到达，可疑的身影在阴影中出没。",
-          "type": "outdoor",
-          "danger": 9
-        },
-        {
-          "id": "tower_building",
-          "name": "高塔",
-          "description": "矗立在城市中心的标志性建筑，从顶端可以俯瞰整个城区。",
+          "id": "spirit_vein_cave",
+          "name": "寒玉灵脉洞",
+          "description": "断龙庙后山石缝里的天然溶洞，洞道曲折幽深，地下连通着一条浅层次灵脉，洞壁嵌着发淡蓝色微光的寒玉，出产低阶灵石、寒铁等修炼锻造材料，有一阶妖兽石甲蜥盘踞守护，是低阶修士采集资源的常去之处。",
           "type": "indoor",
-          "danger": 7
+          "danger": 5
         },
         {
-          "id": "deep_forest",
-          "name": "密林深处",
-          "description": "参天古树遮天蔽日，粗壮的藤蔓缠绕其间，远处传来不明生物的低吼声。",
+          "id": "riverside_dock",
+          "name": "落雁渡渡口",
+          "description": "青坪镇南边沧澜江上的老渡口，江面开阔，时有雁群落于江滩，渡公常年在此摆渡乌篷船，江边搭着卖鱼鲜、烧刀子的简易酒棚，江里偶尔有兴风的小水妖，但被渡公的避水佩压制，很少敢出来伤人，是通往南边州府的必经通路。",
           "type": "outdoor",
-          "danger": 9
+          "danger": 2
         },
         {
-          "id": "forest_clearing",
-          "name": "林中空地",
-          "description": "阳光透过树冠洒落，地面上散落着营火遗迹和不知名的足迹。",
-          "type": "outdoor",
-          "danger": 7
-        },
-        {
-          "id": "ancient_tree",
-          "name": "巨树",
-          "description": "一棵无法估量年龄的巨树拔地而起，树根延伸数十米，树洞深处似有微光闪烁。",
-          "type": "outdoor",
-          "danger": 8
-        },
-        {
-          "id": "shrine",
-          "name": "神殿",
-          "description": "祭祀场所，石台上残留着微弱的光芒，祈祷者在此寻求启示。",
+          "id": "qingfeng_escort",
+          "name": "清风镖局分舵",
+          "description": "青坪镇东头的两进镖局院子，院里摆着练功石、兵器架，墙角插着绣着“清风”二字的镖旗，镖局里的镖师都是会些拳脚功夫的江湖人，承接周边百里的保镖、送信、护送商队的业务，也会给初入江湖的年轻人指点基础武功。",
           "type": "indoor",
-          "danger": 8
+          "danger": 1
+        },
+        {
+          "id": "cloud_pavilion",
+          "name": "望云崖石亭",
+          "description": "青坪镇北边望云崖顶的全石结构古亭，亭边常年云气缭绕，站在亭中可俯瞰整个苍云麓的山林、江川、集镇，常有云游道人、宗门弟子在此打坐练气，山路上偶尔有劫道的小贼，山巅时有山鹰盘旋。",
+          "type": "outdoor",
+          "danger": 3
         }
       ]
     }
@@ -203,216 +171,181 @@
   "regions": [
     {
       "id": "main_region",
-      "name": "艾尔文大陆",
-      "description": "封建中世纪",
+      "name": "苍云麓",
+      "description": "苍云麓是位于中原西南的江湖与修仙界交汇区域，时值中原王朝中世纪诸侯割据、门派并立的时期，凡俗集镇、武林帮派、道门宗门禁地交错分布，灵气浓度适中，既有修习外功内功的江湖武人，也有练气画符、御使低阶法器的修仙者，地形涵盖平坝集镇、茂林山地、江河渡口、地下溶洞、高崖石亭，虽有妖兽、邪祟、匪类出没，但整体威胁不强，危险程度适中，是初入江湖与修仙道的年轻人历练成长的适宜区域。",
       "region_type": "kingdom",
       "danger_level": 0,
       "locations": [
         "hub",
-        "tavern",
-        "market_district",
-        "back_alley",
-        "tower_building",
-        "deep_forest",
-        "forest_clearing",
-        "ancient_tree",
-        "shrine"
+        "ancient_bamboo_forest",
+        "broken_temple",
+        "spirit_vein_cave",
+        "riverside_dock",
+        "qingfeng_escort",
+        "cloud_pavilion"
       ]
     }
   ],
   "locations": [
     {
       "id": "hub",
-      "name": "村庄广场",
-      "description": "石板路交织的聚落，炊烟从茅草屋顶升起，旅人们在此交换消息。",
+      "name": "青坪镇集散广场",
+      "description": "青坪镇核心的开阔石板广场，是周边凡俗百姓、江湖武人、低阶修士的共同落脚休整点，广场边摆着茶摊、杂货铺，镇口有乡勇与武师联合值守，邪祟匪类不敢擅入，是绝对安全的区域，告示牌上常年张贴着周边的历练委托、寻人启事。",
       "region_id": "main_region",
       "location_type": "outdoor",
       "light_level": 8,
       "danger_level": 0,
       "connected": [
-        "tavern",
-        "market_district",
-        "back_alley"
+        "ancient_bamboo_forest",
+        "riverside_dock",
+        "qingfeng_escort",
+        "cloud_pavilion"
       ],
       "entities": [
-        "knight",
-        "blacksmith",
+        "old_tea_seller",
         "player"
       ],
       "items": [],
       "tags": []
     },
     {
-      "id": "tavern",
-      "name": "旅者酒馆",
-      "description": "温暖的壁炉映照着木质吧台，墙上挂着冒险者留下的旧盾。",
+      "id": "ancient_bamboo_forest",
+      "name": "翠雾古竹林",
+      "description": "青坪镇往西绵延数十里的千年毛竹林，林间常年浮着淡青色的灵雾，雾中生长着清心竹、凝露草等低阶灵草，也有毒性不强的青竹蛇、偶尔出没的拦路小毛贼，竹枝上还留着前代剑修刻下的基础剑招痕迹。",
       "region_id": "main_region",
-      "location_type": "indoor",
-      "light_level": 6,
-      "danger_level": 0,
+      "location_type": "outdoor",
+      "light_level": 4,
+      "danger_level": 3,
       "connected": [
         "hub",
-        "market_district"
+        "broken_temple"
+      ],
+      "entities": [],
+      "items": [],
+      "tags": []
+    },
+    {
+      "id": "broken_temple",
+      "name": "山中断龙庙",
+      "description": "古竹林深处后山坡上的废弃山神庙，传闻数百年前有道门高人在此镇压了一条作乱的黑蛟，如今庙墙倾颓，山神像残破不堪，偶有孤魂野鬼、走邪道的低阶修士逗留，也常有赶路的历练者、猎户在此临时歇脚避雨。",
+      "region_id": "main_region",
+      "location_type": "indoor",
+      "light_level": 3,
+      "danger_level": 4,
+      "connected": [
+        "ancient_bamboo_forest",
+        "spirit_vein_cave"
       ],
       "entities": [
-        "tavern_owner",
-        "ranger"
+        "wandering_taoist"
       ],
       "items": [],
       "tags": []
     },
     {
-      "id": "market_district",
-      "name": "商业区",
-      "description": "拥挤繁华的街区，各色摊位和商铺鳞次栉比，叫卖声不绝于耳。",
+      "id": "spirit_vein_cave",
+      "name": "寒玉灵脉洞",
+      "description": "断龙庙后山石缝里的天然溶洞，洞道曲折幽深，地下连通着一条浅层次灵脉，洞壁嵌着发淡蓝色微光的寒玉，出产低阶灵石、寒铁等修炼锻造材料，有一阶妖兽石甲蜥盘踞守护，是低阶修士采集资源的常去之处。",
+      "region_id": "main_region",
+      "location_type": "indoor",
+      "light_level": 2,
+      "danger_level": 5,
+      "connected": [
+        "broken_temple"
+      ],
+      "entities": [],
+      "items": [],
+      "tags": []
+    },
+    {
+      "id": "riverside_dock",
+      "name": "落雁渡渡口",
+      "description": "青坪镇南边沧澜江上的老渡口，江面开阔，时有雁群落于江滩，渡公常年在此摆渡乌篷船，江边搭着卖鱼鲜、烧刀子的简易酒棚，江里偶尔有兴风的小水妖，但被渡公的避水佩压制，很少敢出来伤人，是通往南边州府的必经通路。",
       "region_id": "main_region",
       "location_type": "outdoor",
       "light_level": 7,
-      "danger_level": 6,
+      "danger_level": 2,
       "connected": [
-        "hub",
-        "back_alley",
-        "tavern"
+        "hub"
       ],
       "entities": [
-        "bard"
+        "ferryman_wang"
       ],
       "items": [],
       "tags": []
     },
     {
-      "id": "back_alley",
-      "name": "暗巷",
-      "description": "贫民区的窄巷，阳光难以到达，可疑的身影在阴影中出没。",
-      "region_id": "main_region",
-      "location_type": "outdoor",
-      "light_level": 3,
-      "danger_level": 9,
-      "connected": [
-        "market_district",
-        "tower_building"
-      ],
-      "entities": [],
-      "items": [],
-      "tags": []
-    },
-    {
-      "id": "tower_building",
-      "name": "高塔",
-      "description": "矗立在城市中心的标志性建筑，从顶端可以俯瞰整个城区。",
+      "id": "qingfeng_escort",
+      "name": "清风镖局分舵",
+      "description": "青坪镇东头的两进镖局院子，院里摆着练功石、兵器架，墙角插着绣着“清风”二字的镖旗，镖局里的镖师都是会些拳脚功夫的江湖人，承接周边百里的保镖、送信、护送商队的业务，也会给初入江湖的年轻人指点基础武功。",
       "region_id": "main_region",
       "location_type": "indoor",
-      "light_level": 6,
-      "danger_level": 7,
+      "light_level": 7,
+      "danger_level": 1,
       "connected": [
-        "back_alley",
-        "deep_forest"
+        "hub"
       ],
-      "entities": [],
+      "entities": [
+        "chief_escort_guo"
+      ],
       "items": [],
       "tags": []
     },
     {
-      "id": "deep_forest",
-      "name": "密林深处",
-      "description": "参天古树遮天蔽日，粗壮的藤蔓缠绕其间，远处传来不明生物的低吼声。",
+      "id": "cloud_pavilion",
+      "name": "望云崖石亭",
+      "description": "青坪镇北边望云崖顶的全石结构古亭，亭边常年云气缭绕，站在亭中可俯瞰整个苍云麓的山林、江川、集镇，常有云游道人、宗门弟子在此打坐练气，山路上偶尔有劫道的小贼，山巅时有山鹰盘旋。",
       "region_id": "main_region",
       "location_type": "outdoor",
-      "light_level": 3,
-      "danger_level": 9,
+      "light_level": 9,
+      "danger_level": 3,
       "connected": [
-        "tower_building",
-        "forest_clearing"
+        "hub"
       ],
-      "entities": [],
-      "items": [],
-      "tags": []
-    },
-    {
-      "id": "forest_clearing",
-      "name": "林中空地",
-      "description": "阳光透过树冠洒落，地面上散落着营火遗迹和不知名的足迹。",
-      "region_id": "main_region",
-      "location_type": "outdoor",
-      "light_level": 6,
-      "danger_level": 7,
-      "connected": [
-        "deep_forest",
-        "ancient_tree"
+      "entities": [
+        "sword_disciple_lin"
       ],
-      "entities": [],
-      "items": [],
-      "tags": []
-    },
-    {
-      "id": "ancient_tree",
-      "name": "巨树",
-      "description": "一棵无法估量年龄的巨树拔地而起，树根延伸数十米，树洞深处似有微光闪烁。",
-      "region_id": "main_region",
-      "location_type": "outdoor",
-      "light_level": 4,
-      "danger_level": 8,
-      "connected": [
-        "forest_clearing",
-        "shrine"
-      ],
-      "entities": [],
-      "items": [],
-      "tags": []
-    },
-    {
-      "id": "shrine",
-      "name": "神殿",
-      "description": "祭祀场所，石台上残留着微弱的光芒，祈祷者在此寻求启示。",
-      "region_id": "main_region",
-      "location_type": "indoor",
-      "light_level": 4,
-      "danger_level": 8,
-      "connected": [
-        "ancient_tree"
-      ],
-      "entities": [],
       "items": [],
       "tags": []
     }
   ],
   "characters": {
-    "tavern_owner": {
-      "location_id": "tavern",
-      "inventory": [],
-      "name": "贝拉",
-      "type": "npc",
-      "health": 100,
-      "max_health": 100
-    },
-    "knight": {
+    "old_tea_seller": {
       "location_id": "hub",
       "inventory": [],
-      "name": "索林",
+      "name": "陈茶婆",
       "type": "npc",
       "health": 100,
       "max_health": 100
     },
-    "blacksmith": {
-      "location_id": "hub",
+    "chief_escort_guo": {
+      "location_id": "qingfeng_escort",
       "inventory": [],
-      "name": "铁锤汤姆",
+      "name": "郭震天",
       "type": "npc",
       "health": 100,
       "max_health": 100
     },
-    "ranger": {
-      "location_id": "tavern",
+    "wandering_taoist": {
+      "location_id": "broken_temple",
       "inventory": [],
-      "name": "格里芬",
+      "name": "玄玑道人",
       "type": "npc",
       "health": 100,
       "max_health": 100
     },
-    "bard": {
-      "location_id": "market_district",
+    "ferryman_wang": {
+      "location_id": "riverside_dock",
       "inventory": [],
-      "name": "老麦克",
+      "name": "王渡公",
+      "type": "npc",
+      "health": 100,
+      "max_health": 100
+    },
+    "sword_disciple_lin": {
+      "location_id": "cloud_pavilion",
+      "inventory": [],
+      "name": "林晚晴",
       "type": "npc",
       "health": 100,
       "max_health": 100
@@ -420,10 +353,10 @@
     "player": {
       "location_id": "hub",
       "inventory": [
-        "铁剑",
-        "皮甲",
-        "面包",
-        "10枚金币"
+        "青铜剑",
+        "粗布衣",
+        "银两",
+        "伤药"
       ],
       "name": "冒险者",
       "type": "player",
@@ -433,101 +366,11 @@
   },
   "npcs": [
     {
-      "id": "tavern_owner",
-      "name": "贝拉",
-      "description": "酒馆老板。让每位旅客都感到宾至如归。",
-      "location_id": "tavern",
-      "goal": "让每位旅客都感到宾至如归",
-      "desires": [],
-      "fears": [],
-      "personality": "friendly",
-      "state": {
-        "mood": "neutral",
-        "energy": 1.0,
-        "hunger": 0.0,
-        "current_action": "",
-        "current_location_id": "tavern"
-      },
-      "relationships": {},
-      "resources": {
-        "gold": 10
-      },
-      "inventory": [],
-      "schedule": [
-        {
-          "hour_start": 6,
-          "hour_end": 22,
-          "activity": "照看吧台",
-          "location_id": "tavern"
-        },
-        {
-          "hour_start": 22,
-          "hour_end": 6,
-          "activity": "休息",
-          "location_id": "tavern"
-        }
-      ],
-      "attributes": {
-        "STR": 10,
-        "DEX": 10,
-        "CON": 10,
-        "INT": 10,
-        "WIS": 10,
-        "CHA": 10
-      },
-      "memory": []
-    },
-    {
-      "id": "knight",
-      "name": "索林",
-      "description": "骑士队长。维护秩序与正义。",
+      "id": "old_tea_seller",
+      "name": "陈茶婆",
+      "description": "年近七旬的老婆婆，在集散广场摆了三十年大碗茶摊，泡的粗茶里加了自采的山间灵草，喝了能解乏清神，她见多了南来北往的江湖客，消息十分灵通，偶尔会给顺眼的年轻人提两句周边的注意事项。",
       "location_id": "hub",
-      "goal": "维护秩序与正义",
-      "desires": [],
-      "fears": [],
-      "personality": "stern",
-      "state": {
-        "mood": "neutral",
-        "energy": 1.0,
-        "hunger": 0.0,
-        "current_action": "",
-        "current_location_id": "hub"
-      },
-      "relationships": {},
-      "resources": {
-        "gold": 10
-      },
-      "inventory": [],
-      "schedule": [
-        {
-          "hour_start": 6,
-          "hour_end": 22,
-          "activity": "操练士兵",
-          "location_id": "hub"
-        },
-        {
-          "hour_start": 22,
-          "hour_end": 6,
-          "activity": "休息",
-          "location_id": "hub"
-        }
-      ],
-      "attributes": {
-        "STR": 10,
-        "DEX": 10,
-        "CON": 10,
-        "INT": 10,
-        "WIS": 10,
-        "CHA": 10
-      },
-      "memory": []
-    },
-    {
-      "id": "blacksmith",
-      "name": "铁锤汤姆",
-      "description": "铁匠。锻造出传说中的神兵利器。",
-      "location_id": "hub",
-      "goal": "锻造出传说中的神兵利器",
+      "goal": "攒够银钱与灵石，给在南边州府学武的孙子凑够拜入仙门的束脩。",
       "desires": [],
       "fears": [],
       "personality": "friendly",
@@ -547,7 +390,7 @@
         {
           "hour_start": 6,
           "hour_end": 22,
-          "activity": "打铁铸剑",
+          "activity": "日常活动",
           "location_id": "hub"
         },
         {
@@ -568,11 +411,11 @@
       "memory": []
     },
     {
-      "id": "ranger",
-      "name": "格里芬",
-      "description": "游侠。守护这片土地免受侵害。",
-      "location_id": "tavern",
-      "goal": "守护这片土地免受侵害",
+      "id": "chief_escort_guo",
+      "name": "郭震天",
+      "description": "四十余岁的虬髯大汉，早年是江湖上成名的快刀手，因被仇家暗算伤了内息，退隐到青坪镇执掌清风镖局分舵，一手快刀刀法依旧凌厉，为人刚正不阿，最恨欺压百姓的匪类。",
+      "location_id": "qingfeng_escort",
+      "goal": "护好镖局往来的镖货与客人，暗中追查当年暗算自己的仇家踪迹，待内伤痊愈后重出江湖清理门户。",
       "desires": [],
       "fears": [],
       "personality": "stern",
@@ -581,7 +424,7 @@
         "energy": 1.0,
         "hunger": 0.0,
         "current_action": "",
-        "current_location_id": "tavern"
+        "current_location_id": "qingfeng_escort"
       },
       "relationships": {},
       "resources": {
@@ -592,14 +435,14 @@
         {
           "hour_start": 6,
           "hour_end": 22,
-          "activity": "巡逻边境",
-          "location_id": "tavern"
+          "activity": "日常活动",
+          "location_id": "qingfeng_escort"
         },
         {
           "hour_start": 22,
           "hour_end": 6,
           "activity": "休息",
-          "location_id": "tavern"
+          "location_id": "qingfeng_escort"
         }
       ],
       "attributes": {
@@ -613,11 +456,101 @@
       "memory": []
     },
     {
-      "id": "bard",
-      "name": "老麦克",
-      "description": "吟游诗人。谱写流传千古的英雄史诗。",
-      "location_id": "market_district",
-      "goal": "谱写流传千古的英雄史诗",
+      "id": "wandering_taoist",
+      "name": "玄玑道人",
+      "description": "穿着打补丁青色道袍的云游道士，背着一柄桃木剑，腰间挂着装符纸的布囊，常年在断龙庙落脚，会画驱邪符、治跌打损伤，行踪飘忽不定，没人知道他的真实来历。",
+      "location_id": "broken_temple",
+      "goal": "追查数百年前被镇压在断龙庙下的黑蛟残魂动向，防止残魂聚集力量破封为祸周边百姓。",
+      "desires": [],
+      "fears": [],
+      "personality": "curious",
+      "state": {
+        "mood": "neutral",
+        "energy": 1.0,
+        "hunger": 0.0,
+        "current_action": "",
+        "current_location_id": "broken_temple"
+      },
+      "relationships": {},
+      "resources": {
+        "gold": 10
+      },
+      "inventory": [],
+      "schedule": [
+        {
+          "hour_start": 6,
+          "hour_end": 22,
+          "activity": "日常活动",
+          "location_id": "broken_temple"
+        },
+        {
+          "hour_start": 22,
+          "hour_end": 6,
+          "activity": "休息",
+          "location_id": "broken_temple"
+        }
+      ],
+      "attributes": {
+        "STR": 10,
+        "DEX": 10,
+        "CON": 10,
+        "INT": 10,
+        "WIS": 10,
+        "CHA": 10
+      },
+      "memory": []
+    },
+    {
+      "id": "ferryman_wang",
+      "name": "王渡公",
+      "description": "皮肤黝黑、手掌布满老茧的老船工，在落雁渡摆渡了四十余年，水性精熟，腰间挂着一枚祖传的避水玉佩，能震慑江里的小水妖，话不多，从不主动打听客人的来历。",
+      "location_id": "riverside_dock",
+      "goal": "安稳摆渡攒钱，换一艘更大更结实的新乌篷船，等自己划不动船了就把渡口传给养子。",
+      "desires": [],
+      "fears": [],
+      "personality": "neutral",
+      "state": {
+        "mood": "neutral",
+        "energy": 1.0,
+        "hunger": 0.0,
+        "current_action": "",
+        "current_location_id": "riverside_dock"
+      },
+      "relationships": {},
+      "resources": {
+        "gold": 10
+      },
+      "inventory": [],
+      "schedule": [
+        {
+          "hour_start": 6,
+          "hour_end": 22,
+          "activity": "日常活动",
+          "location_id": "riverside_dock"
+        },
+        {
+          "hour_start": 22,
+          "hour_end": 6,
+          "activity": "休息",
+          "location_id": "riverside_dock"
+        }
+      ],
+      "attributes": {
+        "STR": 10,
+        "DEX": 10,
+        "CON": 10,
+        "INT": 10,
+        "WIS": 10,
+        "CHA": 10
+      },
+      "memory": []
+    },
+    {
+      "id": "sword_disciple_lin",
+      "name": "林晚晴",
+      "description": "十七八岁的青云宗外门女弟子，梳着高马尾，背着一柄流光长剑，常在望云崖石亭练流云剑法，性子爽朗爱笑，遇到同路的历练者会主动指点基础的练气吐纳法门。",
+      "location_id": "cloud_pavilion",
+      "goal": "勤练剑法突破到炼气三层，通过三个月后的宗门内门考核，成为正式的内门弟子。",
       "desires": [],
       "fears": [],
       "personality": "charming",
@@ -626,7 +559,7 @@
         "energy": 1.0,
         "hunger": 0.0,
         "current_action": "",
-        "current_location_id": "market_district"
+        "current_location_id": "cloud_pavilion"
       },
       "relationships": {},
       "resources": {
@@ -637,14 +570,14 @@
         {
           "hour_start": 6,
           "hour_end": 22,
-          "activity": "弹琴吟唱",
-          "location_id": "market_district"
+          "activity": "日常活动",
+          "location_id": "cloud_pavilion"
         },
         {
           "hour_start": 22,
           "hour_end": 6,
           "activity": "休息",
-          "location_id": "market_district"
+          "location_id": "cloud_pavilion"
         }
       ],
       "attributes": {

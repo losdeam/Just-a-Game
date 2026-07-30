@@ -1,9 +1,8 @@
-"""Simple server startup script that bypasses .env loading issues."""
+"""Simple server startup script that runs with the mock LLM (no API key needed)."""
 
 from __future__ import annotations
 
 import os
-import sys
 
 os.environ.pop("DOTENV", None)
 

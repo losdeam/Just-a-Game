@@ -1,10 +1,13 @@
-"""CLI interface for JAG: command-line RPG gameplay with rich output."""
+"""CLI interface for JAG: command-line RPG gameplay with rich output.
+
+Driven by the new module-based engine: the Director conceives plot and solidifies
+changes through tools, while the five modules hold all state.
+"""
 
 from __future__ import annotations
 
 import asyncio
 import sys
-from pathlib import Path
 from typing import Any
 
 import click
@@ -13,23 +16,21 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from jag.agents.game_master import GameMaster
 from jag.config import GameConfig, load_config
+from jag.engine import Game, load_demo_world
 
 console = Console()
 
 
 def print_banner() -> None:
-    """Print game banner."""
     banner = Text()
     banner.append("  JAG  ", style="bold white on dark_red")
-    banner.append(" — 智能体驱动开放世界RPG框架 ", style="dim")
+    banner.append(" — 导演驱动的开放世界RPG框架 ", style="dim")
     console.print(banner)
     console.print()
 
 
-def print_status(status: dict[str, Any], gm: GameMaster | None = None) -> None:
-    """Print game status in a nice panel."""
+def print_status(status: dict[str, Any], game: Game) -> None:
     table = Table(show_header=False, box=None, padding=(0, 2))
     table.add_column("属性", style="cyan")
     table.add_column("数值", style="white")
@@ -39,48 +40,39 @@ def print_status(status: dict[str, Any], gm: GameMaster | None = None) -> None:
     table.add_row("天数", str(status["day"]))
     table.add_row("季节", status["season"])
     table.add_row("位置", status["location"])
-    table.add_row("任务", str(status["active_quests"]))
-    table.add_row("故事线", str(status["active_threads"]))
+    table.add_row("生命", f"{status['health']}/{status['max_health']}")
+    table.add_row("附近", "、".join(status.get("nearby_entities", [])) or "无")
 
     console.print(Panel(table, title="[bold]世界状态[/bold]", border_style="blue"))
 
-    # Show nearby NPCs if any
-    nearby = status.get("nearby_npcs", [])
-    if nearby and gm:
-        npc_names = []
-        for npc_id in nearby:
-            npc = gm.tick_engine._npcs.get(npc_id)
-            if npc:
-                npc_names.append(npc.name)
-        if npc_names:
-            console.print(f"[dim]附近的人: {'、'.join(npc_names)}[/dim]")
 
-
-def print_inventory(inventory: list[str]) -> None:
-    """Print player inventory."""
-    if not inventory:
+def print_inventory(game: Game) -> None:
+    inv = game.inventory
+    if not inv.items and inv.gold == 0:
         console.print("[dim]你的背包是空的。[/dim]")
         return
-    table = Table(title="背包", show_header=True)
+    table = Table(title=f"背包（金币: {inv.gold}）", show_header=True)
     table.add_column("#", style="dim")
     table.add_column("物品", style="green")
-    for i, item in enumerate(inventory, 1):
-        table.add_row(str(i), item)
+    table.add_column("数量", style="white")
+    table.add_column("类型", style="cyan")
+    for i, it in enumerate(inv.items, 1):
+        flag = " [已装备]" if it.equipped else ""
+        table.add_row(str(i), f"{it.name}{flag}", str(it.quantity), it.item_type)
     console.print(table)
 
 
 def print_narrative(text: str) -> None:
-    """Print narrative text."""
     console.print(Panel(text, title="[bold green]叙事[/bold green]", border_style="green"))
 
 
 def print_help() -> None:
-    """Print help text."""
     help_text = """
 [bold]指令:[/bold]
   [cyan]status[/cyan]       — 查看世界状态
   [cyan]inventory[/cyan]    — 查看背包
   [cyan]look[/cyan]         — 环顾四周
+  [cyan]modules[/cyan]      — 查看五大模块提示词（导演所见）
   [cyan]wait[/cyan]         — 等待（推进时间）
   [cyan]wait N[/cyan]       — 等待N回合
   [cyan]save[/cyan]         — 保存游戏
@@ -89,24 +81,35 @@ def print_help() -> None:
   [cyan]quit/exit[/cyan]    — 退出游戏
 
 [bold]行动:[/bold]
-  直接用自然语言描述你想做的事！
+  直接用自然语言描述你想做的事！导演会构思情节，并通过工具固化影响。
   例如:
     "我想探索森林"
     "和商人对话"
     "用剑攻击哥布林"
-    "搜索房间寻找隐藏物品"
 """
     console.print(Panel(help_text, title="[bold]帮助[/bold]", border_style="yellow"))
 
 
-async def game_loop(gm: GameMaster) -> None:
-    """Main game loop."""
+def print_modules(game: Game) -> None:
+    """Show the prompt fragments each module would hand to the Director."""
+    ss = game.self_state
+    loc = game.location
+    npc = game.npc
+    console.print(Panel(game.worldview.to_prompt(), title="[bold]世界观模块[/bold]", border_style="purple"))
+    console.print(Panel(loc.prompt_for_location(ss.current_location_id), title="[bold]地点模块(当前)[/bold]", border_style="blue"))
+    console.print(Panel(npc.prompt_for_location(ss.current_location_id), title="[bold]NPC模块(当前)[/bold]", border_style="cyan"))
+    console.print(Panel(ss.to_prompt(), title="[bold]自身状态模块[/bold]", border_style="yellow"))
+    console.print(Panel(game.inventory.to_prompt(), title="[bold]背包模块[/bold]", border_style="green"))
+
+
+async def game_loop(game: Game) -> None:
     print_banner()
 
-    opening = await gm.generate_opening()
+    opening = await game.generate_opening()
     print_narrative(opening)
     console.print()
     console.print("[dim]输入 [cyan]help[/cyan] 查看指令，或直接描述你想做的事。[/dim]")
+    console.print("[dim]输入 [cyan]modules[/cyan] 可查看各模块当前传给导演的提示词。[/dim]")
     console.print()
 
     while True:
@@ -121,207 +124,99 @@ async def game_loop(gm: GameMaster) -> None:
 
         cmd = player_input.lower().split()[0] if player_input else ""
 
-        # Handle commands
         if cmd in ("quit", "exit", "q"):
             console.print("[yellow]再见，冒险者！[/yellow]")
             break
         elif cmd == "status":
-            print_status(gm.get_status(), gm)
+            print_status(game.get_status(), game)
             continue
         elif cmd == "inventory":
-            player = gm.world.characters.get(gm.player_id, {})
-            print_inventory(player.get("inventory", []))
+            print_inventory(game)
+            continue
+        elif cmd == "modules":
+            print_modules(game)
             continue
         elif cmd == "help":
             print_help()
             continue
         elif cmd == "save":
             path = player_input.split(maxsplit=1)[1] if len(player_input.split()) > 1 else "savegame.json"
-            gm.save_game(path)
+            game.save_game(path)
             console.print(f"[green]游戏已保存至 {path}[/green]")
             continue
         elif cmd == "load":
             path = player_input.split(maxsplit=1)[1] if len(player_input.split()) > 1 else "savegame.json"
-            if gm.load_game(path):
+            if game.load_game(path):
                 console.print(f"[green]游戏已从 {path} 加载[/green]")
-                print_status(gm.get_status(), gm)
+                print_status(game.get_status(), game)
             else:
                 console.print(f"[red]从 {path} 加载失败[/red]")
             continue
         elif cmd == "look":
-            status = gm.get_status()
-            nearby = status.get("nearby_npcs", [])
-            loc_name = status["location"]
-            loc_desc = status.get("location_description", "")
-            text = f"你环顾四周。你身处{loc_name}。{loc_desc}"
-            if nearby:
-                npc_names = []
-                for npc_id in nearby:
-                    npc = gm.tick_engine._npcs.get(npc_id)
-                    if npc:
-                        npc_names.append(f"{npc.name}（{npc.description}）")
-                if npc_names:
-                    text += "\n\n你看到:\n" + "\n".join(f"  • {n}" for n in npc_names)
+            status = game.get_status()
+            ss = game.self_state
+            loc = game.location.get(ss.current_location_id)
+            text = f"你环顾四周。你身处{status['location']}。{status.get('location_description', '')}"
+            present = game.npc.at_location(ss.current_location_id)
+            if present:
+                text += "\n\n你看到:\n" + "\n".join(
+                    f"  • {n.name}（{n.description}）" for n in present
+                )
             else:
                 text += "\n\n附近没有其他人。"
+            if loc and loc.connected:
+                names = [game.location.get(c).name if game.location.get(c) else c for c in loc.connected]
+                text += "\n\n可前往: " + "、".join(names)
             print_narrative(text)
             continue
         elif cmd == "wait":
             parts = player_input.split()
             turns = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else 1
-            narratives = await gm.advance_world(turns)
-            for n in narratives:
+            result = await game.advance_world(turns)
+            for n in result["narratives"]:
                 print_narrative(n)
             continue
 
-        # Process action
+        # Process action via Director
         try:
-            narrative = await gm.process_action(player_input)
-            print_narrative(narrative)
-        except Exception as e:
+            result = await game.process_action(player_input)
+            print_narrative(result["narrative"])
+            # surface tool solidification
+            for tr in result.get("tool_results", []):
+                mark = "[green]✓[/green]" if tr["ok"] else "[red]✗[/red]"
+                console.print(f"[dim]{mark} {tr['tool']}: {tr['message']}[/dim]")
+            opts = result.get("suggested_options", [])
+            if opts:
+                labels = "  ".join(f"[cyan]{o['label']}[/cyan]" for o in opts)
+                console.print(f"[dim]建议: {labels}[/dim]")
+        except Exception as e:  # noqa: BLE001
             console.print(f"[red]错误: {e}[/red]")
-
-
-def setup_demo_world(gm: GameMaster) -> None:
-    """Set up a basic demo world."""
-    from jag.world.npc import NPC, ScheduleEntry
-    from jag.world.world import WorldLocation, WorldRegion
-
-    # Regions
-    gm.setup_world(
-        regions=[
-            WorldRegion(id="kingdom", name="阿尔多利亚王国", description="一个位于荒野边缘的和平王国。", region_type="kingdom"),
-        ],
-        locations=[
-            WorldLocation(id="town_square", name="城镇广场", description="阿尔多利亚繁华的中心。商贩们吆喝着叫卖，市民们忙碌地穿梭往来。", region_id="kingdom", location_type="outdoor", light_level=8),
-            WorldLocation(id="tavern", name="金色酒壶", description="一家温暖的酒馆，弥漫着麦芽酒和烤肉的气味。冒险者们围坐在炉火旁分享故事。", region_id="kingdom", location_type="indoor", light_level=6),
-            WorldLocation(id="market", name="集市街", description="一条长长的街道，两旁摆满了摊位，从新鲜农产品到异域工艺品应有尽有。", region_id="kingdom", location_type="outdoor", light_level=8),
-            WorldLocation(id="forest_edge", name="森林边缘", description="文明世界与黑暗森林的交界处。扭曲的树木在前方投下阴影。", region_id="kingdom", location_type="outdoor", light_level=4, danger_level=3),
-            WorldLocation(id="darkwood", name="暗木小径", description="一条穿过古老森林的狭窄小径。诡异的声响在林间回荡。", region_id="kingdom", location_type="outdoor", light_level=2, danger_level=5),
-            WorldLocation(id="ruins", name="远古遗迹", description="布满青苔和藤蔓的石制建筑。阴影中有东西在闪烁。", region_id="kingdom", location_type="outdoor", light_level=3, danger_level=7),
-        ],
-        npcs=[
-            NPC(
-                id="innkeeper",
-                name="贝尔塔",
-                description="一位眼神和善的健壮妇女，经营着这家酒馆。",
-                location_id="tavern",
-                personality="friendly",
-                goal="让酒馆生意兴隆，顾客满意",
-                desires=["好故事", "美酒"],
-                schedule=[
-                    ScheduleEntry(hour_start=6, hour_end=22, activity="照看吧台", location_id="tavern"),
-                    ScheduleEntry(hour_start=22, hour_end=6, activity="睡觉", location_id="tavern"),
-                ],
-            ),
-            NPC(
-                id="guard_captain",
-                name="阿尔德里克爵士",
-                description="一位身披旧铠的沧桑骑士，城镇卫队的队长。",
-                location_id="town_square",
-                personality="stern",
-                goal="保护城镇免受威胁",
-                fears=["辜负职责"],
-                schedule=[
-                    ScheduleEntry(hour_start=6, hour_end=12, activity="巡逻", location_id="town_square"),
-                    ScheduleEntry(hour_start=12, hour_end=18, activity="训练新兵", location_id="market"),
-                    ScheduleEntry(hour_start=18, hour_end=6, activity="休息", location_id="tavern"),
-                ],
-            ),
-            NPC(
-                id="merchant",
-                name="泽菲尔",
-                description="一位走南闯北的商人，眼光毒辣，口才了得。",
-                location_id="market",
-                personality="charming",
-                goal="通过贸易积累财富",
-                desires=["稀有文物", "金币"],
-                schedule=[
-                    ScheduleEntry(hour_start=8, hour_end=18, activity="贩卖货物", location_id="market"),
-                    ScheduleEntry(hour_start=18, hour_end=8, activity="休息", location_id="tavern"),
-                ],
-            ),
-        ],
-        player_data={
-            "location_id": "town_square",
-            "inventory": ["生锈的铁剑", "皮甲", "面包", "10枚金币"],
-            "name": "冒险者",
-            "type": "player",
-            "health": 100,
-            "max_health": 100,
-        },
-    )
-
-    # Set up connections
-    locs = gm.world.locations
-    if "town_square" in locs:
-        locs["town_square"].connected = ["tavern", "market", "forest_edge"]
-    if "tavern" in locs:
-        locs["tavern"].connected = ["town_square"]
-    if "market" in locs:
-        locs["market"].connected = ["town_square"]
-    if "forest_edge" in locs:
-        locs["forest_edge"].connected = ["town_square", "darkwood"]
-    if "darkwood" in locs:
-        locs["darkwood"].connected = ["forest_edge", "ruins"]
-    if "ruins" in locs:
-        locs["ruins"].connected = ["darkwood"]
-
-    gm.world_lore = {
-        "world_name": "阿尔多利亚王国",
-        "genre": "fantasy",
-        "era": "封建中世纪",
-        "atmosphere": "阳光明媚，处处生机。",
-        "terrain": "城镇、森林",
-        "magic_level": "中魔",
-        "danger_level": "适中",
-        "description": "一个位于荒野边缘的和平王国，剑与魔法的经典奇幻世界。",
-        "history": "阿尔多利亚王国曾是古代精灵帝国的一部分，人类在精灵隐退后建立了自己的文明。如今王国边境的黑暗森林中，古老的遗迹正散发出不祥的气息。",
-        "factions": [],
-        "main_quest": "传说中的黑暗领主正在集结大军，你必须找到传说中的神器，联合各势力，在末日降临前阻止他。",
-        "npcs": [
-            {"name": "贝尔塔", "role": "让酒馆生意兴隆，顾客满意", "location": "金色酒壶"},
-            {"name": "阿尔德里克爵士", "role": "保护城镇免受威胁", "location": "城镇广场"},
-            {"name": "泽菲尔", "role": "通过贸易积累财富", "location": "集市街"},
-        ],
-        "locations": [
-            {"name": "城镇广场", "description": "阿尔多利亚繁华的中心。", "danger": 0},
-            {"name": "金色酒壶", "description": "一家温暖的酒馆。", "danger": 0},
-            {"name": "集市街", "description": "一条长长的街道。", "danger": 0},
-            {"name": "森林边缘", "description": "文明世界与黑暗森林的交界处。", "danger": 3},
-            {"name": "暗木小径", "description": "一条穿过古老森林的狭窄小径。", "danger": 5},
-            {"name": "远古遗迹", "description": "布满青苔和藤蔓的石制建筑。", "danger": 7},
-        ],
-    }
 
 
 @click.group(invoke_without_command=True)
 @click.option("--config", "-c", default=None, help="配置文件路径（YAML）")
 @click.pass_context
 def main(ctx: click.Context, config: str | None) -> None:
-    """JAG — 智能体驱动开放世界RPG框架。"""
+    """JAG — 导演驱动的开放世界RPG框架。"""
     if ctx.invoked_subcommand is None:
-        # Default: start playing
         ctx.invoke(play, config=config)
 
 
 @main.command()
 @click.option("--config", "-c", default=None, help="配置文件路径（YAML）")
 def play(config: str | None) -> None:
-    """开始新游戏。"""
+    """开始新游戏（加载演示世界）。"""
     cfg = load_config(config)
-
-    gm = GameMaster(config=cfg)
-    setup_demo_world(gm)
-
-    console.print("[dim]正在设置演示世界...[/dim]")
-    asyncio.run(game_loop(gm))
+    game = Game(config=cfg)
+    load_demo_world(game.worldview, game.location, game.npc, game.self_state, game.inventory)
+    console.print("[dim]已加载演示世界: 阿尔多利亚王国[/dim]")
+    asyncio.run(game_loop(game))
 
 
 @main.command()
 def version() -> None:
     """显示版本信息。"""
-    console.print("[bold]JAG[/bold] v0.1.0 — 智能体驱动开放世界RPG框架")
+    console.print("[bold]JAG[/bold] v0.2.0 — 导演驱动的开放世界RPG框架（模块化重构）")
 
 
 @main.command()

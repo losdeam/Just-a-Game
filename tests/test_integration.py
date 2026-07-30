@@ -1,212 +1,196 @@
-"""Integration tests for the full JAG game loop."""
+"""Integration tests for the new module-based engine.
+
+Covers: module prompts, tool solidification, the Director flow (mock LLM +
+fallback), demo world loading, and persistence round-trip.
+"""
 
 from __future__ import annotations
 
 import asyncio
+import os
+import tempfile
 
 import pytest
 
-from jag.agents.game_master import GameMaster
 from jag.config import GameConfig, LLMConfig, LLMModuleConfig
-from jag.demo import WorldLoader, load_factions, load_items, load_locations, load_npcs, load_regions, setup_economy
+from jag.director import Director
+from jag.engine import Game, load_demo_world
+from jag.llm import MockLLMProvider
+from jag.modules import InventoryModule, ItemData, SelfStateModule
+from jag.tools import build_default_registry
 
 
 @pytest.fixture
 def game_config() -> GameConfig:
-    """Create a test game config with mock LLM."""
     return GameConfig(
         world_name="Test World",
-        llm=LLMConfig(
-            default=LLMModuleConfig(provider="mock", model="mock"),
-        ),
+        llm=LLMConfig(default=LLMModuleConfig(provider="mock", model="mock")),
     )
 
 
 @pytest.fixture
-def game_master(game_config: GameConfig) -> GameMaster:
-    """Create a GameMaster with demo world loaded."""
-    gm = GameMaster(config=game_config)
-
-    regions = load_regions()
-    locations = load_locations()
-    npcs = load_npcs()
-
-    gm.setup_world(
-        regions=regions,
-        locations=locations,
-        npcs=npcs,
-        player_data={
-            "location_id": "village_square",
-            "inventory": ["rusty_sword", "10 gold coins"],
-            "name": "Test Adventurer",
-            "type": "player",
-        },
-    )
-
-    # Set up economy
-    setup_economy(gm.economy, locations)
-
-    # Set up factions
-    factions, relations = load_factions()
-    for f in factions:
-        gm.faction.add_faction(f)
-    for r in relations:
-        gm.faction.set_relation(r["faction_a"], r["faction_b"], r["relation"])
-
-    return gm
+def game(game_config: GameConfig) -> Game:
+    g = Game(config=game_config)
+    load_demo_world(g.worldview, g.location, g.npc, g.self_state, g.inventory)
+    return g
 
 
-class TestWorldLoader:
-    """Test the demo world loader."""
-
-    def test_load_regions(self):
-        regions = load_regions()
-        assert len(regions) >= 2
-        ids = {r.id for r in regions}
-        assert "greystone" in ids
-        assert "darkwood" in ids
-
-    def test_load_locations(self):
-        locations = load_locations()
-        assert len(locations) >= 6
-        ids = {loc.id for loc in locations}
-        assert "village_square" in ids
-        assert "tavern" in ids
-        assert "forest_path" in ids
-
-    def test_load_npcs(self):
-        npcs = load_npcs()
-        assert len(npcs) >= 4
-        names = {n.name for n in npcs}
-        assert "玛拉" in names
-        assert "杜兰" in names
-
-    def test_load_items(self):
-        items = load_items()
-        assert len(items) >= 5
-        ids = {i.id for i in items}
-        assert "iron_sword" in ids
-        assert "healing_potion" in ids
-
-    def test_load_factions(self):
-        factions, relations = load_factions()
-        assert len(factions) >= 2
-        assert len(relations) >= 1
-
-    def test_world_loader_validate(self):
-        loader = WorldLoader()
-        data = loader.load_all()
-        errors = loader.validate(data)
-        assert len(errors) == 0, f"Validation errors: {errors}"
+# ── Modules ──────────────────────────────────────────────────────────────
 
 
-class TestGameLoop:
-    """Test the full game loop."""
+def test_worldview_prompt_has_name(game: Game) -> None:
+    prompt = game.worldview.to_prompt()
+    assert "阿尔多利亚王国" in prompt
+    assert "【世界观】" in prompt
 
-    @pytest.mark.asyncio
-    async def test_basic_action(self, game_master: GameMaster):
-        """Test processing a basic action."""
-        result = await game_master.process_action("look around")
-        assert isinstance(result, str)
-        assert len(result) > 0
 
-    @pytest.mark.asyncio
-    async def test_move_action(self, game_master: GameMaster):
-        """Test moving to a new location."""
-        result = await game_master.process_action("go to the tavern")
-        assert isinstance(result, str)
-        # Player should have attempted to move
-        status = game_master.get_status()
-        assert status["turn"] >= 1
+def test_location_prompt_for_current(game: Game) -> None:
+    prompt = game.location.prompt_for_location(game.self_state.current_location_id)
+    assert "城镇广场" in prompt
+    assert "可前往" in prompt
 
-    @pytest.mark.asyncio
-    async def test_multiple_turns(self, game_master: GameMaster):
-        """Test running multiple turns."""
-        actions = [
-            "look at the fountain",
-            "talk to the innkeeper",
-            "go to the market",
-            "examine the goods",
-            "head to the village gate",
-        ]
-        for action in actions:
-            result = await game_master.process_action(action)
-            assert isinstance(result, str)
 
-        status = game_master.get_status()
-        assert status["turn"] >= 5
+def test_npc_at_location(game: Game) -> None:
+    present = game.npc.at_location("town_square")
+    assert any(n.name == "阿尔德里克爵士" for n in present)
 
-    @pytest.mark.asyncio
-    async def test_advance_world(self, game_master: GameMaster):
-        """Test advancing world without player action."""
-        narratives = await game_master.advance_world(3)
-        assert len(narratives) == 3
-        assert all(isinstance(n, str) for n in narratives)
 
-    @pytest.mark.asyncio
-    async def test_game_status(self, game_master: GameMaster):
-        """Test getting game status."""
-        status = game_master.get_status()
-        assert "turn" in status
-        assert "location" in status
-        assert "nearby_npcs" in status
+def test_self_state_advances_time() -> None:
+    ss = SelfStateModule()
+    ss.advance_time(3)
+    assert ss.turn == 3
+    assert ss.hour == 11
 
-    @pytest.mark.asyncio
-    async def test_save_load(self, game_master: GameMaster, tmp_path):
-        """Test saving and loading game."""
-        save_path = str(tmp_path / "test_save.json")
 
-        # Play a few turns first
-        await game_master.process_action("look around")
-        await game_master.process_action("wait")
+def test_inventory_add_remove() -> None:
+    inv = InventoryModule()
+    inv.add(ItemData("bread", "面包", quantity=2, item_type="consumable"))
+    assert inv.has("bread")
+    assert inv.remove("bread", 1)
+    assert inv.has("bread")
+    assert inv.remove("bread", 1)
+    assert not inv.has("bread")
 
-        # Save
-        game_master.save_game(save_path)
 
-        # Load
-        success = game_master.load_game(save_path)
-        assert success
+# ── Tools ────────────────────────────────────────────────────────────────
 
-    @pytest.mark.asyncio
-    async def test_20_turn_integration(self, game_master: GameMaster):
-        """Integration test: run 20+ turns and verify consistency."""
-        actions = [
-            "explore the village square",
-            "talk to the villagers",
-            "go to the tavern",
-            "order a drink",
-            "listen to stories",
-            "go to the blacksmith",
-            "examine the weapons",
-            "go to the market",
-            "buy some supplies",
-            "head to the village gate",
-            "look into the forest",
-            "venture into the forest",
-            "search for tracks",
-            "find the hidden camp",
-            "investigate the camp",
-            "head to the ruins",
-            "examine the ancient runes",
-            "return to the forest path",
-            "go back to the village",
-            "rest at the tavern",
-        ]
 
-        errors = []
-        for i, action in enumerate(actions):
-            try:
-                result = await game_master.process_action(action)
-                assert isinstance(result, str), f"Turn {i+1}: narrative is not a string"
-            except Exception as e:
-                errors.append(f"Turn {i+1} ({action}): {e}")
+def test_move_player_tool(game: Game) -> None:
+    reg = build_default_registry()
+    result = reg.execute("move_player", {"location_id": "tavern"}, game)
+    assert result.ok
+    assert game.self_state.current_location_id == "tavern"
 
-        assert not errors, f"Errors during integration: {errors}"
 
-        status = game_master.get_status()
-        assert status["turn"] >= 20, f"Expected 20+ turns, got {status['turn']}"
+def test_update_health_tool_clamps(game: Game) -> None:
+    reg = build_default_registry()
+    reg.execute("update_health", {"delta": -1000}, game)
+    assert game.self_state.health == 0
+    reg.execute("update_health", {"delta": 1000}, game)
+    assert game.self_state.health == game.self_state.max_health
 
-        # Verify world state consistency
-        assert len(game_master.world.characters) > 0
-        assert len(game_master.world.locations) >= 6
-        assert game_master.world.time.turn >= 20
+
+def test_add_npc_tool(game: Game) -> None:
+    reg = build_default_registry()
+    result = reg.execute("add_npc", {
+        "id": "goblin", "name": "哥布林", "description": "丑陋的小怪物",
+        "location_id": "forest_edge", "personality": "aggressive",
+    }, game)
+    assert result.ok
+    assert game.npc.get("goblin") is not None
+
+
+def test_registry_describes_all_tools() -> None:
+    reg = build_default_registry()
+    text = reg.describe_all()
+    assert "update_worldview" in text
+    assert "move_player" in text
+    assert "add_npc" in text
+    assert "add_item" in text
+
+
+# ── Director + Game flow ─────────────────────────────────────────────────
+
+
+def test_opening_generated(game: Game) -> None:
+    opening = asyncio.run(game.generate_opening())
+    assert isinstance(opening, str)
+    assert len(opening) > 0
+
+
+def test_process_action_returns_narrative_and_advances_time(game: Game) -> None:
+    before = game.self_state.turn
+    result = asyncio.run(game.process_action("我环顾四周"))
+    assert "narrative" in result
+    assert result["narrative"]
+    assert game.self_state.turn == before + 1
+    assert "status" in result
+    assert "suggested_options" in result
+
+
+def test_director_fallback_on_empty_decision(game: Game) -> None:
+    # Mock LLM returns a default (empty) DirectorDecision -> fallback kicks in.
+    director = Director(MockLLMProvider(), build_default_registry())
+    decision = asyncio.run(director.process_action("做点什么", game))
+    assert decision.narrative  # fallback narrative is non-empty
+
+
+def test_director_executes_tool_calls(game: Game) -> None:
+    """A scripted mock provider returns a decision with a tool call; the Director
+    must execute it against the modules."""
+    from jag.director.models import DirectorDecision, ToolCall
+
+    class ScriptedMock(MockLLMProvider):
+        async def structured(self, prompt, response_model, system="", **kwargs):  # type: ignore[override]
+            return DirectorDecision(
+                thoughts="移动到酒馆",
+                narrative="你走进了金色酒壶。",
+                tool_calls=[ToolCall(tool="move_player", args={"location_id": "tavern"})],
+                suggested_options=["和贝尔塔交谈"],
+            )
+
+    director = Director(ScriptedMock(), build_default_registry())
+    decision = asyncio.run(director.process_action("去酒馆", game))
+    assert game.self_state.current_location_id == "tavern"
+    assert decision.narrative == "你走进了金色酒壶。"
+
+
+# ── Persistence ──────────────────────────────────────────────────────────
+
+
+def test_save_load_roundtrip(game: Game) -> None:
+    # play a couple of actions so history is non-empty
+    asyncio.run(game.process_action("四处看看"))
+    asyncio.run(game.process_action("走向集市"))
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+        path = f.name
+    try:
+        game.save_game(path)
+        # mutate state
+        game.self_state.health = 1
+        game.self_state.current_location_id = "ruins"
+        # reload
+        assert game.load_game(path)
+        assert game.self_state.health == 100
+        assert game.self_state.current_location_id == "town_square"
+        assert len(game.history) == 2
+    finally:
+        os.unlink(path)
+
+
+# ── Status / views ───────────────────────────────────────────────────────
+
+
+def test_status_shape(game: Game) -> None:
+    status = game.get_status()
+    for key in ("turn", "time", "day", "season", "location", "inventory",
+                "health", "max_health", "nearby_entities"):
+        assert key in status
+
+
+def test_lore_view(game: Game) -> None:
+    lore = game.get_lore_view()
+    assert lore["world_name"] == "阿尔多利亚王国"
+    assert len(lore["locations"]) == 6
+    assert len(lore["npcs"]) == 3
